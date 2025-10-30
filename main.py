@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import logging
 from dotenv import load_dotenv
-import os
+import os, random
 
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
@@ -13,7 +13,7 @@ intents.message_content = True
 intents.members = True
 intents.moderation
 
-bot = commands.Bot(command_prefix=commands.when_mentioned_or('!'), intents=intents, help_command=None)
+bot = commands.Bot(command_prefix=commands.when_mentioned_or('b'), intents=intents, help_command=None)
 
 def role_validate(roles):
     if not any("Moderator" in i.name for i in roles):
@@ -33,15 +33,15 @@ async def hello(ctx):
     await ctx.send(f"Hello! {ctx.author.name}")
 
 @bot.command()
-async def help(cmd):
-    await cmd.send(f"Help! {cmd.author.name}")
-
-@bot.command()
 async def xdd(cmd):
     await cmd.send(f"xdd {cmd.author.name}")
 
 @bot.command()
 async def crole(ctx, role_name: str, color: str = None):
+    validate = role_validate(ctx.author.roles)
+    if not validate:
+        await ctx.send("❌ You need to be a bot admin to use this command.")
+        return
     guild = ctx.guild
     existing_role = discord.utils.get(guild.roles, name=role_name)
 
@@ -67,6 +67,10 @@ async def crole(ctx, role_name: str, color: str = None):
     
 @bot.command()
 async def rrole(ctx, role_name: str):
+    validate = role_validate(ctx.author.roles)
+    if not validate:
+        await ctx.send("❌ You need to be a bot admin to use this command.")
+        return
     guild = ctx.guild
     existing_role = discord.utils.get(guild.roles, name=role_name)
 
@@ -103,5 +107,75 @@ async def arole(ctx, role_name: str):
         await ctx.send(f"✅ Added role `{role.name}` to {member.mention}")
 
     await ctx.send(f"🎉 Done! Role `{role.name}` added to all mentioned users.")
+
+@bot.command()
+async def info(ctx):
+    embed = discord.Embed(
+        title="Bot Info",
+        description="This is a simple info command using embeds!",
+        color=discord.Color.blue()  # you can also use .random()
+    )
+
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
+    embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+    embed.add_field(name="Latency", value=f"{round(bot.latency * 1000)} ms", inline=False)
+    embed.add_field(name="Server", value=ctx.guild.name, inline=False)
+    embed.set_footer(text="Requested by " + ctx.author.name)
+
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def rick(ctx, n=1):
+    l = ["<:ting2:1433595520424742983>","<:ting:1433593486883684393>"]
+    if n > 10 or n <= 0:
+        await ctx.send("❌ Number of Bricks out of range ❌")
+        await ctx.send("".join([random.choice(l) for _ in range(10)]))
+        return
+    await ctx.send("".join([random.choice(l) for _ in range(n)]))
+
+@bot.command()
+async def help(ctx):
+    embed = discord.Embed(
+        title="🤖 Bot Help Menu",
+        description="Here are all available commands!",
+        color=discord.Color.blurple()
+    )
+
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
+    embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+
+    # 🎯 General Commands
+    embed.add_field(
+        name="🧩 General",
+        value=(
+            "`bping` → Check bot latency\n"
+            "`bhello` → Say hello to the bot\n"
+            "`binfo` → Show bot/server info\n"
+            "`brick [n]` → Send random brick emojis (1–10)"
+        ),
+        inline=False
+    )
+
+    # ⚙️ Role Management
+    embed.add_field(
+        name="🛠️ Role Management",
+        value=(
+            "`bcrole <role_name> [#color]` → Create a new role (random color if none)\n"
+            "`brrole <role_name>` → Remove a role by name\n"
+            "`barole <role_name> @user1 @user2 ...` → Add role to mentioned users"
+        ),
+        inline=False
+    )
+
+    # 🧠 Extra / Misc
+    embed.add_field(
+        name="💡 Misc",
+        value="More features coming soon!",
+        inline=False
+    )
+
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar.url)
+
+    await ctx.send(embed=embed)
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
