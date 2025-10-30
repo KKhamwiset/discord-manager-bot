@@ -18,4 +18,12 @@ bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 async def on_ready():
     print(f'{bot.user} has connected to Discord!')
 
+@bot.command()
+async def ping(ctx):
+    await ctx.send(f'Pong! {round(bot.latency * 1000)}ms')
+
+@bot.command()
+async def hello(ctx):
+    await ctx.send(f"Hello! {ctx.author.name}")
+
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
