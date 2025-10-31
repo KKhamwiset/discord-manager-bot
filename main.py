@@ -22,10 +22,11 @@ bot = commands.Bot(
     help_command=None
 )
 
-async def _load_all_extensions():
+async def _load_all_extensions(exclude: list[str] = []):
     paths = glob.glob("cogs/*.py") + glob.glob("cogs/**/*.py", recursive=True)
     for path in paths:
-        if os.path.basename(path).startswith("_"):
+        if os.path.basename(path).startswith("_") or any(i in exclude for i in os.path.basename(path).split('.')):
+
             continue
         mod = path[:-3].replace(os.sep, ".")  
         await bot.load_extension(mod)
@@ -36,7 +37,7 @@ async def on_ready():
 
 @bot.event
 async def setup_hook():
-    await _load_all_extensions() 
+    await _load_all_extensions([]) 
 
 @bot.command()
 async def ping(ctx: commands.Context):

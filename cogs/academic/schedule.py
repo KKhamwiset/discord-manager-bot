@@ -6,11 +6,9 @@ import discord
 from discord import ui
 from discord.ext import commands
 import pymongo
+from dotenv import load_dotenv
 
-# ถ้าใช้ python-dotenv ค่อยเปิดสองบรรทัดนี้
-# from dotenv import load_dotenv
-# load_dotenv()
-
+load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 
 # --------------------------
@@ -154,7 +152,7 @@ class Schedule(commands.Cog):
             print("❌ MongoDB connection failed. Check your MONGO_URI.")
             self.client = None
 
-    @commands.command(name="addclass")
+    @commands.command(name="addclass", aliases=["asch", "ac"])
     async def add_class_interactive(self, ctx: commands.Context):
         """
         เปิด View ให้เลือกวัน (ไทย + อังกฤษในวงเล็บ) แล้วตามด้วย Modal รับช่วงเวลา/ชื่อวิชา
@@ -164,7 +162,7 @@ class Schedule(commands.Cog):
             return
 
         view = AddClassView(author=ctx.author, db_collection=self.collection)
-        await ctx.send("เลือกวันจากเมนูด้านล่าง แล้วระบบจะถามช่วงเวลาและชื่อวิชาต่อให้จบในขั้นตอนเดียว 👇", view=view)
+        await ctx.send("เลือกวันจากตัวเลือกด้านล่าง แล้วระบบจะถามช่วงเวลาและชื่อวิชาต่อให้จบในขั้นตอนเดียว 👇", view=view)
 
     @commands.command(name="myschedule")
     async def my_schedule(self, ctx: commands.Context):
@@ -229,10 +227,8 @@ class Schedule(commands.Cog):
     async def delete_class(self, ctx: commands.Context, *, subject_to_delete: str):
         """
         ลบวิชาออกจากตารางเรียนของผู้ใช้
-        - รองรับชื่อวิชาที่มีช่องว่าง
-        - ลบแบบ case-insensitive
-        - ยุบช่องว่างซ้ำและตัดช่องว่างหัวท้ายก่อนลบ
-        ตัวอย่าง: bdelclass GEN101 General Physics
+        รองรับชื่อวิชาที่มีการเว้นวรรค
+        ตัวอย่าง: !delclass GEN101 General Physics
         """
         if not self.client:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")

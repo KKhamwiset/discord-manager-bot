@@ -11,7 +11,7 @@ class RoleManagement(commands.Cog):
             return False
         return True
 
-    @commands.command(name="crole",aliases=["createrole","makerole"])
+    @commands.command(name="cr",aliases=["createrole","makerole"])
     async def createRole(self, ctx, role_name: str, color: str = None):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
@@ -38,7 +38,7 @@ class RoleManagement(commands.Cog):
         new_role = await guild.create_role(name=role_name, color=color_value)
         await ctx.send(f"✅ Role `{new_role.name}` created with color `{str(new_role.color)}`.")
         
-    @commands.command(name="rrole",aliases=["delrole","removerole"])
+    @commands.command(name="dr",aliases=["delrole","removerole"])
     async def removeRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
@@ -53,7 +53,7 @@ class RoleManagement(commands.Cog):
         await existing_role.delete()
         await ctx.send(f"✅ Deleted role `{role_name}`")
 
-    @commands.command(name="arole",aliases=["addrole"])
+    @commands.command(name="arole",aliases=["addrole","ar"])
     async def addRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
