@@ -11,8 +11,8 @@ class RoleManagement(commands.Cog):
             return False
         return True
 
-    @commands.command()
-    async def crole(self, ctx, role_name: str, color: str = None):
+    @commands.command(name="crole",aliases=["createrole","makerole"])
+    async def createRole(self, ctx, role_name: str, color: str = None):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
             await ctx.send("❌ You need to be a bot admin to use this command.")
@@ -38,8 +38,8 @@ class RoleManagement(commands.Cog):
         new_role = await guild.create_role(name=role_name, color=color_value)
         await ctx.send(f"✅ Role `{new_role.name}` created with color `{str(new_role.color)}`.")
         
-    @commands.command()
-    async def rrole(self,ctx, role_name: str):
+    @commands.command(name="rrole",aliases=["delrole","removerole"])
+    async def removeRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
             await ctx.send("❌ You need to be a bot admin to use this command.")
@@ -53,8 +53,8 @@ class RoleManagement(commands.Cog):
         await existing_role.delete()
         await ctx.send(f"✅ Deleted role `{role_name}`")
 
-    @commands.command()
-    async def arole(self,ctx, role_name: str):
+    @commands.command(name="arole",aliases=["addrole"])
+    async def addRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
             await ctx.send("❌ You need to be a bot admin to use this command.")
@@ -77,6 +77,6 @@ class RoleManagement(commands.Cog):
             await ctx.send(f"✅ Added role `{role.name}` to {member.mention}")
 
         await ctx.send(f"🎉 Done! Role `{role.name}` added to all mentioned users.")
-        
+
 async def setup(bot : commands.Bot):
     await bot.add_cog(RoleManagement(bot))

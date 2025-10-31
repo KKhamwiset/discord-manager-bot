@@ -16,7 +16,8 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(
-    command_prefix=commands.when_mentioned_or('b'),
+    command_prefix=commands.when_mentioned_or("b","t"),
+    case_insensitive=True,
     intents=intents,
     help_command=None
 )
@@ -45,13 +46,13 @@ async def ping(ctx: commands.Context):
 async def hello(ctx: commands.Context):
     await ctx.send(f"Hello! {ctx.author.name}")
 
-@bot.command()
-async def xdd(ctx: commands.Context):
+@bot.command(name="xdd",aliases=["xdx"])
+async def greet(ctx: commands.Context):
     await ctx.send(f"xdd {ctx.author.name}")
 
 
-@bot.command(name="brick")  # rename to match your help text
-async def brick(ctx: commands.Context, n: int = 1):
+@bot.command(name="rick",aliases=["ing"])
+async def generateEmoji(ctx: commands.Context, n: int = 1):
     faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]
     if n > 10 or n <= 0:
         await ctx.send("❌ Number of bricks out of range (1–10). Showing 10.")

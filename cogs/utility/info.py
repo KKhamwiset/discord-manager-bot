@@ -40,7 +40,7 @@ class Info(commands.Cog):
                 "`bping` → Check bot latency\n"
                 "`bhello` → Say hello to the bot\n"
                 "`binfo` → Show bot/server info\n"
-                "`bbrick [n]` → Send random brick emojis (1–10)"
+                "`brick [n]` → Send random brick emojis (1–10)"
             ),
             inline=False
         )
