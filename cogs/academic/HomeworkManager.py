@@ -217,7 +217,7 @@ class HomeworkManager(commands.Cog):
             self.db = None
             self.collection = None
 
-    @commands.command(name="addhw")
+    @commands.command(name="addhw",aliases=["addhomework","ahw"])
     async def add_homework(self, ctx: commands.Context):
         """เปิดปุ่มเรียก Modal เพิ่มการบ้าน (จำกัดให้ผู้สั่งใช้ปุ่มได้คนเดียว)"""
         if not self.client:
@@ -226,7 +226,7 @@ class HomeworkManager(commands.Cog):
         view = AddHWView(self.collection, allowed_user_id=ctx.author.id)
         await ctx.send("กดปุ่มด้านล่างเพื่อเปิดฟอร์มเพิ่มการบ้าน 👇", view=view)
 
-    @commands.command(name="myhw")
+    @commands.command(name="hw",aliases=["myhw","myhomework"])
     async def my_homework(self, ctx: commands.Context):
         """แสดงรายการการบ้านจัดกลุ่มตามวิชา + เรียงตามวัน/เวลา ส่ง"""
         if not self.client:
@@ -266,7 +266,7 @@ class HomeworkManager(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="delhw")
+    @commands.command(name="delhw",aliases=["dhw"])
     async def delete_homework(self, ctx: commands.Context, *, assignment_to_delete: str):
         """
         ลบการบ้านจากชื่องาน (contains + case-insensitive + ยืดหยุ่นช่องว่าง)
