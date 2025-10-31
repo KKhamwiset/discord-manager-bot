@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
-import random
 
 class Info(commands.Cog):
     def __init__(self,bot):
         self.bot = bot 
+
     @commands.command()
     async def info(self ,ctx: commands.Context):
         embed = discord.Embed(
@@ -23,7 +23,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
     
     @commands.command()
-    async def help(ctx: commands.Context):
+    async def help(self,ctx: commands.Context):
         embed = discord.Embed(
             title="🤖 Bot Help Menu",
             description="Here are all available commands!",
@@ -55,7 +55,7 @@ class Info(commands.Cog):
         )
         embed.set_footer(text=f"Requested by {ctx.author.name}")
         await ctx.send(embed=embed)
-        
+
 async def setup(bot : commands.Bot):
     await bot.add_cog(Info(bot))
 
