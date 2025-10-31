@@ -1,175 +1,135 @@
-# Discord Utility Bot
+แน่นอน นี่คือ README.md เวอร์ชันปรับปรุงใหม่สำหรับ Discord bot ของคุณ ที่รวบรวมข้อมูลจากไฟล์ทั้งหมดที่ให้มา ทั้งฟีเจอร์จัดการ role, ตารางเรียน และคำสั่งทั่วไป
 
-A lightweight Discord bot built with [`discord.py`](https://discordpy.readthedocs.io/) that provides quick utilities, role management, and fun extras. Uses `dotenv` for secure token loading and writes debug logs to `discord.log`.
+-----
 
----
+# Discord Manager & Utility Bot
 
-## ✨ Features
+บอท Discord อเนกประสงค์ที่สร้างด้วย [`discord.py`](https://www.google.com/search?q=%5Bhttps://discordpy.readthedocs.io/%5D\(https://discordpy.readthedocs.io/\)) มาพร้อมกับฟีเจอร์จัดการเซิร์ฟเวอร์, เครื่องมืออำนวยความสะดวก และระบบตารางเรียนส่วนตัว บอทใช้ `cogs` ในการจัดการคำสั่งอย่างเป็นระบบ, `dotenv` สำหรับการจัดการ Token อย่างปลอดภัย และ `pymongo` สำหรับการจัดเก็บข้อมูลตารางเรียน
 
-* **General**: latency check, greetings, server/bot info in a rich embed
-* **Role management** (requires proper permissions): create, delete, and assign roles to mentioned users
-* **Fun**: random "brick" emoji spammer (uses your custom emojis)
-* **Structured logging**: file-based logging at `DEBUG` level
+-----
 
----
+## ✨ ฟีเจอร์หลัก
 
-## 🧱 Commands
+  * **General**: ตรวจสอบค่า Latency (`ping`), ทักทายผู้ใช้งาน (`hello`), และแสดงข้อมูลเซิร์ฟเวอร์ (`info`)
+  * **Role Management**: (ต้องมีสิทธิ์) สร้าง, ลบ และมอบหมาย role ให้กับสมาชิกที่ถูกกล่าวถึง
+  * **Academic Schedule**: (ต้องใช้ MongoDB) เพิ่ม, ลบ และดูตารางเรียนส่วนตัวของผู้ใช้ผ่านคำสั่งง่ายๆ
+  * **Fun**: ส่ง custom emoji แบบสุ่ม
+  * **Help Command**: แสดงเมนูช่วยเหลือแบบ embed ที่สวยงามและเข้าใจง่าย
+  * **Modular Loading**: โหลดคำสั่งทั้งหมดจากโฟลเดอร์ `cogs` โดยอัตโนมัติ
 
-> Default prefix: **`b`** (or mention the bot). Examples below assume the prefix.
+-----
 
-### General
+## 🧱 คำสั่งทั้งหมด
 
-| Command  | Usage       | Description                                                               |
-| -------- | ----------- | ------------------------------------------------------------------------- |
-| `bping`  | `bping`     | Replies with bot latency in ms.                                           |
-| `bhello` | `bhello`    | Greets the author by name.                                                |
-| `binfo`  | `binfo`     | Shows bot/server info in an embed.                                        |
-| `brick`  | `brick [n]` | Sends *n* random custom “brick” emojis (1–10). If out of range, sends 10. |
+> Prefix เริ่มต้น: **`b`** หรือ **`t`** (หรือ mention บอท)
 
-### Roles (requires **Moderator** in your roles **and** the bot’s role to have required perms)
+### ทั่วไป (General)
 
-| Command  | Usage                                  | Description                                                                           |
-| -------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| `bcrole` | `bcrole <role_name> [#HEX]`            | Creates a role with an optional hex color (e.g., `#FF0000`). Random color if omitted. |
-| `brrole` | `brrole <role_name>`                   | Deletes a role by name.                                                               |
-| `barole` | `barole <role_name> @user1 @user2 ...` | Adds an existing role to all mentioned members.                                       |
+| Command | Usage | Description |
+| --- | --- | --- |
+| `bping` | `bping` | ตอบกลับด้วย Latency ของบอท (ms) |
+| `bhello` | `bhello` | ทักทายผู้ที่ใช้คำสั่ง |
+| `binfo` | `binfo` | แสดงข้อมูลของบอทและเซิร์ฟเวอร์ในรูปแบบ embed |
+| `brick [n]` | `brick [n]` | ส่ง custom emoji แบบสุ่ม 1-10 ชิ้น (ชื่อเดิม `rick`) |
+| `bhelp` | `bhelp` | แสดงหน้าต่างช่วยเหลือพร้อมคำสั่งทั้งหมด |
 
-> The help menu is available via `bhelp` (custom embed).
+### จัดการ Role (Role Management)
 
----
+**หมายเหตุ:** ผู้ใช้ต้องมี Role ชื่อ **"Moderator"** และบอทต้องมีสิทธิ์ `Manage Roles`
 
-## 🔐 Permissions & Intents
+| Command | Usage | Description |
+| --- | --- | --- |
+| `bcrole` | `bcrole <role_name> [#HEX]` | สร้าง Role ใหม่ พร้อมกำหนดสี (สุ่มสีหากไม่ระบุ) |
+| `brrole` | `brrole <role_name>` | ลบ Role ตามชื่อ |
+| `barole` | `barole <role_name> @user1 @user2 ...` | เพิ่ม Role ที่มีอยู่แล้วให้กับสมาชิกที่ mention |
 
-This bot uses privileged intents and role-management APIs. Make sure ALL of these are configured:
+### ตารางเรียน (Academic Schedule)
 
-### In the **Discord Developer Portal** → *Your App* → **Bot**
+**หมายเหตุ:** ฟีเจอร์นี้ต้องการการตั้งค่า `MONGO_URI` ในไฟล์ `.env`
 
-* **Privileged Gateway Intents**: ✅ *MESSAGE CONTENT*, ✅ *SERVER MEMBERS*
-* (Optional if you plan moderation features) ✅ *GUILD MODERATION*
+| Command | Usage | Description |
+| --- | --- | --- |
+| `baddclass` | `baddclass` | เปิดเมนูแบบ dropdown และ modal เพื่อเพิ่มวิชาเรียนในตาราง |
+| `bmyschedule`| `bmyschedule` | แสดงตารางเรียนทั้งหมดของผู้ใช้ จัดเรียงตามวันและเวลา |
+| `bdelclass` | `bdelclass <subject_name>` | ลบวิชาเรียนออกจากตารางตามชื่อวิชา (รองรับชื่อที่มีเว้นวรรค) |
 
-### On your **server** (for the bot role)
+-----
 
-* **Manage Roles** (to create/delete roles and assign them)
-* **Read Messages/View Channels**, **Send Messages**, **Embed Links**
+## 🧰 สิ่งที่ต้องมี (Requirements)
 
-> **Role hierarchy rule**: the bot’s highest role must be **above** any role it needs to create or assign.
+  * Python **3.10+**
+  * `discord.py`
+  * `python-dotenv`
+  * `pymongo[srv]`
 
----
-
-## 🧰 Requirements
-
-* Python **3.10+**
-* `discord.py` **2.x**
-* `python-dotenv`
-
-Install deps:
-
-```bash
-pip install -U discord.py python-dotenv
-```
-
----
-
-## 🔧 Setup & Run
-
-1. **Create a bot** at the [Discord Developer Portal](https://discord.com/developers/applications), add a **Bot** user, and copy the **Token**.
-2. **Enable intents** as listed above.
-3. **Invite the bot** to your server using an OAuth2 URL with scopes `bot` (and optionally `applications.commands`) and permissions including `Manage Roles`, `Send Messages`, `Embed Links`.
-4. **Project files**: put your Python file (e.g., `bot.py`) alongside a `.env` file:
-
-```
-.env
-bot.py
-```
-
-5. **Create `.env`** with your token:
-
-```
-DISCORD_TOKEN=YOUR_BOT_TOKEN_HERE
-```
-
-6. **Run** the bot:
+คุณสามารถติดตั้งทั้งหมดได้ผ่าน `requirements.txt`:
 
 ```bash
-python bot.py
+pip install -r requirements.txt
 ```
 
-> Logs will be written to `discord.log` (rotated on each run due to `mode='w'`).
+-----
 
----
+## 🔧 การติดตั้งและใช้งาน
 
-## 🧩 Notes about Emojis (Brick command)
+1.  **สร้างบอท Discord**: ไปที่ [Discord Developer Portal](https://discord.com/developers/applications) สร้างแอปพลิเคชัน, เพิ่ม Bot user และคัดลอก **Token**
 
-The `brick` command references custom emojis by ID (e.g., `<:ting:1433593486883684393>`). These **must exist in a server the bot can see**. Replace them with emojis available to your server or standard Unicode emojis.
+2.  **เปิดใช้งาน Intents**: ในหน้า Bot ของแอป, เปิดใช้งาน **Privileged Gateway Intents** ทั้ง 3 อย่าง:
 
----
+      * `SERVER MEMBERS INTENT`
+      * `MESSAGE CONTENT INTENT`
 
-## 🧪 Local Dev Tips
+3.  **เชิญบอทเข้าเซิร์ฟเวอร์**: สร้าง URL เชิญบอทด้วยสิทธิ์ `bot` และ `applications.commands` พร้อมกับ Permissions ที่จำเป็น:
 
-* Use a **.gitignore** to avoid committing your `.env` and `discord.log`:
+      * `Manage Roles`
+      * `Send Messages`
+      * `Embed Links`
 
-```
-.env
-discord.log
-__pycache__/
-```
+4.  **ตั้งค่าโปรเจกต์**:
 
-* Consider creating a **test server** for development.
-* If you refactor command names, update the help embed table above to match.
+      * สร้างไฟล์ `.env` ในโฟลเดอร์หลัก
+      * เพิ่ม `DISCORD_TOKEN` และ `MONGO_URI` (หากต้องการใช้ระบบตารางเรียน) ลงในไฟล์ `.env`
 
----
+    **ไฟล์ `.env`:**
 
-## 🩺 Troubleshooting
+    ```
+    DISCORD_TOKEN=YOUR_BOT_TOKEN_HERE
+    MONGO_URI=YOUR_MONGODB_CONNECTION_STRING_HERE
+    ```
 
-* **`Privileged intent is not enabled`**: Enable *Message Content* and *Server Members* in the Developer Portal (Bot tab) and restart.
-* **`Missing Permissions` on role ops**: Grant the bot **Manage Roles**, and move the bot’s highest role **above** the target role in the role list.
-* **Mentions not working in `barole`**: Ensure you actually mention members (`@User`). The command reads `ctx.message.mentions`.
-* **Color parse error**: Provide a valid hex like `#00FF99`.
+5.  **รันบอท**:
 
----
+    ```bash
+    python main.py
+    ```
 
-## 📁 Project Structure (suggested)
+    บอทจะทำการเชื่อมต่อกับ Discord และโหลด Cogs ทั้งหมดโดยอัตโนมัติ และ Log จะถูกบันทึกลงใน `discord.log`
+
+-----
+
+## 🔐 สิทธิ์ที่ต้องการ (Permissions)
+
+  * **Discord Developer Portal**: ต้องเปิดใช้งาน **Message Content** และ **Server Members** Intents
+  * **ในเซิร์ฟเวอร์ Discord**:
+      * Role ของบอทต้องมีสิทธิ์ **Manage Roles** เพื่อให้คำสั่งสร้าง/ลบ/เพิ่ม Role ทำงานได้
+      * **ลำดับ Role (Hierarchy)**: Role ของบอทต้องอยู่สูงกว่า Role ที่ต้องการจะจัดการ
+
+-----
+
+## 📁 โครงสร้างโปรเจกต์
 
 ```
 .
-├── bot.py           # your main script (code sample below)
-├── .env             # DISCORD_TOKEN=...
-├── requirements.txt # optional pinning
+├── cogs/
+│   ├── academic/
+│   │   └── schedule.py
+│   ├── roles/
+│   │   └── role_management.py
+│   └── utility/
+│       └── info.py
+├── main.py             # ไฟล์หลักสำหรับรันบอท
+├── .env                # ไฟล์เก็บค่า Token และ MONGO_URI
+├── requirements.txt    # รายการ library ที่ต้องติดตั้ง
+├── .gitignore          # ไฟล์ที่ถูกละเว้นโดย Git
 └── README.md
 ```
-
-**requirements.txt** (optional)
-
-```
-discord.py>=2.3.0
-python-dotenv>=1.0.0
-```
-
----
-
-## 🛡️ Security
-
-* **Never** hardcode tokens; keep them in `.env`.
-* Rotate your token if it leaks (`Developer Portal` → Regenerate).
-* Limit the bot’s permissions scope to what you actually need.
-
----
-
-## 📜 License
-
-MIT (or choose your preferred license).
-
----
-
-## 🧩 Code Reference
-
-Below is the command set this README targets (trimmed for clarity):
-
-```py
-# Prefix: b, and mention handling via commands.when_mentioned_or('b')
-# Commands: ping, hello, xdd, crole, rrole, arole, info, rick/brick, help
-# Intents: message_content=True, members=True
-# Logging: discord.log at DEBUG
-```
-
-> Reminder: if you later rename commands (`rick` → `brick`), reflect the change both in code and in the tables above.
