@@ -46,22 +46,6 @@ async def hello(ctx: commands.Context):
 async def xdd(ctx: commands.Context):
     await ctx.send(f"xdd {ctx.author.name}")
 
-@bot.command()
-async def info(ctx: commands.Context):
-    embed = discord.Embed(
-        title="Bot Info",
-        description="This is a simple info command using embeds!",
-        color=discord.Color.blue()
-    )
-    if ctx.author.avatar:
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
-    if ctx.bot.user and ctx.bot.user.avatar:
-        embed.set_thumbnail(url=ctx.bot.user.avatar.url)
-    embed.add_field(name="Latency", value=f"{round(bot.latency * 1000)} ms", inline=False)
-    embed.add_field(name="Server", value=ctx.guild.name if ctx.guild else "DM", inline=False)
-    embed.set_footer(text=f"Requested by {ctx.author.name}")
-
-    await ctx.send(embed=embed)
 
 @bot.command(name="brick")  # rename to match your help text
 async def brick(ctx: commands.Context, n: int = 1):
@@ -70,39 +54,5 @@ async def brick(ctx: commands.Context, n: int = 1):
         await ctx.send("❌ Number of bricks out of range (1–10). Showing 10.")
         n = 10
     await ctx.send("".join(random.choice(faces) for _ in range(n)))
-
-@bot.command()
-async def help(ctx: commands.Context):
-    embed = discord.Embed(
-        title="🤖 Bot Help Menu",
-        description="Here are all available commands!",
-        color=discord.Color.blurple()
-    )
-    if ctx.author.avatar:
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
-    if ctx.bot.user and ctx.bot.user.avatar:
-        embed.set_thumbnail(url=ctx.bot.user.avatar.url)
-
-    embed.add_field(
-        name="🧩 General",
-        value=(
-            "`bping` → Check bot latency\n"
-            "`bhello` → Say hello to the bot\n"
-            "`binfo` → Show bot/server info\n"
-            "`bbrick [n]` → Send random brick emojis (1–10)"
-        ),
-        inline=False
-    )
-    embed.add_field(
-        name="🛠️ Role Management",
-        value=(
-            "`bcrole <role_name> [#color]` → Create a new role (random color if none)\n"
-            "`brrole <role_name>` → Remove a role by name\n"
-            "`barole <role_name> @user1 @user2 ...` → Add role to mentioned users"
-        ),
-        inline=False
-    )
-    embed.set_footer(text=f"Requested by {ctx.author.name}")
-    await ctx.send(embed=embed)
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
