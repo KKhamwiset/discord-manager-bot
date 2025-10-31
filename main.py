@@ -31,8 +31,11 @@ async def _load_all_extensions():
 
 @bot.event
 async def on_ready():
-    await _load_all_extensions()
     print(f'{bot.user} has connected to Discord!')
+
+@bot.event
+async def setup_hook():
+    await _load_all_extensions() 
 
 @bot.command()
 async def ping(ctx: commands.Context):
