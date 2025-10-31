@@ -5,9 +5,9 @@ import discord
 from discord import ui
 from discord.ext import commands
 import pymongo
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-#load_dotenv()
+load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 
 
@@ -81,7 +81,7 @@ class Schedule(commands.Cog):
             print("❌ MongoDB connection failed. Check your MONGO_URI.")
             self.client = None
 
-    @commands.command(name="addclass")
+    @commands.command(name="addclass", aliases=["asch", "ac"])
     async def add_class_interactive(self, ctx: commands.Context):
         if not self.client:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
@@ -90,7 +90,7 @@ class Schedule(commands.Cog):
         view = AddClassView(author=ctx.author, db_collection=self.collection)
         await ctx.send("กดปุ่มด้านล่างเพื่อเริ่มกรอกข้อมูลตารางเรียนได้เลย!", view=view)
 
-    @commands.command(name="myschedule")
+    @commands.command(name="myschedule", aliases=["mysch", "sch"])
     async def my_schedule(self, ctx: commands.Context):
         if not self.client:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
@@ -128,7 +128,7 @@ class Schedule(commands.Cog):
     # --- โค้ด delclass (ปรับปรุงให้รับชื่อเว้นวรรคได้) ---
 
 
-    @commands.command(name="delclass")
+    @commands.command(name="delclass", aliases=["dsch", "dc"])
     async def delete_class(self, ctx, *, subject_to_delete: str):
             """
             ลบวิชาออกจากตารางเรียนของผู้ใช้
