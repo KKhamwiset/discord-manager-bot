@@ -164,7 +164,7 @@ class Schedule(commands.Cog):
         view = AddClassView(author=ctx.author, db_collection=self.collection)
         await ctx.send("เลือกวันจากตัวเลือกด้านล่าง แล้วระบบจะถามช่วงเวลาและชื่อวิชาต่อให้จบในขั้นตอนเดียว 👇", view=view)
 
-    @commands.command(name="myschedule")
+    @commands.command(name="myschedule", aliases=["msch", "mc"])
     async def my_schedule(self, ctx: commands.Context):
         """
         แสดงตารางเรียนของผู้ใช้ โดยหัวข้อวันจะแสดงเป็น ไทย + อังกฤษในวงเล็บ เช่น 'จันทร์ (Mon)'
@@ -223,7 +223,7 @@ class Schedule(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="delclass")
+    @commands.command(name="delclass", aliases=["delsch", "dc"])
     async def delete_class(self, ctx: commands.Context, *, subject_to_delete: str):
         """
         ลบวิชาออกจากตารางเรียนของผู้ใช้
