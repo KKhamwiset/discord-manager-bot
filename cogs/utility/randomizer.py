@@ -11,7 +11,9 @@ class Randomizer(commands.Cog):
         self.bot = bot
         self.col = self.bot.db["restaurant_choices"]
         if self.col is not None:
-            print("✅ Randomizer collection initialized")
+            print("✅ Randomizer Cog connection, OK.")
+        else:
+            print("❌ Randomizer Cog connection failed.")
 
     # ---------- util ----------
     def role_validate(self, roles: list[discord.Role]) -> bool:
