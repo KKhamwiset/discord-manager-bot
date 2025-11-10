@@ -5,7 +5,6 @@ import re
 import discord
 from discord import ui
 from discord.ext import commands
-import pymongo
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,6 +25,8 @@ DAYS_TH_EN = [
 DAYS_ORDER_TH = [d[0] for d in DAYS_TH_EN]
 DAY_TH_TO_EN = {th: en for th, en in DAYS_TH_EN}
 DAY_TH_LOWER_TO_EN = {th.lower(): en for th, en in DAYS_TH_EN}
+DAY_LOWER_TH_TO_TH = {th.lower(): th for th, en in DAYS_TH_EN}
+# --------------------------------------------------
 
 # --------------------------
 # Modal 2 ช่อง (เวลา + วิชา)
@@ -47,19 +48,23 @@ class TwoFieldModal(ui.Modal, title="เพิ่มวิชาในตาร�
     async def on_submit(self, interaction: discord.Interaction):
         day_th = self.selected_day_th
         day_en = DAY_TH_TO_EN.get(day_th, "")
-        time = self.time_input.value
-        subject = self.subject_input.value
+        
+        # Normalize inputs
+        time = self.time_input.value.strip()
+        # Normalize subject: trim and collapse multiple spaces
+        subject_raw = self.subject_input.value
+        subject = re.sub(r"\s+", " ", subject_raw.strip())
 
         schedule_data = {
             "user_id": interaction.user.id,
-            # เก็บทั้งฟิลด์ใหม่และฟิลด์เดิม เพื่อไม่พังกับข้อมูลเก่า
             "day_th": day_th,
             "day_en": day_en,
             "day": day_th.lower(),  # legacy (เดิมเก็บไทยตัวเล็ก)
             "time": time,
-            "subject": subject,
+            "subject": subject, # Save the normalized subject
         }
-        self.db_collection.insert_one(schedule_data)
+        await self.db_collection.insert_one(schedule_data)
+        # --------------------------------
 
         label_day = f"{day_th} ({day_en})" if day_en else day_th
         await interaction.response.send_message(
@@ -111,15 +116,19 @@ def normalize_day_key(item):
     """
     รับเอกสาร 1 ตัวจาก Mongo แล้วคืนวันภาษาไทย (สำหรับใช้เป็น key) ให้คงรูปแบบเดียว
     """
-    # รองรับทั้งเอกสารใหม่ (day_th) และเก่า (day=ไทยตัวเล็ก)
+    # 1. Try new format first (fastest)
     if "day_th" in item:
         return item["day_th"]
-    d = item.get("day", "")
-    # แปลงเป็นชื่อไทยปกติ (ตัวพิมพ์เดิม)
-    for th in DAY_TH_TO_EN:
-        if d == th or d == th.lower():
-            return th
-    return d  # ถ้าไม่รู้จัก ก็คืนค่าดิบ (จะไปอยู่กลุ่ม "อื่นๆ")
+    
+    # 2. Try legacy format (using the lookup dict)
+    legacy_day_lower = item.get("day", "").lower()
+    canonical_day = DAY_LOWER_TH_TO_TH.get(legacy_day_lower)
+    
+    if canonical_day:
+        return canonical_day
+        
+    # 3. Fallback to raw data if not recognized
+    return item.get("day", "") 
 
 def get_day_label_th_en(day_th: str) -> str:
     en = DAY_TH_TO_EN.get(day_th, "")
@@ -134,7 +143,6 @@ def time_sort_key(time_range: str):
     parts = time_range.split("-")
     start = parts[0].strip() if parts else time_range.strip()
     # บังคับรูปแบบ HH:MM ให้ปลอดภัย
-    # ถ้าไม่ใช่รูปแบบมาตรฐาน จะตกมา default '00:00'
     return start if re.match(r"^\d{1,2}:\d{2}$", start) else "00:00"
 
 # --------------------------
@@ -144,20 +152,17 @@ class Schedule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         try:
-            self.client = pymongo.MongoClient(MONGO_URI)
-            self.db = self.client["discord_bot_db"]
-            self.collection = self.db["schedules"]
-            print("✅ MongoDB connection successful for Schedule Cog.")
-        except pymongo.errors.ConfigurationError:
-            print("❌ MongoDB connection failed. Check your MONGO_URI.")
-            self.client = None
+            self.collection = self.bot.db["schedules"]
+            print("✅ Schedule Cog connection, OK.")
+        except Exception as e:
+            print(f"❌ Schedule Cog connection failed: {e}")
 
     @commands.command(name="addclass", aliases=["asch", "ac"])
     async def add_class_interactive(self, ctx: commands.Context):
         """
         เปิด View ให้เลือกวัน (ไทย + อังกฤษในวงเล็บ) แล้วตามด้วย Modal รับช่วงเวลา/ชื่อวิชา
         """
-        if not self.client:
+        if self.collection is None:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
             return
 
@@ -169,14 +174,16 @@ class Schedule(commands.Cog):
         """
         แสดงตารางเรียนของผู้ใช้ โดยหัวข้อวันจะแสดงเป็น ไทย + อังกฤษในวงเล็บ เช่น 'จันทร์ (Mon)'
         """
-        if not self.client:
+        if self.collection is None:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
             return
 
-        user_schedules = self.collection.find({"user_id": ctx.author.id})
+        user_schedules_cursor = self.collection.find({"user_id": ctx.author.id})
+        user_schedules_list = await user_schedules_cursor.to_list(length=None) 
+        # ---------------------------------------------
 
         schedule_by_day = {}
-        for item in user_schedules:
+        for item in user_schedules_list:
             day_th = normalize_day_key(item)  # คืนชื่อวันภาษาไทย
             schedule_by_day.setdefault(day_th, []).append(item)
 
@@ -193,12 +200,10 @@ class Schedule(commands.Cog):
         for day_th in DAYS_ORDER_TH:
             if day_th in schedule_by_day:
                 items = schedule_by_day[day_th]
-                # sort ตามเวลาเริ่ม
                 items_sorted = sorted(items, key=lambda x: time_sort_key(x.get("time", "")))
 
                 day_info_lines = []
                 for s in items_sorted:
-                    # แสดงเวลา + ชื่อวิชา
                     t = s.get("time", "-")
                     subj = s.get("subject", "(ไม่ระบุชื่อวิชา)")
                     day_info_lines.append(f"`{t}` - **{subj}**")
@@ -224,20 +229,32 @@ class Schedule(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="delclass", aliases=["delsch", "dc"])
-    async def delete_class(self, ctx: commands.Context, *, subject_to_delete: str):
+    async def delete_class(self, ctx: commands.Context, *, subject_to_delete: str = None):
         """
         ลบวิชาออกจากตารางเรียนของผู้ใช้
         รองรับชื่อวิชาที่มีการเว้นวรรค
         ตัวอย่าง: !delclass GEN101 General Physics
         """
-        if not self.client:
+        if self.collection is None:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
+            return 
+        
+        if subject_to_delete is None:
+            embed = discord.Embed(
+                title="❌ คุณลืมระบุชื่อวิชา",
+                description="โปรดระบุชื่อวิชาที่ต้องการลบ (ต้องตรงกับที่บันทึกไว้)",
+                color=discord.Color.red()
+            )
+            embed.add_field(
+                name="ตัวอย่างการใช้งาน",
+                value=f"```{ctx.prefix}delclass GEN101 General Physics```"
+            )
+            await ctx.send(embed=embed)
             return
 
-        # ปรับรูปแบบชื่อวิชาให้คงที่: ตัดช่องว่างหัวท้ายและยุบหลายช่องว่าง
         normalized = re.sub(r"\s+", " ", subject_to_delete.strip())
 
-        result = self.collection.delete_many({
+        result = await self.collection.delete_many({
             "user_id": ctx.author.id,
             "subject": {
                 "$regex": f"^{re.escape(normalized)}$",

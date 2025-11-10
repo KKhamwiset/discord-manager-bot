@@ -5,11 +5,8 @@ import re
 import discord
 from discord import ui
 from discord.ext import commands
-import pymongo
 from datetime import datetime
 from math import ceil
-
-MONGO_URI = os.getenv("MONGO_URI")
 
 # --------------------------
 # Utilities
@@ -163,7 +160,9 @@ class HomeworkModal(ui.Modal, title="เพิ่มการบ้านให�
             "due_display": due_display,  # 'YYYY-MM-DD HH:MM' (ไม่มี T)
             "due_ts": due_ts,            # unix seconds
         }
-        self.db_collection.insert_one(homework_data)
+        
+        await self.db_collection.insert_one(homework_data)
+        # --------------------------------
 
         await interaction.response.send_message(
             f"✅ บันทึกการบ้านวิชา **{subject}** แล้ว! 🗓️ {due_display}",
@@ -198,29 +197,17 @@ class AddHWView(discord.ui.View):
 class HomeworkManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.client = None
-        self.db = None
-        self.collection = None
-
         try:
-            if not MONGO_URI:
-                print("❌ MONGO_URI is not set")
-                return
-            self.client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-            self.client.admin.command("ping")
-            self.db = self.client["discord_bot_db"]
-            self.collection = self.db["homeworks"]
-            print("✅ MongoDB connection successful for HomeworkManager Cog.")
+            self.collection = self.bot.db["homeworks"] 
+            print("✅ HomeworkManager Cog connection, OK.")
         except Exception as e:
-            print(f"❌ MongoDB connection failed for HomeworkManager. {e}")
-            self.client = None
-            self.db = None
+            print(f"❌ HomeworkManager Cog connection failed: {e}")
             self.collection = None
 
     @commands.command(name="addhw",aliases=["addhomework","ahw"])
     async def add_homework(self, ctx: commands.Context):
         """เปิดปุ่มเรียก Modal เพิ่มการบ้าน (จำกัดให้ผู้สั่งใช้ปุ่มได้คนเดียว)"""
-        if not self.client:
+        if self.collection is None:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
             return
         view = AddHWView(self.collection, allowed_user_id=ctx.author.id)
@@ -229,11 +216,13 @@ class HomeworkManager(commands.Cog):
     @commands.command(name="hw",aliases=["myhw","myhomework"])
     async def my_homework(self, ctx: commands.Context):
         """แสดงรายการการบ้านจัดกลุ่มตามวิชา + เรียงตามวัน/เวลา ส่ง"""
-        if not self.client:
+        if self.collection is None:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
             return
-
-        user_homeworks = list(self.collection.find({"user_id": ctx.author.id}))
+        user_homeworks_cursor = self.collection.find({"user_id": ctx.author.id})
+        user_homeworks = await user_homeworks_cursor.to_list(length=None)
+        # ---------------------------------------------
+        
         hw_by_subject: dict[str, list[dict]] = {}
         for item in user_homeworks:
             subject = item.get("subject", "วิชาอื่นๆ")
@@ -258,7 +247,7 @@ class HomeworkManager(commands.Cog):
                 due_display = hw.get("due_display")
                 due_ts = hw.get("due_ts")
                 if due_display:
-                    lines.append(f"» {name}  —  🗓️ {due_display}  {human_left(due_ts)}")
+                    lines.append(f"» {name}  —  🗓️ {due_display}  {human_left(due_ts)}")
                 else:
                     lines.append(f"» {name}")
 
@@ -267,19 +256,31 @@ class HomeworkManager(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="delhw",aliases=["dhw"])
-    async def delete_homework(self, ctx: commands.Context, *, assignment_to_delete: str):
+    async def delete_homework(self, ctx: commands.Context, *, assignment_to_delete: str = None):
         """
         ลบการบ้านจากชื่องาน (contains + case-insensitive + ยืดหยุ่นช่องว่าง)
         """
-        if not self.client:
+        if self.collection is None:
             await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
             return
-
+        
+        if assignment_to_delete is None:
+            embed = discord.Embed(
+                title="❌ คุณลืมระบุชื่องาน",
+                description="โปรดระบุชื่องานที่ต้องการลบ (หรือบางส่วนของชื่องาน)",
+                color=discord.Color.red()
+            )
+            embed.add_field(
+                name="ตัวอย่างการใช้งาน",
+                value=f"```{ctx.prefix}delhw รายงานบทที่ 5```"
+            )
+            await ctx.send(embed=embed)
+            return
         normalized = re.sub(r"\s+", " ", assignment_to_delete.strip())
         pattern = re.sub(r"\s+", r"\\s+", re.escape(normalized))
         regex_contains = f".*{pattern}.*"
-
-        result = self.collection.delete_many({
+        
+        result = await self.collection.delete_many({
             "user_id": ctx.author.id,
             "assignment": {"$regex": regex_contains, "$options": "i"}
         })
