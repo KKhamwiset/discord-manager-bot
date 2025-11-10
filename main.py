@@ -16,6 +16,17 @@ intents.message_content = True
 intents.members = True
 
 
+TARGET_PREFIXES = ["b", "t"]
+
+async def get_case_insensitive_prefix(bot, message: discord.Message):
+    prefixes = []
+    prefixes += [commands.when_mentioned(bot, message)]
+
+    for p in TARGET_PREFIXES:
+        prefixes += [p.lower(), p.upper(), p.capitalize()]
+
+    return prefixes
+
 class Mongo:
     def __init__(self, uri: str, db_name: str):
         self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000, maxPoolSize=20)
@@ -57,7 +68,7 @@ class Core(commands.Cog):
 class BotInitDB(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix=commands.when_mentioned_or("b", "t"),
+            command_prefix=get_case_insensitive_prefix,
             case_insensitive=True,
             intents=intents,
             help_command=None,
