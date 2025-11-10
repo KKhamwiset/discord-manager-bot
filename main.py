@@ -2,7 +2,7 @@ import os, glob, logging, random, discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
-
+from web_server import keep_alive
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
