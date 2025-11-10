@@ -20,10 +20,10 @@ TARGET_PREFIXES = ["b", "t"]
 
 async def get_case_insensitive_prefix(bot, message: discord.Message):
     prefixes = []
-    prefixes += [commands.when_mentioned(bot, message)]
+    prefixes += [*commands.when_mentioned(bot, message)]
 
     for p in TARGET_PREFIXES:
-        prefixes += [p.lower(), p.upper(), p.capitalize()]
+        prefixes += [p, p.upper()]
 
     return prefixes
 
