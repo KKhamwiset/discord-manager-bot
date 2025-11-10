@@ -102,6 +102,7 @@ class BotInitDB(commands.Bot):
             await self.load_extension(mod)
 
 
-# ------------ run ------------
+# ------------ run -----------
+keep_alive()
 Bot = BotInitDB()
 Bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
