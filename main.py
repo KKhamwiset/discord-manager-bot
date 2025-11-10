@@ -2,7 +2,7 @@ import os, glob, logging, random, discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
-
+from web_server import keep_alive
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -82,7 +82,7 @@ class BotInitDB(commands.Bot):
 
     async def _load_all_extensions(self, exclude: list[str] | None = None):
         exclude = exclude or []
-        paths = glob.glob("cogs/*.py") + glob.glob("cogs/**/*.py", recursive=True)
+        paths = glob.glob("cogs/**/*.py", recursive=True)
         for path in paths:
             base = os.path.basename(path)
             if base.startswith("_") or any(i in exclude for i in base.split(".")):
@@ -92,5 +92,6 @@ class BotInitDB(commands.Bot):
 
 
 # ------------ run ------------
+keep_alive()
 Bot = BotInitDB()
 Bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
