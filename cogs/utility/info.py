@@ -24,9 +24,10 @@ class Info(commands.Cog):
     
     @commands.command()
     async def help(self,ctx: commands.Context):
+        """Shows this help message"""
         embed = discord.Embed(
             title="🤖 Bot Help Menu",
-            description="Here are all available commands!",
+            description=f"My prefixes are **`b`** or **`t`**. Here are all my commands!",
             color=discord.Color.blurple()
         )
         if ctx.author.avatar:
@@ -35,27 +36,60 @@ class Info(commands.Cog):
             embed.set_thumbnail(url=ctx.bot.user.avatar.url)
 
         embed.add_field(
-            name="🧩 General",
+            name="🧩 Utility",
             value=(
+                "`bhelp` → Shows this help menu\n"
                 "`bping` → Check bot latency\n"
                 "`bhello` → Say hello to the bot\n"
-                "`binfo` → Show bot/server info\n"
-                "`brick [n]` → Send random brick emojis (1–10)"
+                "`binfo` → Show bot/server info"
             ),
             inline=False
         )
+
         embed.add_field(
-            name="🛠️ Role Management",
+            name="🎓 Academic",
             value=(
-                "`bcrole <role_name> [#color]` → Create a new role (random color if none)\n"
-                "`brrole <role_name>` → Remove a role by name\n"
-                "`barole <role_name> @user1 @user2 ...` → Add role to mentioned users"
+                "**Class Schedule:**\n"
+                "`baddclass` → Open a menu to add a new class\n"
+                "`bmyschedule` → Show your class schedule\n"
+                "`bdelclass <subject>` → Delete a class by name\n"
+                "**Homework:**\n"
+                "`baddhw` → Open a form to add homework\n"
+                "`bhw` → Show all your pending homework\n"
+                "`bdelhw <name>` → Delete homework by name"
             ),
             inline=False
         )
+
+        embed.add_field(
+            name="🛡️ Moderation (Mods Only)",
+            value=(
+                "**Roles:**\n"
+                "`bcrole <name> [#color]` → Create a new role\n"
+                "`brrole <name>` → Remove a role by name\n"
+                "`barole <name> @user...` → Add role to mentioned users\n"
+                "**Restaurant List:**\n"
+                "`basr <name>` → Add a **standard** restaurant\n"
+                "`bassr <name>` → Add a **special** restaurant\n"
+                "`bdrand <name>` → Delete a restaurant by name"
+            ),
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🎉 Fun & Games",
+            value=(
+                "`brick [n]` → Send 1-10 random custom emojis\n"
+                "`bxdd` → Send a random XD response\n"
+                "`bsr` → Pick a random **standard** restaurant\n"
+                "`bssr` → Pick a random **special** restaurant\n"
+                "`bls` → List all restaurants"
+            ),
+            inline=False
+        )
+        
         embed.set_footer(text=f"Requested by {ctx.author.name}")
         await ctx.send(embed=embed)
 
 async def setup(bot : commands.Bot):
     await bot.add_cog(Info(bot))
-
