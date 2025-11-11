@@ -1,6 +1,6 @@
-from flask import Flask
+from flask import Flask , jsonify
 from threading import Thread
-import os , jsonify
+import os
 app = Flask('General เบ๊ Bot')
 @app.route('/')
 def home():
