@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask , jsonify
 from threading import Thread
 import os
 app = Flask('General เบ๊ Bot')
@@ -13,3 +13,7 @@ def run():
 def keep_alive():
     t = Thread(target=run)
     t.start()
+
+@app.route('/status', methods=['GET'])
+def status():
+    return jsonify({"status": "running"}), 200
