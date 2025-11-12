@@ -37,7 +37,7 @@ class RoleManagement(commands.Cog):
         # create role
         new_role = await guild.create_role(name=role_name, color=color_value)
         await ctx.send(f"✅ Role `{new_role.name}` created with color `{str(new_role.color)}`.")
-        
+
     @commands.command(name="dr",aliases=["delrole","removerole"])
     async def removeRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
@@ -73,7 +73,7 @@ class RoleManagement(commands.Cog):
             return
 
         for member in mentioned_members:
-            await member.add_roles(role)
+            await member.add_roles(role) if role not in member.roles else ctx.send(f"⚠️ {member.mention} already has the role `{role.name}`.")
             await ctx.send(f"✅ Added role `{role.name}` to {member.mention}")
 
         await ctx.send(f"🎉 Done! Role `{role.name}` added to all mentioned users.")
