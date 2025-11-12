@@ -52,6 +52,46 @@ class RoleManagement(commands.Cog):
             return
         await existing_role.delete()
         await ctx.send(f"✅ Deleted role `{role_name}`")
+        
+    @commands.command(name="lr",aliases=["listroles","roles"])
+    async def listRoles(self,ctx):
+        guild = ctx.guild
+        roles = guild.roles
+        role_names = [role.name for role in roles if role.name != "@everyone"]
+        if not role_names:
+            await ctx.send("⚠️ No roles found in this server.")
+            return
+        role_list = "\n".join(role_names)
+        await ctx.send(f"📜 Roles in this server:\n{role_list}")
+    
+    @commands.command(name="rrole",aliases=["removerolefromuser","rr"])
+    async def removeRoleFromUser(self,ctx, role_name: str):
+        validate = self.role_validate(ctx.author.roles)
+        if not validate:
+            await ctx.send("❌ You need to be a bot admin to use this command.")
+            return
+        guild = ctx.guild
+        role = discord.utils.get(guild.roles, name=role_name)
+
+        if not role:
+            await ctx.send(f"⚠️ Role `{role_name}` does not exist.")
+            return
+
+        mentioned_members = ctx.message.mentions
+
+        if not mentioned_members:
+            await ctx.send("❌ You need to mention at least one user.")
+            return
+
+        for member in mentioned_members:
+            if member.roles and role in member.roles:
+                await member.remove_roles(role)
+                await ctx.send(f"✅ Role `{role.name}` removed from user `{member.display_name}`.")
+            else:
+                await ctx.send(f"⚠️ User `{member.display_name}` does not have the role `{role.name}`.")
+                await ctx.send("⏭️ Skipping to the next user.")
+
+        await ctx.send(f"🎉 Done! Role `{role.name}` removed from all mentioned users.")
 
     @commands.command(name="arole",aliases=["addrole","ar"])
     async def addRole(self,ctx, role_name: str):
@@ -73,7 +113,13 @@ class RoleManagement(commands.Cog):
             return
 
         for member in mentioned_members:
-            await member.add_roles(role) ; ctx.send(f"✅ Added role `{role.name}` to {member.mention}") if role not in member.roles else ctx.send(f"⚠️ {member.mention} already has the role `{role.name}`.")
+            if member.roles and role in member.roles:
+                await ctx.send(f"⚠️ User `{member.display_name}` already has the role `{role.name}`.")
+                await ctx.send("⏭️ Skipping to the next user.")
+                continue
+            else:
+                await member.add_roles(role)
+                await ctx.send(f"✅ Role `{role.name}` added to user `{member.display_name}`.")
 
         await ctx.send(f"🎉 Done! Role `{role.name}` added to all mentioned users.")
 
