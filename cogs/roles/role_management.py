@@ -73,8 +73,7 @@ class RoleManagement(commands.Cog):
             return
 
         for member in mentioned_members:
-            await member.add_roles(role) if role not in member.roles else ctx.send(f"⚠️ {member.mention} already has the role `{role.name}`.")
-            await ctx.send(f"✅ Added role `{role.name}` to {member.mention}")
+            await member.add_roles(role) ; ctx.send(f"✅ Added role `{role.name}` to {member.mention}") if role not in member.roles else ctx.send(f"⚠️ {member.mention} already has the role `{role.name}`.")
 
         await ctx.send(f"🎉 Done! Role `{role.name}` added to all mentioned users.")
 
