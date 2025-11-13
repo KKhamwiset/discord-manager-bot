@@ -54,17 +54,17 @@ class Core(commands.Cog):
     @commands.command(name="xdd", aliases=["xdx"])
     async def greet(self, ctx: commands.Context):
         responses = [
-            # "XD",
-            # "xD",
-            # "Xd",
-            # "😂",
-            # "🤣",
-            # "Hahaha!",
-            # "That's funny!",
-            # "LMAO!",
-            # "ROFL!",
-            # "nga",
-            # "nigha",
+            "XD",
+            "xD",
+            "Xd",
+            "😂",
+            "🤣",
+            "Hahaha!",
+            "That's funny!",
+            "LMAO!",
+            "ROFL!",
+            "nga",
+            "nigha",
             "<:xdx:1438479283147243572>",
             "<:xdd:1438479267716534353>",
         ]
