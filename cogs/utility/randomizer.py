@@ -39,7 +39,7 @@ class Randomizer(commands.Cog):
             await ctx.send(embed=embed)
 
     # ---------- commands ----------
-    @commands.command(name="arand", aliases=["asr", "assr"])
+    @commands.command(name="arand", aliases=["asr", "assr"], help="Add a restaurant to the randomizer list.")
     async def add_rand(self, ctx: commands.Context, *args):
         """Add a restaurant to the randomizer list (standard or special)."""
         if not self.role_validate(ctx.author.roles):
@@ -82,7 +82,7 @@ class Randomizer(commands.Cog):
             discord.Color.green(),
         )
 
-    @commands.command(name="nrand", aliases=["sr"])
+    @commands.command(name="nrand", aliases=["sr"], help="Pick a random standard restaurant.")
     async def rand(self, ctx: commands.Context):
         """Pick a random restaurant from standard list."""
         picked = await self.col.aggregate(
@@ -108,7 +108,7 @@ class Randomizer(commands.Cog):
             discord.Color.purple(),
         )
 
-    @commands.command(name="srand", aliases=["ssr"])
+    @commands.command(name="srand", aliases=["ssr"], help="Pick a random special restaurant.")
     async def special_rand(self, ctx: commands.Context):
         """Pick a random restaurant from special list."""
         picked = await self.col.aggregate(
@@ -134,7 +134,7 @@ class Randomizer(commands.Cog):
             discord.Color.yellow(),
         )
 
-    @commands.command(name="lrand", aliases=["ls"])
+    @commands.command(name="lrand", aliases=["ls"], help="List all restaurants by type.")
     async def list_rand(self, ctx: commands.Context):
         """List all restaurants by type."""
         cursor = self.col.find(
@@ -190,7 +190,7 @@ class Randomizer(commands.Cog):
         await send_list_embed("🍱 Standard Restaurants", discord.Color.purple(), sr, "No standard restaurants found.")
         await send_list_embed("⭐ Special Restaurants", discord.Color.gold(), ssr, "No special restaurants found.")
 
-    @commands.command(name="drand", aliases=["dres"])
+    @commands.command(name="drand", aliases=["dres"], help="Delete a randomizer entry by name.")
     async def del_rand(self, ctx: commands.Context, *, name: str | None = None):
         """Delete a restaurant by exact name."""
         if not name:

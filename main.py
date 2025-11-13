@@ -43,15 +43,15 @@ class Core(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(help="Check bot latency")
     async def ping(self, ctx: commands.Context):
         await ctx.send(f"Pong! {round(self.bot.latency * 1000)}ms")
 
-    @commands.command()
+    @commands.command(help="Say hello to the bot")
     async def hello(self, ctx: commands.Context):
         await ctx.send(f"Hello! {ctx.author.name}")
 
-    @commands.command(name="xdd", aliases=["xdx"])
+    @commands.command(name="xdd", aliases=["xdx"], help="Random XD")
     async def greet(self, ctx: commands.Context):
         responses = [
             "XD",
@@ -70,7 +70,7 @@ class Core(commands.Cog):
         ]
         await ctx.send(random.choice(responses))
 
-    @commands.command(name="rick", aliases=["ing"])
+    @commands.command(name="rick", aliases=["ing"], help="Generate random Ting emoji")
     async def generateEmoji(self, ctx: commands.Context, n: int = 1):
         faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]
         if n > 10 or n <= 0:
