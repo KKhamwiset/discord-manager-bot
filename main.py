@@ -71,12 +71,12 @@ class Core(commands.Cog):
         await ctx.send(random.choice(responses))
 
     @commands.command(name="rick", aliases=["ing"], help="Generate random Ting emoji")
-    async def generateEmoji(self, ctx: commands.Context, n: int = 1):
+    async def generateEmoji(self, ctx: commands.Context, amount: int = 1):
         faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]
-        if n > 10 or n <= 0:
+        if amount > 10 or amount <= 0:
             await ctx.send("❌ Number out of range (1–10). Showing 10.")
-            n = 10
-        await ctx.send("".join(random.choice(faces) for _ in range(n)))
+            amount = 10
+        await ctx.send("".join(random.choice(faces) for _ in range(amount)))
 
 
 class BotInitDB(commands.Bot):
