@@ -39,7 +39,11 @@ class Randomizer(commands.Cog):
             await ctx.send(embed=embed)
 
     # ---------- commands ----------
-    @commands.command(name="arand", aliases=["asr", "assr"], help="Add a restaurant to the randomizer list.")
+    @commands.command(
+        name="arand",
+        aliases=["asr", "asrand", "assr"],
+        help="Add a restaurant to the randomizer list. \n **arand** for standard or **asrand** for special.",
+    )
     async def add_rand(self, ctx: commands.Context, *args):
         """Add a restaurant to the randomizer list (standard or special)."""
         if not self.role_validate(ctx.author.roles):
