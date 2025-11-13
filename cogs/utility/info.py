@@ -27,7 +27,7 @@ class Info(commands.Cog):
         if command_name is None:
             embed = discord.Embed(
                 title="🤖 Bot Help Menu",
-                description=f"Use `{ctx.clean_prefix}help <command>` for more details.\n\nHere are all available commands:",
+                description=f"My prefixes are **`b`** or **`t`**. Here are all my commands!\nUse `{ctx.clean_prefix}help <command>` for more details.\n\nHere are all available commands:",
                 color=discord.Color.blurple(),
             )
             if ctx.author.avatar:
@@ -52,7 +52,7 @@ class Info(commands.Cog):
                     "**Class Schedule:**\n"
                     "`addclass` → Open a menu to add a new class\n"
                     "`myschedule` → Show your class schedule\n"
-                    "`delclass <subject>` → Delete a class by name\n"
+                    "`delclass` → Delete a class by name\n"
                     "**Homework:**\n"
                     "`addhw` → Open a form to add homework\n"
                     "`hw` → Show all your pending homework\n"
@@ -62,31 +62,34 @@ class Info(commands.Cog):
             )
 
             embed.add_field(
+                name="🎉 Fun & Games",
+                value=(
+                    "`rick` → Send 1-10 random custom emojis\n"
+                    "`xdd` → Send a random XD response\n"
+                    "`nrand` → Pick a random **standard** restaurant\n"
+                    "`srand` → Pick a random **special** restaurant\n"
+                    "`lrand` → List all restaurants"
+                ),
+                inline=False
+            )
+            
+            embed.add_field(
                 name="🛡️ Moderation (Mods Only)",
                 value=(
                     "**Roles:**\n"
                     "`createrole` → Create a new role\n"
                     "`deleterole` → Remove a role by name\n"
+                    "`listrole` → List all roles in the server\n"
+                    "`removerole` → Remove role from mentioned users\n"
                     "`addrole` → Add role to mentioned users\n"
                     "**Restaurant List:**\n"
-                    "`basr <name>` → Add a **standard** restaurant\n"
-                    "`bassr <name>` → Add a **special** restaurant\n"
-                    "`bdrand <name>` → Delete a restaurant by name"
+                    "`arand` → Add a **standard** restaurant\n"
+                    "`asrand` → Add a **special** restaurant\n"
+                    "`drand` → Delete a restaurant by name"
                 ),
                 inline=False,
             )
 
-            embed.add_field(
-                name="🎉 Fun & Games",
-                value=(
-                    "`brick [n]` → Send 1-10 random custom emojis\n"
-                    "`bxdd` → Send a random XD response\n"
-                    "`bsr` → Pick a random **standard** restaurant\n"
-                    "`bssr` → Pick a random **special** restaurant\n"
-                    "`bls` → List all restaurants"
-                ),
-                inline=False
-            )
             embed.set_footer(text=f"Requested by {ctx.author.name}")
             return await ctx.send(embed=embed)
 
@@ -94,7 +97,7 @@ class Info(commands.Cog):
 
         # Specific command case
         if cmd is None:
-            return await ctx.send(f"❌ a command name {command_name} is not found.")
+            return await ctx.send(f"❌ A command name {command_name} is not found.")
 
         embed = discord.Embed(
             title=f"❓ Help: {ctx.clean_prefix}{cmd.qualified_name}",
