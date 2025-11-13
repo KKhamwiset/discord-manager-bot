@@ -53,7 +53,21 @@ class Core(commands.Cog):
 
     @commands.command(name="xdd", aliases=["xdx"])
     async def greet(self, ctx: commands.Context):
-        responses = ["XD", "xD", "Xd", "😂", "🤣", "Hahaha!", "That's funny!", "LMAO!", "ROFL!","nga","nigha"]
+        responses = [
+            # "XD",
+            # "xD",
+            # "Xd",
+            # "😂",
+            # "🤣",
+            # "Hahaha!",
+            # "That's funny!",
+            # "LMAO!",
+            # "ROFL!",
+            # "nga",
+            # "nigha",
+            "<:xdx:1438479283147243572>",
+            "<:xdd:1438479267716534353>",
+        ]
         await ctx.send(random.choice(responses))
 
     @commands.command(name="rick", aliases=["ing"])
@@ -100,7 +114,6 @@ class BotInitDB(commands.Bot):
                 continue
             mod = path[:-3].replace(os.sep, ".")
             await self.load_extension(mod)
-
 
 
 # ------------ run -----------
