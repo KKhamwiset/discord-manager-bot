@@ -11,7 +11,7 @@ class RoleManagement(commands.Cog):
             return False
         return True
 
-    @commands.command(name="cr",aliases=["createrole","makerole"])
+    @commands.command(name="createrole", aliases=["cr", "makerole"], help="Create a role")
     async def createRole(self, ctx, role_name: str, color: str = None):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
@@ -38,7 +38,7 @@ class RoleManagement(commands.Cog):
         new_role = await guild.create_role(name=role_name, color=color_value)
         await ctx.send(f"✅ Role `{new_role.name}` created with color `{str(new_role.color)}`.")
 
-    @commands.command(name="dr",aliases=["delrole","removerole"])
+    @commands.command(name="deleterole",aliases=["dr","delrole"], help="Delete a role")
     async def removeRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
@@ -53,7 +53,7 @@ class RoleManagement(commands.Cog):
         await existing_role.delete()
         await ctx.send(f"✅ Deleted role `{role_name}`")
         
-    @commands.command(name="lr",aliases=["listroles","roles"])
+    @commands.command(name="listrole",aliases=["lr","roles"], help="List all roles in the server")
     async def listRoles(self,ctx):
         guild = ctx.guild
         roles = guild.roles
@@ -64,7 +64,7 @@ class RoleManagement(commands.Cog):
         role_list = "\n".join(role_names)
         await ctx.send(f"📜 Roles in this server:\n{role_list}")
     
-    @commands.command(name="rrole",aliases=["removerolefromuser","rr"])
+    @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
     async def removeRoleFromUser(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:
@@ -93,7 +93,7 @@ class RoleManagement(commands.Cog):
 
         await ctx.send(f"🎉 Done! Role `{role.name}` removed from all mentioned users.")
 
-    @commands.command(name="arole",aliases=["addrole","ar"])
+    @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
     async def addRole(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
         if not validate:

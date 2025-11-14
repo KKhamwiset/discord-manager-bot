@@ -5,7 +5,7 @@ class Info(commands.Cog):
     def __init__(self,bot):
         self.bot = bot 
 
-    @commands.command()
+    @commands.command(help="Show bot/server info")
     async def info(self ,ctx: commands.Context):
         embed = discord.Embed(
             title="Bot Info",
@@ -21,73 +21,110 @@ class Info(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author.name}")
 
         await ctx.send(embed=embed)
-    
+
     @commands.command()
-    async def help(self,ctx: commands.Context):
-        """Shows this help message"""
+    async def help(self,ctx: commands.Context, command_name: str | None = None):
+        if command_name is None:
+            embed = discord.Embed(
+                title="🤖 Bot Help Menu",
+                description=f"My prefixes are **`b`** or **`t`**. Here are all my commands!\nUse `{ctx.clean_prefix}help <command>` for more details.\n\nHere are all available commands:",
+                color=discord.Color.blurple(),
+            )
+            if ctx.author.avatar:
+                embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
+            if ctx.bot.user and ctx.bot.user.avatar:
+                embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+
+            embed.add_field(
+                name="🧩 Utility",
+                value=(
+                    "`help` → Shows this help menu\n"
+                    "`ping` → Check bot latency\n"
+                    "`hello` → Say hello to the bot\n"
+                    "`info` → Show bot/server info"
+                ),
+                inline=False
+            )
+
+            embed.add_field(
+                name="🎓 Academic",
+                value=(
+                    "**Class Schedule:**\n"
+                    "`addclass` → Open a menu to add a new class\n"
+                    "`myschedule` → Show your class schedule\n"
+                    "`delclass` → Delete a class by name\n"
+                    "**Homework:**\n"
+                    "`addhw` → Open a form to add homework\n"
+                    "`hw` → Show all your pending homework\n"
+                    "`delhw` → Delete homework by name"
+                ),
+                inline=False
+            )
+
+            embed.add_field(
+                name="🎉 Fun & Games",
+                value=(
+                    "`rick` → Send 1-10 random custom emojis\n"
+                    "`xdd` → Send a random XD response\n"
+                    "`nrand` → Pick a random **standard** restaurant\n"
+                    "`srand` → Pick a random **special** restaurant\n"
+                    "`lrand` → List all restaurants"
+                ),
+                inline=False
+            )
+            
+            embed.add_field(
+                name="🛡️ Moderation (Mods Only)",
+                value=(
+                    "**Roles:**\n"
+                    "`createrole` → Create a new role\n"
+                    "`deleterole` → Remove a role by name\n"
+                    "`listrole` → List all roles in the server\n"
+                    "`removerole` → Remove role from mentioned users\n"
+                    "`addrole` → Add role to mentioned users\n"
+                    "**Restaurant List:**\n"
+                    "`arand` → Add a **standard** restaurant\n"
+                    "`asrand` → Add a **special** restaurant\n"
+                    "`drand` → Delete a restaurant by name"
+                ),
+                inline=False,
+            )
+
+            embed.set_footer(text=f"Requested by {ctx.author.name}")
+            return await ctx.send(embed=embed)
+
+        cmd = self.bot.get_command(command_name)
+
+        # Specific command case
+        if cmd is None:
+            return await ctx.send(f"❌ A command name {command_name} is not found.")
+
         embed = discord.Embed(
-            title="🤖 Bot Help Menu",
-            description=f"My prefixes are **`b`** or **`t`**. Here are all my commands!",
-            color=discord.Color.blurple()
+            title=f"❓ Help: {ctx.clean_prefix}{cmd.qualified_name}",
+            color=discord.Color.blurple(),
         )
+
         if ctx.author.avatar:
-            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
-        if ctx.bot.user and ctx.bot.user.avatar:
-            embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+            embed.set_author(
+                name=ctx.author.display_name, icon_url=ctx.author.avatar.url
+            )
 
-        embed.add_field(
-            name="🧩 Utility",
-            value=(
-                "`bhelp` → Shows this help menu\n"
-                "`bping` → Check bot latency\n"
-                "`bhello` → Say hello to the bot\n"
-                "`binfo` → Show bot/server info"
-            ),
-            inline=False
-        )
+        # Description
+        desc = cmd.help or "No description has been set for this command yet."
+        embed.add_field(name="Description", value=desc, inline=False)
 
-        embed.add_field(
-            name="🎓 Academic",
-            value=(
-                "**Class Schedule:**\n"
-                "`baddclass` → Open a menu to add a new class\n"
-                "`bmyschedule` → Show your class schedule\n"
-                "`bdelclass <subject>` → Delete a class by name\n"
-                "**Homework:**\n"
-                "`baddhw` → Open a form to add homework\n"
-                "`bhw` → Show all your pending homework\n"
-                "`bdelhw <name>` → Delete homework by name"
-            ),
-            inline=False
-        )
+        # Usage line
+        usage = f"{ctx.clean_prefix}{cmd.qualified_name} {cmd.signature}".strip()
+        embed.add_field(name="Usage", value=f"`{usage}`", inline=False)
 
-        embed.add_field(
-            name="🛡️ Moderation (Mods Only)",
-            value=(
-                "**Roles:**\n"
-                "`bcrole <name> [#color]` → Create a new role\n"
-                "`brrole <name>` → Remove a role by name\n"
-                "`barole <name> @user...` → Add role to mentioned users\n"
-                "**Restaurant List:**\n"
-                "`basr <name>` → Add a **standard** restaurant\n"
-                "`bassr <name>` → Add a **special** restaurant\n"
-                "`bdrand <name>` → Delete a restaurant by name"
-            ),
-            inline=False
-        )
-        
-        embed.add_field(
-            name="🎉 Fun & Games",
-            value=(
-                "`brick [n]` → Send 1-10 random custom emojis\n"
-                "`bxdd` → Send a random XD response\n"
-                "`bsr` → Pick a random **standard** restaurant\n"
-                "`bssr` → Pick a random **special** restaurant\n"
-                "`bls` → List all restaurants"
-            ),
-            inline=False
-        )
-        
+        # Aliases
+        if cmd.aliases:
+            embed.add_field(
+                name="Aliases",
+                value=", ".join(f"`{alias}`" for alias in cmd.aliases),
+                inline=False,
+            )
+
         embed.set_footer(text=f"Requested by {ctx.author.name}")
         await ctx.send(embed=embed)
 
