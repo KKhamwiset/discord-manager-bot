@@ -52,10 +52,21 @@ class RoleManagement(commands.Cog):
             return
         await existing_role.delete()
         await ctx.send(f"✅ Deleted role `{role_name}`")
-        
-    @commands.command(name="listrole",aliases=["lr","roles"], help="List all roles in the server")
-    async def listRoles(self,ctx):
+
+    @commands.command(name="listrole",aliases=["lr","roles"], help="List all roles in the server / List user roles")
+    async def listRoles(self,ctx, user: discord.Member = None):
         guild = ctx.guild
+        if user is not None:
+            user_roles = [role.name for role in user.roles if role.name != "@everyone"]
+
+            if not user_roles:
+                await ctx.send(f"⚠️ `{user.display_name}` has no roles.")
+                return
+
+            roles_text = "\n".join(user_roles)
+            await ctx.send(f"📜 Roles for `{user.display_name}`:\n{roles_text}")
+            return
+        
         roles = guild.roles
         role_names = [role.name for role in roles if role.name != "@everyone"]
         if not role_names:
@@ -63,7 +74,7 @@ class RoleManagement(commands.Cog):
             return
         role_list = "\n".join(role_names)
         await ctx.send(f"📜 Roles in this server:\n{role_list}")
-    
+
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
     async def removeRoleFromUser(self,ctx, role_name: str):
         validate = self.role_validate(ctx.author.roles)
