@@ -157,7 +157,7 @@ class Schedule(commands.Cog):
         except Exception as e:
             print(f"❌ Schedule Cog connection failed: {e}")
 
-    @commands.command(name="addclass", aliases=["asch", "ac"])
+    @commands.command(name="addclass", aliases=["asch", "ac"], help="Open a form to add class schedule")
     async def add_class_interactive(self, ctx: commands.Context):
         """
         เปิด View ให้เลือกวัน (ไทย + อังกฤษในวงเล็บ) แล้วตามด้วย Modal รับช่วงเวลา/ชื่อวิชา
@@ -169,7 +169,7 @@ class Schedule(commands.Cog):
         view = AddClassView(author=ctx.author, db_collection=self.collection)
         await ctx.send("เลือกวันจากตัวเลือกด้านล่าง แล้วระบบจะถามช่วงเวลาและชื่อวิชาต่อให้จบในขั้นตอนเดียว 👇", view=view)
 
-    @commands.command(name="myschedule", aliases=["msch", "mc"])
+    @commands.command(name="myschedule", aliases=["msch", "mc"], help="Show your class schedule")
     async def my_schedule(self, ctx: commands.Context):
         """
         แสดงตารางเรียนของผู้ใช้ โดยหัวข้อวันจะแสดงเป็น ไทย + อังกฤษในวงเล็บ เช่น 'จันทร์ (Mon)'
@@ -228,7 +228,7 @@ class Schedule(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="delclass", aliases=["delsch", "dc"])
+    @commands.command(name="delclass", aliases=["delsch", "dc"], help="Delete a class from your schedule")
     async def delete_class(self, ctx: commands.Context, *, subject_to_delete: str = None):
         """
         ลบวิชาออกจากตารางเรียนของผู้ใช้
