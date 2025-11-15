@@ -118,6 +118,6 @@ class BotInitDB(commands.Bot):
 
 # ------------ run -----------
 
-# keep_alive()
+keep_alive()
 Bot = BotInitDB()
 Bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
