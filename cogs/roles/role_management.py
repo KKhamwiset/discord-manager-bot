@@ -6,17 +6,19 @@ class RoleManagement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def role_validate(self, roles : list[discord.Role], members: list[discord.Member] = None) -> bool:
-        
+    def role_validate(self, roles : list[discord.Role], * ,members: list[discord.Member] = None) -> bool:
+
         if not any("Moderator" in i.name for i in roles):
             return False
         
+        requested_role = max(roles, key=lambda r: r.position)
+
         if members is not None:
             for member in members:
-                requested_role = max(roles, key=lambda r: r.position)
                 target_role = max(member.roles, key=lambda r: r.position)
                 if requested_role.position <= target_role.position:
                     return False
+    
         return True
 
     @commands.command(name="createrole", aliases=["cr", "makerole"], help="Create a role")
@@ -86,7 +88,7 @@ class RoleManagement(commands.Cog):
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
     async def removeRoleFromUser(self,ctx, role_name: str,*user: discord.Member):
         mentioned_members = list(ctx.message.mentions)
-        mentioned_members += [i for i in user if i not in mentioned_members] if user else []
+        mentioned_members += [i for i in user if i not in mentioned_members]
         print(mentioned_members)
         validate = self.role_validate(ctx.author.roles,members=mentioned_members)
         if not validate:
@@ -115,7 +117,7 @@ class RoleManagement(commands.Cog):
     @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
     async def addRole(self,ctx, role_name: str,*user: discord.Member):
         mentioned_members = list(ctx.message.mentions)
-        mentioned_members += [i for i in user if i not in mentioned_members] if user else []
+        mentioned_members += [i for i in user if i not in mentioned_members]
         validate = self.role_validate(ctx.author.roles)
         if not validate:
             await ctx.send("❌ You need to be a bot admin to use this command.")

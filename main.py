@@ -73,6 +73,11 @@ class Core(commands.Cog):
     @commands.command(name="rick", aliases=["ing"], help="Generate random Ting emoji")
     async def generateEmoji(self, ctx: commands.Context, amount: int = 1):
         faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]
+        try:
+            amount = int(amount)
+        except ValueError:
+            await ctx.send("❌ Please provide a valid number format.")
+            return
         if amount > 10 or amount <= 0:
             await ctx.send("❌ Number out of range (1–10). Showing 10.")
             amount = 10
