@@ -75,7 +75,7 @@ class Core(commands.Cog):
         faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]
         try:
             amount = int(amount)
-        except ValueError:
+        except:
             await ctx.send("❌ Please provide a valid number format.")
             return
         if amount > 10 or amount <= 0:
