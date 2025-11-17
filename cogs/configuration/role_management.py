@@ -1,32 +1,18 @@
 import discord
 from discord.ext import commands
 import random
+import validation
 
 class RoleManagement(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
-
-    def role_validate(self, roles : list[discord.Role], * ,members: list[discord.Member] = None) -> bool:
-
-        if not any("Moderator" in i.name for i in roles):
-            return False
-        
-        requested_role = max(roles, key=lambda r: r.position)
-
-        if members is not None:
-            for member in members:
-                target_role = max(member.roles, key=lambda r: r.position)
-                if requested_role.position <= target_role.position:
-                    return False
     
-        return True
-
+    
     @commands.command(name="createrole", aliases=["cr", "makerole"], help="Create a role")
+    @validation.role()
     async def createRole(self, ctx, role_name: str, color: str = None):
-        validate = self.role_validate(ctx.author.roles)
-        if not validate:
-            await ctx.send("❌ You need to be a bot admin to use this command.")
-            return
+
         guild = ctx.guild
         existing_role = discord.utils.get(guild.roles, name=role_name)
 
@@ -48,12 +34,10 @@ class RoleManagement(commands.Cog):
         new_role = await guild.create_role(name=role_name, color=color_value)
         await ctx.send(f"✅ Role `{new_role.name}` created with color `{str(new_role.color)}`.")
 
+    
     @commands.command(name="deleterole",aliases=["dr","delrole"], help="Delete a role")
+    @validation.role()
     async def removeRole(self,ctx, role_name: str):
-        validate = self.role_validate(ctx.author.roles)
-        if not validate:
-            await ctx.send("❌ You need to be a bot admin to use this command.")
-            return
         guild = ctx.guild
         existing_role = discord.utils.get(guild.roles, name=role_name)
 
@@ -85,15 +69,12 @@ class RoleManagement(commands.Cog):
         role_list = "\n".join(role_names)
         await ctx.send(f"Order 📜 Roles in this server:\n{role_list}")
 
+    
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
+    @validation.role()
     async def removeRoleFromUser(self,ctx, role_name: str,*user: discord.Member):
         mentioned_members = list(ctx.message.mentions)
         mentioned_members += [i for i in user if i not in mentioned_members]
-        print(mentioned_members)
-        validate = self.role_validate(ctx.author.roles,members=mentioned_members)
-        if not validate:
-            await ctx.send("❌ You need to be a bot admin to use this command or modify roles of users with equal/higher roles.")
-            return
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=role_name)
 
@@ -118,10 +99,6 @@ class RoleManagement(commands.Cog):
     async def addRole(self,ctx, role_name: str,*user: discord.Member):
         mentioned_members = list(ctx.message.mentions)
         mentioned_members += [i for i in user if i not in mentioned_members]
-        validate = self.role_validate(ctx.author.roles)
-        if not validate:
-            await ctx.send("❌ You need to be a bot admin to use this command.")
-            return
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=role_name)
 

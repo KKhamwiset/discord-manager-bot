@@ -1,4 +1,5 @@
 import os, glob, logging, random, discord
+import validation
 from discord.ext import commands
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,13 +9,13 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB = os.getenv("MONGO_DB", "discord_bot_db")
+GUILD_ID = int(os.getenv("GUILD_ID", "0"))
 
 handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-
 
 TARGET_PREFIXES = ["b", "t"]
 
@@ -43,7 +44,7 @@ class Core(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(help="Check bot latency")
+    @commands.hybrid_command(help="Check bot latency")
     async def ping(self, ctx: commands.Context):
         await ctx.send(f"Pong! {round(self.bot.latency * 1000)}ms")
 
@@ -51,7 +52,7 @@ class Core(commands.Cog):
     async def hello(self, ctx: commands.Context):
         await ctx.send(f"Hello! {ctx.author.name}")
 
-    @commands.command(name="xdd", aliases=["xdx"], help="Random XD")
+    @commands.hybrid_command(name="xdd", aliases=["xdx"], help="Random XD")
     async def greet(self, ctx: commands.Context):
         responses = [
             "XD",
@@ -70,7 +71,7 @@ class Core(commands.Cog):
         ]
         await ctx.send(random.choice(responses))
 
-    @commands.command(name="rick", aliases=["ing"], help="Generate random Ting emoji")
+    @commands.hybrid_command(name="rick", aliases=["ing"], help="Generate random Ting emoji")
     async def generateEmoji(self, ctx: commands.Context, amount="1"):
         faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]
         try:
@@ -96,14 +97,30 @@ class BotInitDB(commands.Bot):
             raise RuntimeError("Missing TOKEN or MONGO_URI")
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
+        self.add_check(validation.channel)
         print("✅ Mongo connected" if self.db is not None else "❌ Mongo failed")
 
     async def setup_hook(self):
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
         await self._load_all_extensions()
+        if os.getenv("ENV") == "SINGLE_GUILD":
+            guild = discord.Object(id=GUILD_ID)
+            # Clean-up state
+            self.tree.clear_commands(guild=guild) 
+            await self.tree.sync(guild=guild)
+            # Resync state
+            await self.tree.sync(guild=guild)
+
+        else:
+            await self.tree.sync()
 
     async def on_ready(self):
+        guild = self.get_guild(GUILD_ID)
+        if guild:
+            print(f"✅ Connected to guild: {guild.name} (ID: {guild.id})")
+        else:
+            print("⚠️ Guild not found in cache. Are you sure GUILD_ID is correct?")
         print(f"{self.user} has connected to Discord!")
 
     async def close(self):
