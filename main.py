@@ -1,4 +1,5 @@
 import os, glob, logging, random, discord
+import validation
 from discord.ext import commands
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,7 +15,6 @@ handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w"
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-
 
 TARGET_PREFIXES = ["b", "t"]
 
@@ -96,12 +96,14 @@ class BotInitDB(commands.Bot):
             raise RuntimeError("Missing TOKEN or MONGO_URI")
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
+        self.add_check(validation.channel)
         print("✅ Mongo connected" if self.db is not None else "❌ Mongo failed")
 
     async def setup_hook(self):
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
         await self._load_all_extensions()
+        await self.tree.sync()
 
     async def on_ready(self):
         print(f"{self.user} has connected to Discord!")

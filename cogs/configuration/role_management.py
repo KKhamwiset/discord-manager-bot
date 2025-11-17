@@ -8,8 +8,9 @@ class RoleManagement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @validation.role()
+    
     @commands.command(name="createrole", aliases=["cr", "makerole"], help="Create a role")
+    @validation.role()
     async def createRole(self, ctx, role_name: str, color: str = None):
 
         guild = ctx.guild
@@ -33,8 +34,9 @@ class RoleManagement(commands.Cog):
         new_role = await guild.create_role(name=role_name, color=color_value)
         await ctx.send(f"✅ Role `{new_role.name}` created with color `{str(new_role.color)}`.")
 
-    @validation.role()
+    
     @commands.command(name="deleterole",aliases=["dr","delrole"], help="Delete a role")
+    @validation.role()
     async def removeRole(self,ctx, role_name: str):
         guild = ctx.guild
         existing_role = discord.utils.get(guild.roles, name=role_name)
@@ -67,8 +69,9 @@ class RoleManagement(commands.Cog):
         role_list = "\n".join(role_names)
         await ctx.send(f"Order 📜 Roles in this server:\n{role_list}")
 
-    @validation.role()
+    
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
+    @validation.role()
     async def removeRoleFromUser(self,ctx, role_name: str,*user: discord.Member):
         mentioned_members = list(ctx.message.mentions)
         mentioned_members += [i for i in user if i not in mentioned_members]
@@ -92,7 +95,6 @@ class RoleManagement(commands.Cog):
 
         await ctx.send(f"🎉 Done! Role `{role.name}` removed from all mentioned users.")
 
-    @validation.role()
     @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
     async def addRole(self,ctx, role_name: str,*user: discord.Member):
         mentioned_members = list(ctx.message.mentions)
