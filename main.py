@@ -104,10 +104,16 @@ class BotInitDB(commands.Bot):
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
         await self._load_all_extensions()
-        guild = discord.Object(id=GUILD_ID)
-        self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)
+        if os.getenv("ENV") == "SINGLE_GUILD":
+            guild = discord.Object(id=GUILD_ID)
+            # Clean-up state
+            self.tree.clear_commands(guild=guild) 
+            await self.tree.sync(guild=guild)
+            # Resync state
+            await self.tree.sync(guild=guild)
 
+        else:
+            await self.tree.sync()
 
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
