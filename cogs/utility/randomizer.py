@@ -2,7 +2,7 @@ import random
 import asyncio
 import discord
 from discord.ext import commands
-
+import validation
 DELAY_SEC = 0.6
 
 
@@ -16,8 +16,6 @@ class Randomizer(commands.Cog):
             print("❌ Randomizer Cog connection failed.")
 
     # ---------- util ----------
-    def role_validate(self, roles: list[discord.Role]) -> bool:
-        return any("Moderator" in r.name for r in roles)
 
     async def send_embed(
         self,
@@ -194,6 +192,7 @@ class Randomizer(commands.Cog):
         await send_list_embed("🍱 Standard Restaurants", discord.Color.purple(), sr, "No standard restaurants found.")
         await send_list_embed("⭐ Special Restaurants", discord.Color.gold(), ssr, "No special restaurants found.")
 
+    @validation.role()
     @commands.command(name="drand", aliases=["dres"], help="Delete a randomizer entry by name.")
     async def del_rand(self, ctx: commands.Context, *, name: str | None = None):
         """Delete a restaurant by exact name."""
@@ -204,14 +203,6 @@ class Randomizer(commands.Cog):
                 "⚠️ Please provide a restaurant name to delete.\n\n"
                 "Usage: `!drand <restaurant_name>`",
                 discord.Color.orange(),
-            )
-
-        if not self.role_validate(ctx.author.roles):
-            return await self.send_embed(
-                ctx,
-                "Permission Denied",
-                "❌ You need to be a Moderator to use this command.",
-                discord.Color.red(),
             )
 
         result = await self.col.delete_one({"restaurant": name})
