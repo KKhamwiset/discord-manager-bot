@@ -8,7 +8,7 @@ async def global_channel_check(ctx: commands.Context) -> bool:
     if ctx.command is None:
         return True
 
-    if ctx.command.name in ["setbotchannel", "listbotchannels","help"]:
+    if ctx.command.name in ["setbotchannel", "listbotchannels","disablebotchannel","help"]:
         return True
 
     collection = ctx.bot.db["guild_config"]
