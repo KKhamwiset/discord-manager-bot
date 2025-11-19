@@ -1,6 +1,5 @@
 # cogs/academic/HomeworkManager.py
 
-import os
 import re
 import discord
 from discord import ui

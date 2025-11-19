@@ -100,6 +100,40 @@ class BotInitDB(commands.Bot):
         self.add_check(validation.channel)
         print("✅ Mongo connected" if self.db is not None else "❌ Mongo failed")
 
+    async def refactor_db(self,enabled=False):
+        if not enabled:
+            return
+        
+        print("🔄 Starting Migration...")
+        db = self.db["schedules"]
+        cursor = db.find({})
+        data = await cursor.to_list(length=None)
+        schema = {}
+        for i in data:
+            user_id = i.get("user_id")
+            day =  i.get("day_en","").strip()
+
+            if user_id not in schema:
+                schema[user_id] = {"user_id" : user_id}
+
+            if day not in schema[user_id]:
+                schema[user_id][day] = []
+            new_data = {
+                "name" : i.get("subject"),
+                "room" : "Unknown",
+                "time" : i.get("time")
+            }
+            schema[user_id][day] += [new_data]
+
+        new_data = list(schema.values())
+        if new_data:
+            await db.delete_many({})
+            await db.insert_many(new_data)
+        else:
+            print("❌ Error: Transformation resulted in empty list. Aborting wipe.")
+        print("✅ Done Migrations")
+        
+            
     async def setup_hook(self):
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
@@ -114,6 +148,7 @@ class BotInitDB(commands.Bot):
 
         else:
             await self.tree.sync()
+        await self.refactor_db()
 
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
