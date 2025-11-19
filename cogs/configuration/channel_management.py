@@ -82,11 +82,12 @@ class ChannelManagement(commands.Cog):
         allowed_channels: List[Dict[str, Any]] = config.get("allowed_channels", [])
         
         idx = get_channel_entry_index(allowed_channels, channel.id)
-
+        critical = False
         if idx is not None:
             allowed_channels.pop(idx)
 
             if not allowed_channels:
+                critical = True
                 update_fields = {
                     "mode": "all",
                     "allowed_channels": [],
@@ -101,6 +102,7 @@ class ChannelManagement(commands.Cog):
                 description = (
                     f"{channel.mention} removed from bot channels.\n"
                     "Commands are now allowed in **all channels** again."
+                     
                 )
                 embed = create_embed(
                     "🔁 Bot channel restriction disabled",
@@ -120,8 +122,10 @@ class ChannelManagement(commands.Cog):
                     description,
                     discord.Color.green()
                 )
-            
-            await ctx.send(embed=embed)
+            await ctx.send(
+                f"{next(i for i in guild.roles if i.name == 'Moderator').mention if critical else ""}\n"
+                ,embed=embed
+                )
         else:
             description = f"{channel.mention} is not an allowed bot channel."
             embed = create_embed(

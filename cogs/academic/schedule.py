@@ -5,14 +5,8 @@ import re
 import discord
 from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
-load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI")
 
-# --------------------------
-# ค่าคงที่: รายชื่อวัน ไทย/อังกฤษ
-# --------------------------
 DAYS_TH_EN = [
     ("จันทร์", "Mon"),
     ("อังคาร", "Tue"),
@@ -24,84 +18,195 @@ DAYS_TH_EN = [
 ]
 DAYS_ORDER_TH = [d[0] for d in DAYS_TH_EN]
 DAY_TH_TO_EN = {th: en for th, en in DAYS_TH_EN}
+DAY_EN_TO_TH = {en: th for th, en in DAYS_TH_EN}
 DAY_TH_LOWER_TO_EN = {th.lower(): en for th, en in DAYS_TH_EN}
 DAY_LOWER_TH_TO_TH = {th.lower(): th for th, en in DAYS_TH_EN}
 # --------------------------------------------------
 
-# --------------------------
-# Modal 2 ช่อง (เวลา + วิชา)
-# วันรับมาจาก dropdown
-# --------------------------
-class TwoFieldModal(ui.Modal, title="เพิ่มวิชาในตารางเรียน"):
+async def generate_delete_options(db, user_id):
+    doc = await db.find_one({"user_id": user_id})
+    if not doc:
+        return []
+
+    options = []
+    for date_key, subjects_list in doc.items():
+        if date_key in ["_id", "user_id"] or not subjects_list: continue
+        
+        # Convert "Monday" -> "จันทร์"
+        day_th = DAY_EN_TO_TH.get(date_key, date_key)
+        
+        for sub in subjects_list:
+            name = sub.get("name")
+            room = sub.get("room", "-")
+            # Create Option
+            options.append(discord.SelectOption(
+                label=name[:100], 
+                description=f"{day_th} - ห้อง {room}",
+                value=name[:100],
+                emoji="🗑️"
+            ))
+    return options
+
+class ConfirmDeleteView(ui.View):
+    def __init__(self, db, user_id, day_key, subject_name, subject_room):
+        super().__init__(timeout=60)
+        self.db = db
+        self.user_id = user_id
+        self.day_key = day_key
+        self.subject_name = subject_name
+        self.subject_room = subject_room
+
+    @ui.button(label="ยืนยันลบ", style=discord.ButtonStyle.danger, emoji="🗑️")
+    async def confirm(self, interaction: discord.Interaction, button: ui.Button):
+        await self.db.update_one(
+            {"user_id": self.user_id},
+            {"$pull": {self.day_key: {"name": self.subject_name}}}
+        )
+        
+        await interaction.response.edit_message(
+            content=f"✅ ลบวิชา **{self.subject_name}** (วัน{DAY_EN_TO_TH.get(self.day_key, self.day_key)}) เรียบร้อยแล้ว!",
+            view=None
+        )
+        new_options = await generate_delete_options(self.db, self.user_id)
+        if new_options:
+            new_selector = SubjectSelect(self.db, interaction.user, new_options[:25])
+            new_view = AddClassView(interaction.user, self.db, new_selector)
+            await self.original_msg.edit(view=new_view)
+        else:
+            await self.original_msg.edit(content="✅ คุณลบวิชาเรียนหมดแล้ว!", view=None)
+        self.stop()
+
+    @ui.button(label="ยกเลิก", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.edit_message(content="❌ ยกเลิกการลบแล้ว", view=None)
+        self.value = False
+        self.stop()
+
+class AddClassModal(ui.Modal, title="เพิ่มวิชาในตารางเรียน"):
     time_input = ui.TextInput(
-        label="ช่วงเวลา (เช่น 09:00-12:00)", placeholder="09:00-12:00", required=True
+        label="ช่วงเวลา (เช่น 09:00-12:00)", 
+        placeholder="09:00-12:00", 
+        required=True,
+        max_length=20
     )
     subject_input = ui.TextInput(
-        label="ชื่อวิชา หรือ รหัสวิชา", placeholder="GEN101 General Physics", required=True
+        label="ชื่อวิชา หรือ รหัสวิชา", 
+        placeholder="GEN101 General Physics", 
+        required=True,
+        max_length=100
+    )
+    room_input = ui.TextInput(
+        label="ห้องเรียน (ระบุหรือไม่ก็ได้)", 
+        placeholder="72-405", 
+        required=False,
+        max_length=50
     )
 
     def __init__(self, db_collection, selected_day_th: str):
         super().__init__()
         self.db_collection = db_collection
-        self.selected_day_th = selected_day_th  # จาก dropdown
+        self.selected_day_th = selected_day_th
 
     async def on_submit(self, interaction: discord.Interaction):
-        day_th = self.selected_day_th
-        day_en = DAY_TH_TO_EN.get(day_th, "")
-        
-        # Normalize inputs
+        day_en = DAY_TH_TO_EN.get(self.selected_day_th)
+        if not day_en:
+            await interaction.response.send_message("❌ เกิดข้อผิดพลาดเกี่ยวกับวัน", ephemeral=True)
+            return
+
+
         time = self.time_input.value.strip()
-        # Normalize subject: trim and collapse multiple spaces
         subject_raw = self.subject_input.value
         subject = re.sub(r"\s+", " ", subject_raw.strip())
+        room = self.room_input.value.strip() or "ไม่ระบุ"
 
-        schedule_data = {
-            "user_id": interaction.user.id,
-            "day_th": day_th,
-            "day_en": day_en,
-            "day": day_th.lower(),  # legacy (เดิมเก็บไทยตัวเล็ก)
+
+        new_class = {
+            "name": subject,
             "time": time,
-            "subject": subject, # Save the normalized subject
+            "room": room
         }
-        await self.db_collection.insert_one(schedule_data)
-        # --------------------------------
 
-        label_day = f"{day_th} ({day_en})" if day_en else day_th
+        await self.db_collection.update_one(
+            {"user_id": interaction.user.id},
+            {"$push": {day_en: new_class}},
+            upsert=True
+        )
+
         await interaction.response.send_message(
-            f"✅ บันทึกวิชา **{subject}** ในวัน **{label_day}** เรียบร้อยแล้ว!",
+            f"✅ บันทึกวิชา **{subject}** \n🗓️ วัน**{self.selected_day_th}** เวลา `{time}` ห้อง `{room}`",
             ephemeral=True
         )
 
-# --------------------------
-# Dropdown ให้เลือกวัน
-# --------------------------
 class DaySelect(ui.Select):
-    def __init__(self, db_collection):
+    def __init__(self, db):
+        self.db_collection = db
         options = [
-            discord.SelectOption(label=f"{th} ({en})", value=th, emoji="🗓️")
+            discord.SelectOption(label=f"{th}", value=th, emoji="🗓️")
             for th, en in DAYS_TH_EN
         ]
         super().__init__(
-            placeholder="เลือกวันของคาบเรียน…",
+            placeholder="เลือกวันที่จะเรียน...",
             min_values=1, max_values=1, options=options
         )
-        self.db_collection = db_collection
 
     async def callback(self, interaction: discord.Interaction):
         selected_day_th = self.values[0]
-        # เปิด Modal ที่เหลือ (เวลา + วิชา) โดยส่งวันเข้าไป
-        modal = TwoFieldModal(self.db_collection, selected_day_th)
+        # เปิด Modal ใหม่ที่แก้แล้ว
+        modal = AddClassModal(self.db_collection, selected_day_th)
         await interaction.response.send_modal(modal)
 
-# --------------------------
-# View หลัก: ใส่ Dropdown อย่างเดียว
-# --------------------------
+class SubjectSelect(ui.Select):
+    def __init__(self, db, author, options):
+        self.db_collection = db
+        self.author = author
+        super().__init__(
+            placeholder="เลือกวิชาที่จะลบ...",
+            min_values=1, max_values=1, options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_value = self.values[0]
+        doc = await self.db_collection.find_one({"user_id": self.author.id})
+        if not doc:
+            await interaction.response.send_message("❌ ไม่พบข้อมูล", ephemeral=True)
+            return
+
+        target_subject = None
+        target_day_key = None
+        for date, subjects in doc.items():
+            if date in ["_id", "user_id"]: continue
+            for sub in subjects:
+                if sub.get("name") == selected_value:
+                    target_subject = sub
+                    target_day_key = date
+                    break
+            if target_subject: break
+        
+        if target_subject:
+            view = ConfirmDeleteView(
+                db=self.db_collection,
+                user_id=self.author.id,
+                day_key=target_day_key,
+                subject_name=target_subject.get("name"),
+                subject_room=target_subject.get("room")
+            )
+            await interaction.response.send_message(
+                f"⚠️ **ยืนยันการลบ?**\nคุณต้องการลบวิชา **{target_subject.get('name')}** (วัน{DAY_EN_TO_TH.get(target_day_key, target_day_key)}) ใช่หรือไม่?", 
+                view=view, 
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message("❌ หาวิชาไม่เจอ (อาจถูกลบไปแล้ว)", ephemeral=True)
+
+# --------------------------------------------------
+# Main View
+# --------------------------------------------------
 class AddClassView(ui.View):
-    def __init__(self, author: discord.Member, db_collection):
+    def __init__(self, author: discord.Member, db_collection, Selector: ui.Select):
         super().__init__(timeout=180)
         self.author = author
         self.db_collection = db_collection
-        self.add_item(DaySelect(self.db_collection))
+        self.add_item(Selector)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user != self.author:
@@ -109,86 +214,39 @@ class AddClassView(ui.View):
             return False
         return True
 
-# --------------------------
-# Helper: แปลง key จัดกลุ่มวัน & sort เวลา
-# --------------------------
-def normalize_day_key(item):
-    """
-    รับเอกสาร 1 ตัวจาก Mongo แล้วคืนวันภาษาไทย (สำหรับใช้เป็น key) ให้คงรูปแบบเดียว
-    """
-    # 1. Try new format first (fastest)
-    if "day_th" in item:
-        return item["day_th"]
-    
-    # 2. Try legacy format (using the lookup dict)
-    legacy_day_lower = item.get("day", "").lower()
-    canonical_day = DAY_LOWER_TH_TO_TH.get(legacy_day_lower)
-    
-    if canonical_day:
-        return canonical_day
-        
-    # 3. Fallback to raw data if not recognized
-    return item.get("day", "") 
-
-def get_day_label_th_en(day_th: str) -> str:
-    en = DAY_TH_TO_EN.get(day_th, "")
-    return f"{day_th} ({en})" if en else day_th
-
-def time_sort_key(time_range: str):
-    """
-    รับสตริงเวลาเช่น '09:00-12:00' แล้วคืน key สำหรับ sort (ใช้เวลาเริ่ม)
-    """
-    if not isinstance(time_range, str):
-        return "00:00"
-    parts = time_range.split("-")
-    start = parts[0].strip() if parts else time_range.strip()
-    # บังคับรูปแบบ HH:MM ให้ปลอดภัย
-    return start if re.match(r"^\d{1,2}:\d{2}$", start) else "00:00"
-
-# --------------------------
-# Cog หลัก
-# --------------------------
+# --------------------------------------------------
+#Cog Logic
+# --------------------------------------------------
 class Schedule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         try:
-            self.collection = self.bot.db["schedules"]
-            print("✅ Schedule Cog connection, OK.")
+            if self.db is not None:
+                print("✅ Schedule Cog connection, OK.")
         except Exception as e:
             print(f"❌ Schedule Cog connection failed: {e}")
 
-    @commands.command(name="addclass", aliases=["asch", "ac"], help="Open a form to add class schedule")
+    @property
+    def db(self):
+        return self.bot.db["schedules"]
+
+    @commands.command(name="addclass", aliases=["asch", "ac"])
     async def add_class_interactive(self, ctx: commands.Context):
-        """
-        เปิด View ให้เลือกวัน (ไทย + อังกฤษในวงเล็บ) แล้วตามด้วย Modal รับช่วงเวลา/ชื่อวิชา
-        """
-        if self.collection is None:
-            await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
-            return
+        if self.db is None: return await ctx.send("❌ DB Error")
+        
+        
+        view = AddClassView(author=ctx.author, db_collection=self.db, Selector=DaySelect(self.db))
+        await ctx.send("เลือกวันเรียนเพื่อเพิ่มวิชา 👇", view=view)
 
-        view = AddClassView(author=ctx.author, db_collection=self.collection)
-        await ctx.send("เลือกวันจากตัวเลือกด้านล่าง แล้วระบบจะถามช่วงเวลาและชื่อวิชาต่อให้จบในขั้นตอนเดียว 👇", view=view)
 
-    @commands.command(name="myschedule", aliases=["msch", "mc"], help="Show your class schedule")
+    @commands.command(name="myschedule", aliases=["msch", "mc"])
     async def my_schedule(self, ctx: commands.Context):
-        """
-        แสดงตารางเรียนของผู้ใช้ โดยหัวข้อวันจะแสดงเป็น ไทย + อังกฤษในวงเล็บ เช่น 'จันทร์ (Mon)'
-        """
-        if self.collection is None:
-            await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
-            return
+        if self.db is None: return await ctx.send("❌ DB Error")
 
-        user_schedules_cursor = self.collection.find({"user_id": ctx.author.id})
-        user_schedules_list = await user_schedules_cursor.to_list(length=None) 
-        # ---------------------------------------------
-
-        schedule_by_day = {}
-        for item in user_schedules_list:
-            day_th = normalize_day_key(item)  # คืนชื่อวันภาษาไทย
-            schedule_by_day.setdefault(day_th, []).append(item)
-
-        if not schedule_by_day:
-            await ctx.send("🤔 คุณยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` เพื่อเพิ่มวิชาเรียนสิ")
+        doc = await self.db.find_one({"user_id": ctx.author.id})
+        
+        if not doc:
+            await ctx.send("🤔 คุณยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
             return
 
         embed = discord.Embed(
@@ -196,76 +254,48 @@ class Schedule(commands.Cog):
             color=discord.Color.teal(),
         )
 
-        # แสดงตามลำดับวันมาตรฐาน
-        for day_th in DAYS_ORDER_TH:
-            if day_th in schedule_by_day:
-                items = schedule_by_day[day_th]
-                items_sorted = sorted(items, key=lambda x: time_sort_key(x.get("time", "")))
+        has_data = False
+        for day_th, day_en in DAYS_TH_EN:
+            subjects = doc.get(day_en, [])
+            
+            if subjects:
+                has_data = True
+                subjects_sorted = sorted(subjects, key=lambda x: x.get("time", "00:00"))
+                
+                lines = []
+                for sub in subjects_sorted:
+                    t = sub.get("time", "-")
+                    n = sub.get("name", "???")
+                    r = sub.get("room", "")
+                    room_txt = f" (ห้อง **{r}**)" if r and r != "ไม่ระบุ" else ""
+                    lines.append(f"`{t}` **{n}**{room_txt}")
+                
+                embed.add_field(name=f"🗓️ {day_th}", value="\n".join(lines), inline=False)
 
-                day_info_lines = []
-                for s in items_sorted:
-                    t = s.get("time", "-")
-                    subj = s.get("subject", "(ไม่ระบุชื่อวิชา)")
-                    day_info_lines.append(f"`{t}` - **{subj}**")
+        if not has_data:
+             await ctx.send("🤔 คุณมีชื่อในระบบ แต่ยังไม่ได้เพิ่มวิชาเรียนเลย")
+        else:
+             await ctx.send(embed=embed)
 
-                embed.add_field(
-                    name=f"🗓️ {get_day_label_th_en(day_th)}",
-                    value="\n".join(day_info_lines) if day_info_lines else "—",
-                    inline=False
-                )
-
-        # กรณีมีวันอื่นๆ ที่ไม่อยู่ในรายการ (ข้อมูลเก่า/สะกดแปลก)
-        others = [k for k in schedule_by_day.keys() if k not in DAYS_ORDER_TH]
-        for day_th in others:
-            items = schedule_by_day[day_th]
-            items_sorted = sorted(items, key=lambda x: time_sort_key(x.get("time", "")))
-            day_info_lines = [f"`{s.get('time','-')}` - **{s.get('subject','(ไม่ระบุชื่อวิชา)')}**" for s in items_sorted]
-            embed.add_field(
-                name=f"🗓️ {get_day_label_th_en(day_th)}",
-                value="\n".join(day_info_lines) if day_info_lines else "—",
-                inline=False
-            )
-
-        await ctx.send(embed=embed)
-
-    @commands.command(name="delclass", aliases=["delsch", "dc"], help="Delete a class from your schedule")
-    async def delete_class(self, ctx: commands.Context, *, subject_to_delete: str = None):
-        """
-        ลบวิชาออกจากตารางเรียนของผู้ใช้
-        รองรับชื่อวิชาที่มีการเว้นวรรค
-        ตัวอย่าง: !delclass GEN101 General Physics
-        """
-        if self.collection is None:
-            await ctx.send("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
-            return 
+    @commands.command(name="delclass", aliases=["delsch", "dc"])
+    async def delete_class(self, ctx: commands.Context):
+        if self.db is None: return await ctx.send("❌ DB Error")
         
-        if subject_to_delete is None:
-            embed = discord.Embed(
-                title="❌ คุณลืมระบุชื่อวิชา",
-                description="โปรดระบุชื่อวิชาที่ต้องการลบ (ต้องตรงกับที่บันทึกไว้)",
-                color=discord.Color.red()
-            )
-            embed.add_field(
-                name="ตัวอย่างการใช้งาน",
-                value=f"```{ctx.prefix}delclass GEN101 General Physics```"
-            )
-            await ctx.send(embed=embed)
+        doc = await self.db.find_one({"user_id" : ctx.author.id})
+        if not doc:
+            await ctx.send("🤔 คุณยังไม่มีตารางเรียน")
+            return
+            
+        options = await generate_delete_options(self.db,ctx.author.id)
+        
+        if not options:
+            await ctx.send("🤔 ตารางเรียนว่างเปล่า")
             return
 
-        normalized = re.sub(r"\s+", " ", subject_to_delete.strip())
+        selector = SubjectSelect(self.db, ctx.author, options[:25])
+        view = AddClassView(author=ctx.author, db_collection=self.db, Selector=selector)
 
-        result = await self.collection.delete_many({
-            "user_id": ctx.author.id,
-            "subject": {
-                "$regex": f"^{re.escape(normalized)}$",
-                "$options": "i"
-            }
-        })
-
-        if result.deleted_count > 0:
-            await ctx.send(f"✅ **ลบสำเร็จ!** วิชา **{normalized}** ถูกลบ {result.deleted_count} รายการ")
-        else:
-            await ctx.send(f"🤔 **ไม่พบข้อมูล** วิชา **{normalized}** ในตารางเรียนของคุณ")
+        await ctx.send("เลือกรายวิชาที่ต้องการจะลบ 👇", view=view)
 
 async def setup(bot):
     await bot.add_cog(Schedule(bot))
