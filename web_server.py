@@ -1,8 +1,9 @@
 from flask import Flask, jsonify
 from threading import Thread
+from waitress import serve
 import os
 
-app = Flask('General เบ๊ Bot')
+app = Flask('Bot')
 
 @app.route('/')
 def home():
@@ -72,7 +73,7 @@ def home():
 
 def run():
     port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    serve(app,host='0.0.0.0', port=port)
 
 def keep_alive():
     """Starts the Flask web server in a background thread."""
