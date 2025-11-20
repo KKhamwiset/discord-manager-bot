@@ -135,20 +135,18 @@ class BotInitDB(commands.Bot):
         
             
     async def setup_hook(self):
+        print("Starting Setup Hook...")
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
-        await self._load_all_extensions()
-        if os.getenv("ENV") == "SINGLE_GUILD":
-            guild = discord.Object(id=GUILD_ID)
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
-            print(f"✅ Synced to Guild: {GUILD_ID}")
-            # Clear Global Cache
-            self.tree.clear_commands(guild=None) 
-            await self.tree.sync(guild=None)
+        await self._load_all_extensions() 
 
+        if os.getenv("ENV") == "SINGLE_GUILD":
+            target_guild = discord.Object(id=GUILD_ID)
+            self.tree.copy_global_to(guild=target_guild)
+            await self.tree.sync(guild=target_guild)
+            
         else:
-            print("🌍 Syncing Globally...")
+            print("🌍 Production Mode: Syncing Globally...")
             await self.tree.sync()
         await self.refactor_db()
 
