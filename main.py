@@ -177,4 +177,5 @@ class BotInitDB(commands.Bot):
 
 keep_alive()
 Bot = BotInitDB()
-Bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
+log_level_shift = logging.ERROR if bool(os.getenv("DEV")) == True else logging.DEBUG
+Bot.run(TOKEN, log_handler=handler, log_level=log_level_shift)
