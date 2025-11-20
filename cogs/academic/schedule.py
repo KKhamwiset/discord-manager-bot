@@ -20,7 +20,9 @@ class Schedule(commands.Cog):
     def db(self):
         return self.bot.db["schedules"]
 
-    @commands.command(name="addclass", aliases=["asch", "ac"])
+    @commands.command(name="addclass", 
+                      aliases=["asch", "ac"],
+                      help="Add subject data to user's database")
     async def add_class_interactive(self, ctx: commands.Context):
         if self.db is None: return await ctx.send("❌ DB Error")
         
@@ -29,18 +31,23 @@ class Schedule(commands.Cog):
         await ctx.send("เลือกวันเรียนเพื่อเพิ่มวิชา 👇", view=view)
 
 
-    @commands.command(name="myschedule", aliases=["msch", "mc"])
-    async def my_schedule(self, ctx: commands.Context):
+    @commands.command(
+            name="myschedule", 
+            aliases=["msch", "mc"],
+            help="Show the subjects list of provided user if none show self"
+            )
+    async def my_schedule(self, ctx: commands.Context, user : discord.Member = None):
         if self.db is None: return await ctx.send("❌ DB Error")
-
-        doc = await self.db.find_one({"user_id": ctx.author.id})
+        target_user = user.id if user is not None else ctx.author.id
+        target_display_name = user.display_name if user is not None else ctx.author.display_name
+        doc = await self.db.find_one({"user_id": target_user})
         
         if not doc:
             await ctx.send("🤔 คุณยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
             return
 
         embed = discord.Embed(
-            title=f"📅 ตารางเรียนของ {ctx.author.display_name}",
+            title=f"📅 ตารางเรียนของ {target_display_name}",
             color=discord.Color.teal(),
         )
 
@@ -67,7 +74,10 @@ class Schedule(commands.Cog):
         else:
              await ctx.send(embed=embed)
 
-    @commands.command(name="delclass", aliases=["delsch", "dc"])
+    @commands.command(name="delclass", 
+                      aliases=["delsch", "dc"],
+                      help="Delete subject from user's database" 
+                      )
     async def delete_class(self, ctx: commands.Context):
         if self.db is None: return await ctx.send("❌ DB Error")
         
