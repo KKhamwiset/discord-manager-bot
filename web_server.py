@@ -73,7 +73,7 @@ def home():
 
 def run():
     port = int(os.environ.get('PORT', 8080))
-    serve(host='0.0.0.0', port=port)
+    serve(app,host='0.0.0.0', port=port)
 
 def keep_alive():
     """Starts the Flask web server in a background thread."""
