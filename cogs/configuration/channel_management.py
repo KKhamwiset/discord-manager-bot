@@ -1,5 +1,6 @@
 import discord
 import validation
+from discord import app_commands
 from discord.ext import commands
 from typing import Literal, Optional, Any, Dict, List
 
@@ -18,7 +19,7 @@ def get_channel_entry_index(allowed_channels: List[Dict[str, Any]], channel_id: 
     except StopIteration:
         return None
 
-# --- Cog Refactoring ---
+# --- Cog Logic ---
 
 class ChannelManagement(commands.Cog):
     """
@@ -28,7 +29,7 @@ class ChannelManagement(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         try:
-            self.collection: Any = bot.db["guild_config"]
+            self.collection = bot.db["guild_config"]
             print("✅ ChannelManagement Cog connection, OK.")
         except Exception as e:
             print(f"❌ ChannelManagement Cog connection failed: {e!r}")
@@ -43,10 +44,10 @@ class ChannelManagement(commands.Cog):
             return None
         return ctx.guild
 
-    async def _validate_commands(self, ctx: commands.Context, raw_names: List[str]) -> tuple[List[str], List[str], List[str]]:
-        names: List[str] = []
-        aliases: List[str] = []
-        invalid: List[str] = []
+    async def _validate_commands(self, ctx: commands.Context, raw_names: List[str]):
+        names = []
+        aliases = []
+        invalid = []
 
         for n in raw_names:
             tester = self.bot.get_command(n)
@@ -70,6 +71,7 @@ class ChannelManagement(commands.Cog):
     @validation.role()
     @commands.hybrid_command(
         name="disablebotchannel",
+        description="Disable the bot from responding to commands in this channel.",
         help="Disable this channel as an allowed bot channel."
     )
     async def disable_bot_channel(self, ctx: commands.Context):
@@ -79,10 +81,12 @@ class ChannelManagement(commands.Cog):
 
         channel = ctx.channel
         config = await self._get_guild_config(guild.id)
-        allowed_channels: List[Dict[str, Any]] = config.get("allowed_channels", [])
+        # Removed unnecessary ": List[Dict[str, Any]]" hint
+        allowed_channels = config.get("allowed_channels", [])
         
         idx = get_channel_entry_index(allowed_channels, channel.id)
         critical = False
+        
         if idx is not None:
             allowed_channels.pop(idx)
 
@@ -102,7 +106,6 @@ class ChannelManagement(commands.Cog):
                 description = (
                     f"{channel.mention} removed from bot channels.\n"
                     "Commands are now allowed in **all channels** again."
-                     
                 )
                 embed = create_embed(
                     "🔁 Bot channel restriction disabled",
@@ -122,10 +125,12 @@ class ChannelManagement(commands.Cog):
                     description,
                     discord.Color.green()
                 )
-            await ctx.send(
-                f"{next(i for i in guild.roles if i.name == 'Moderator').mention if critical else ""}\n"
-                ,embed=embed
-                )
+            
+            moderator_role = discord.utils.find(lambda r: r.name == 'Moderator', guild.roles)
+            mention = moderator_role.mention if critical and moderator_role else ""
+            
+            await ctx.send(content=mention, embed=embed)
+            
         else:
             description = f"{channel.mention} is not an allowed bot channel."
             embed = create_embed(
@@ -140,7 +145,12 @@ class ChannelManagement(commands.Cog):
     @validation.role()
     @commands.hybrid_command(
         name="setbotchannel", 
+        description="Configure which commands are allowed in this channel.",
         help="Set this channel as a bot channel"
+    )
+    @app_commands.describe(
+        cmd_mode="Filter mode: 'all' (allow everything), 'only' (whitelist), or 'exclude' (blacklist).",
+        cmd_names="List of command names separated by spaces (e.g. 'ping help'). Required for 'only'/'exclude'."
     )
     async def set_bot_channel(
         self,
@@ -165,9 +175,9 @@ class ChannelManagement(commands.Cog):
             error_msg = (
                 "❌ You must provide at least **one command name** when using "
                 "`only` or `exclude`.\n"
-                "ตัวอย่าง:\n"
+                "**Example:**\n"
                 "`!setbotchannel only ping help`\n"
-                "หรือ Slash: `/setbotchannel cmd_mode:only cmd_names:\"ping help\"`"
+                "**Slash:** `/setbotchannel cmd_mode:only cmd_names:\"ping help\"`"
             )
             await ctx.send(error_msg)
             return
@@ -181,7 +191,7 @@ class ChannelManagement(commands.Cog):
             return
 
         config = await self._get_guild_config(guild.id)
-        allowed_channels: List[Dict[str, Any]] = config.get("allowed_channels", [])
+        allowed_channels = config.get("allowed_channels", [])
 
         idx = get_channel_entry_index(allowed_channels, channel.id)
         
@@ -212,18 +222,18 @@ class ChannelManagement(commands.Cog):
         )
         
         if cmd_mode == "all":
-            detail = "โหมดคำสั่ง: **all** (อนุญาตทุกคำสั่ง)"
+            detail = "Mode: **all** (All commands allowed)"
         elif cmd_mode == "only":
             detail = (
-                "โหมดคำสั่ง: **only**\n"
-                f"อนุญาตเฉพาะ: `{', '.join(names)}`"
-                + (f" | alias: `{', '.join(aliases)}`" if aliases else "")
+                "Mode: **only** (Whitelist)\n"
+                f"Allowed: `{', '.join(names)}`"
+                + (f" | Aliases: `{', '.join(aliases)}`" if aliases else "")
             )
         else:
             detail = (
-                "โหมดคำสั่ง: **exclude**\n"
-                f"ยกเว้นคำสั่ง: `{', '.join(names)}`"
-                + (f" | alias: `{', '.join(aliases)}`" if aliases else "")
+                "Mode: **exclude** (Blacklist)\n"
+                f"Blocked: `{', '.join(names)}`"
+                + (f" | Aliases: `{', '.join(aliases)}`" if aliases else "")
             )
 
         description = f"{channel.mention} bot channel settings {'updated' if idx is not None else 'configured'}.\n{detail}"
@@ -234,7 +244,11 @@ class ChannelManagement(commands.Cog):
     # --- listbotchannels command ---
 
     @validation.role()
-    @commands.hybrid_command(name="listbotchannels", help="Show allowed bot channels")
+    @commands.hybrid_command(
+        name="listbotchannels", 
+        description="List all channels where bot commands are explicitly allowed/configured.",
+        help="Show allowed bot channels"
+    )
     async def list_bot_channels(self, ctx: commands.Context):
         guild = await self._check_guild_context(ctx)
         if guild is None:
@@ -243,15 +257,17 @@ class ChannelManagement(commands.Cog):
         config = await self._get_guild_config(guild.id)
         
         if config.get("mode", "all") == "all":
-            await ctx.send("📢 Bot commands are allowed in **all** channels.")
+            await ctx.send("📢 Bot commands are allowed in **all** channels (Default Mode).")
             return
 
-        entries: List[Dict[str, Any]] = config.get("allowed_channels", [])
+        # Removed unnecessary ": List[Dict[str, Any]]" hint
+        entries = config.get("allowed_channels", [])
         if not entries:
-            await ctx.send("⚠️ Whitelist mode is on but no channels are set.")
+            await ctx.send("⚠️ Whitelist mode is active, but no channels are configured. Bot may be silent.")
             return
 
-        lines: List[str] = []
+        # Removed unnecessary ": List[str]" hint
+        lines = []
         for entry in entries:
             ch_id = int(entry.get("channel_id"))
             ch = guild.get_channel(ch_id) or guild.get_thread(ch_id) 
@@ -263,11 +279,11 @@ class ChannelManagement(commands.Cog):
             cmds = entry.get("allowed_commands", []) or []
 
             if cmode == "all":
-                detail = "all commands"
+                detail = "All commands"
             elif cmode == "only":
-                detail = "only: " + (", ".join(cmds) if cmds else "(none)")
+                detail = "Only: " + (", ".join(cmds) if cmds else "(None)")
             elif cmode == "exclude":
-                detail = "all except: " + (", ".join(cmds) if cmds else "(none)")
+                detail = "All except: " + (", ".join(cmds) if cmds else "(None)")
             else:
                 detail = f"{cmode} (raw)"
 
