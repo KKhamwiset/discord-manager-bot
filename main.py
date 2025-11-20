@@ -140,13 +140,12 @@ class BotInitDB(commands.Bot):
         await self._load_all_extensions()
         if os.getenv("ENV") == "SINGLE_GUILD":
             guild = discord.Object(id=GUILD_ID)
-            # Clean-up state
-            self.tree.clear_commands(guild=guild) 
+            self.tree.copy_global_to(guild=guild)
             await self.tree.sync(guild=guild)
-            # Resync state
-            await self.tree.sync(guild=guild)
+            print(f"✅ Synced to Guild: {GUILD_ID}")
 
         else:
+            print("🌍 Syncing Globally...")
             await self.tree.sync()
         await self.refactor_db()
 
