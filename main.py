@@ -143,6 +143,9 @@ class BotInitDB(commands.Bot):
             self.tree.copy_global_to(guild=guild)
             await self.tree.sync(guild=guild)
             print(f"✅ Synced to Guild: {GUILD_ID}")
+            # Clear Global Cache
+            self.tree.clear_commands(guild=None) 
+            await self.tree.sync(guild=None)
 
         else:
             print("🌍 Syncing Globally...")
