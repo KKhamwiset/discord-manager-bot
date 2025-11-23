@@ -72,6 +72,7 @@ class RoleManagement(commands.Cog):
             embed = discord.Embed(title=f"Roles for {user.display_name}", description=roles_text, color=user.top_role.color if user.top_role else discord.Color.dark_gold(), timestamp=ctx.message.created_at)
             embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
             embed.add_field(name="Total Roles", value=str(len(user_roles)), inline=False)
+            embed.add_field(name="Highest Role", value=f"**{user.top_role.name}**" if user.top_role else "@everyone", inline=False)
             embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
             await ctx.send(embed=embed)
             return

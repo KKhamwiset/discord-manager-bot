@@ -13,16 +13,16 @@ def role_validation():
                     title="❌ Permission Denied",
                     description="You must have Moderator role to use this.",
                     color=discord.Color.red()
-                )
+                )s
             )
             return False
-        requester_top = max(author_roles, key=lambda r: r.position)
+        requester_top = ctx.author.top_role
 
         members = list(wrapped_ctx.message.mentions)
         members += [i for i in member if i not in members]
         if members:
             for m in members:
-                target_top = max(m.roles, key=lambda r: r.position)
+                target_top = m.top_role
                 if requester_top.position <= target_top.position:
                     await wrapped_ctx.send(
                         embed=discord.Embed(
