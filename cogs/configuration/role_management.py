@@ -48,8 +48,18 @@ class RoleManagement(commands.Cog):
         await ctx.send(f"✅ Deleted role `{role_name}`")
 
     @commands.command(name="listrole",aliases=["lr","roles"], help="List all roles in the server / List user roles")
-    async def listRoles(self,ctx, user: discord.Member = None):
+    async def listRoles(self,ctx, ctx_type : discord.Member | discord.guild.Role = None):
         guild = ctx.guild
+        user = None
+        role = None
+        if ctx_type is not None:
+            if isinstance(ctx_type, discord.Member):
+                user = ctx_type
+            elif isinstance(ctx_type, discord.Role):
+                role = ctx_type
+            else:
+                await ctx.send("❌ Invalid type! Use a member or role.")
+                return
         if user is not None:
             user_roles = [role.name for role in user.roles if role.name != "@everyone"]
 
@@ -58,7 +68,19 @@ class RoleManagement(commands.Cog):
                 return
 
             roles_text = "\n".join(user_roles)
-            await ctx.send(f"📜 Roles for `{user.display_name}`:\n{roles_text}")
+            embed = discord.Embed(title=f"Roles for {user.display_name}", description=roles_text, color=discord.Color.dark_gold())
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+            await ctx.send(embed=embed)
+            return
+        if role is not None:
+            role_members = [member.name for member in role.members]
+            if not role_members:
+                await ctx.send(f"⚠️ Role `{role.name}` has no members.")
+                return
+            members_text = "\n".join(role_members)
+            embed = discord.Embed(title=f"Members in role {role.name}", description=members_text, color=discord.Color.dark_gold())
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+            await ctx.send(embed=embed)
             return
         
         roles = sorted(guild.roles,key=lambda r: r.position, reverse=True)
@@ -67,7 +89,9 @@ class RoleManagement(commands.Cog):
             await ctx.send("⚠️ No roles found in this server.")
             return
         role_list = "\n".join(role_names)
-        await ctx.send(f"Order 📜 Roles in this server:\n{role_list}")
+        embed = discord.Embed(title="Roles in this server", description=role_list, color=discord.Color.dark_gold())
+        embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+        await ctx.send(embed=embed)
 
     
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
