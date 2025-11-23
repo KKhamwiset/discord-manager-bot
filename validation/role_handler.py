@@ -4,19 +4,18 @@ from discord.ext import commands
 
 def role_validation():
     async def check_permissions(wrapped_ctx: commands.Context):
-        author_roles = wrapped_ctx.author.roles
         member = [i for i in list(wrapped_ctx.args)if isinstance(i, discord.Member)]
 
-        if not any("Moderator" in r.name for r in author_roles):
+        if not any("Moderator" in r.name for r in wrapped_ctx.author.roles):
             await wrapped_ctx.send(
                 embed=discord.Embed(
                     title="❌ Permission Denied",
                     description="You must have Moderator role to use this.",
                     color=discord.Color.red()
-                )s
+                )
             )
             return False
-        requester_top = ctx.author.top_role
+        requester_top = wrapped_ctx.author.top_role
 
         members = list(wrapped_ctx.message.mentions)
         members += [i for i in member if i not in members]
