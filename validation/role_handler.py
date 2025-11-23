@@ -4,10 +4,9 @@ from discord.ext import commands
 
 def role_validation():
     async def check_permissions(wrapped_ctx: commands.Context):
-        author_roles = wrapped_ctx.author.roles
         member = [i for i in list(wrapped_ctx.args)if isinstance(i, discord.Member)]
 
-        if not any("Moderator" in r.name for r in author_roles):
+        if not any("Moderator" in r.name for r in wrapped_ctx.author.roles):
             await wrapped_ctx.send(
                 embed=discord.Embed(
                     title="❌ Permission Denied",
@@ -16,13 +15,13 @@ def role_validation():
                 )
             )
             return False
-        requester_top = max(author_roles, key=lambda r: r.position)
+        requester_top = wrapped_ctx.author.top_role
 
         members = list(wrapped_ctx.message.mentions)
         members += [i for i in member if i not in members]
         if members:
             for m in members:
-                target_top = max(m.roles, key=lambda r: r.position)
+                target_top = m.top_role
                 if requester_top.position <= target_top.position:
                     await wrapped_ctx.send(
                         embed=discord.Embed(

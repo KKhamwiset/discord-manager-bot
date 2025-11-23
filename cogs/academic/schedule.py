@@ -30,7 +30,17 @@ class Schedule(commands.Cog):
         view = AddClassView(author=ctx.author, db_collection=self.db, Selector=selector)
         await ctx.send("เลือกวันเรียนเพื่อเพิ่มวิชา 👇", view=view)
 
-
+    @commands.command(name="editclass",
+                      aliases=["ec","esch"],
+                      help="Edit the subject information")
+    async def edit_class_info(self,ctx :commands.Context):
+        if self.db is None:
+            return await ctx.send("❌ DB Error")
+        option = await generate_options(self.db, ctx.author.id)
+        selector=editSubjectSelect(self.db,ctx.author,option)
+        view = AddClassView(author=ctx.author,db_collection=self.db,Selector=selector)
+        await ctx.send("เลือกวิชาที่ต้องการแก้ไข 👇", view=view)
+        
     @commands.command(
             name="myschedule", 
             aliases=["msch", "mc"],
@@ -86,13 +96,13 @@ class Schedule(commands.Cog):
             await ctx.send("🤔 คุณยังไม่มีตารางเรียน")
             return
             
-        options = await generate_delete_options(self.db,ctx.author.id)
+        options = await generate_options(self.db,ctx.author.id)
         
         if not options:
             await ctx.send("🤔 ตารางเรียนว่างเปล่า")
             return
 
-        selector = SubjectSelect(self.db, ctx.author, options[:25])
+        selector = delSubjectSelect(self.db, ctx.author, options[:25])
         view = AddClassView(author=ctx.author, db_collection=self.db, Selector=selector)
 
         await ctx.send("เลือกรายวิชาที่ต้องการจะลบ 👇", view=view)
