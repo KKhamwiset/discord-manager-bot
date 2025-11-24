@@ -7,7 +7,6 @@ import validation
 class Maintenance(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.instance = "Server" if bool(os.getenv("DEV")) else "Dev" + " instance"
     @commands.hybrid_command(name="pause", help="Pauses the bot (Maintenance Mode).")
     @validation.role()
     async def pause_bot(self, ctx):
@@ -16,7 +15,7 @@ class Maintenance(commands.Cog):
             return
         
         await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name="Maintenance Mode"))
-        await ctx.send(f"⏸️ {self.instance} bot paused. Entering Maintenance Mode.")
+        await ctx.send(f"⏸️ {self.bot.instance} bot paused. Entering Maintenance Mode.")
         self.bot.is_paused = True
         logging.info(f"Bot paused by {ctx.author}")
 
@@ -28,7 +27,7 @@ class Maintenance(commands.Cog):
             return
         self.bot.is_paused = False
         await self.bot.change_presence(status=discord.Status.online)
-        await ctx.send(f"▶️ {self.instance} bot resumed. Back online!")
+        await ctx.send(f"▶️ {self.bot.instance} bot resumed. Back online!")
         logging.info(f"Bot resumed by {ctx.author}")
 
 async def setup(bot):

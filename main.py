@@ -99,6 +99,7 @@ class BotInitDB(commands.Bot):
         self.is_paused = False
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
+        self.instance = "Server" if not bool(os.getenv("DEV")) else "Development"
         self.add_check(validation.channel)
         self.add_check(self.check_maintenance_mode)
 

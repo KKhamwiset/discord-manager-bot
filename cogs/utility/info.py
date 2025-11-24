@@ -1,4 +1,4 @@
-import discord
+import discord , os 
 from discord.ext import commands
 from discord import app_commands
 
@@ -13,11 +13,9 @@ class Info(commands.Cog):
             description="General เบ๊ Bot - Your Discord Utility Assistant",
             color=discord.Color.blue()
         )
-        if ctx.author.avatar:
-            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
-        if ctx.bot.user and ctx.bot.user.avatar:
-            embed.set_thumbnail(url=ctx.bot.user.avatar.url)
-            
+        embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.add_field(name="Current bot instance ", value=self.bot.instance, inline=False)
         embed.add_field(name="Latency", value=f"{round(self.bot.latency * 1000)} ms", inline=True)
         embed.add_field(name="Server", value=ctx.guild.name if ctx.guild else "DM", inline=True)
         embed.add_field(name="Users", value=str(len(self.bot.users)), inline=True)
