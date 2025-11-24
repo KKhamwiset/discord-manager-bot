@@ -15,9 +15,9 @@ class Maintenance(commands.Cog):
             await ctx.send("⚠️ Bot is already paused.")
             return
         
-        self.bot.is_paused = True
         await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name="Maintenance Mode"))
-        await ctx.send(f"⏸️ {instance} bot paused. Entering Maintenance Mode.")
+        await ctx.send(f"⏸️ {self.instance} bot paused. Entering Maintenance Mode.")
+        self.bot.is_paused = True
         logging.info(f"Bot paused by {ctx.author}")
 
     @commands.hybrid_command(name="resume", help="Resumes the bot from Maintenance Mode.")
@@ -26,10 +26,9 @@ class Maintenance(commands.Cog):
         if not self.bot.is_paused:
             await ctx.send("⚠️ Bot is not paused.")
             return
-
         self.bot.is_paused = False
         await self.bot.change_presence(status=discord.Status.online)
-        await ctx.send(f"▶️ {instance} bot resumed. Back online!")
+        await ctx.send(f"▶️ {self.instance} bot resumed. Back online!")
         logging.info(f"Bot resumed by {ctx.author}")
 
 async def setup(bot):

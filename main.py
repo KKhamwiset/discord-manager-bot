@@ -108,6 +108,7 @@ class BotInitDB(commands.Bot):
         if not self.is_paused:
             return True
         if ctx.command.name == "resume":
+            await ctx.send (f"Resuming bot operations. {ctx.author.mention}")
             return True
         return False
 
