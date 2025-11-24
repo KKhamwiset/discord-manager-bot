@@ -10,7 +10,7 @@ class Maintenance(commands.Cog):
     @commands.hybrid_command(name="pause", help="Pauses the bot (Maintenance Mode).")
     @validation.role()
     async def pause_bot(self, ctx, instance: str = None):
-        if instance is not None and instance not in ["Server","Development"]:
+        if instance is not None and instance not in ["server","dev"]:
             await ctx.send("⚠️ Invalid instance.")
             return
         if not instance:
@@ -27,7 +27,7 @@ class Maintenance(commands.Cog):
     @commands.hybrid_command(name="resume", help="Resumes the bot from Maintenance Mode.")
     @validation.role()
     async def resume_bot(self, ctx, instance: str = None):
-        if instance is not None and instance not in ["Server","Development"]:
+        if instance is not None and instance not in ["server","dev"]:
             await ctx.send("⚠️ Invalid instance.")
             return
         if not instance:
