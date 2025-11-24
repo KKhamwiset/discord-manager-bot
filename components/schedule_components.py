@@ -111,7 +111,7 @@ class EditInfoModal(ui.Modal,title="แก้ไขข้อมูลราย�
             placeholder="Prof. John Doe", 
             required=True,
             max_length=50,
-            default="Unknown"
+            default=self.prof
         )
         
         self.time_input = time_input

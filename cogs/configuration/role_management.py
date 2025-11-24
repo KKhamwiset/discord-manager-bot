@@ -62,13 +62,12 @@ class RoleManagement(commands.Cog):
                 return
         
         if user is not None:
-            user_roles = [role.name for role in user.roles if role.name != "@everyone"]
-
+            user_roles = [role.name for role in user.roles if role.name != "@everyone"][::-1]
             if not user_roles:
                 await ctx.send(f"⚠️ `{user.display_name}` has no roles.")
                 return
 
-            roles_text = "\n".join([f"• {r}" for r in user_roles])
+            roles_text = "\n".join([f" - `{r}`" for r in user_roles])
             embed = discord.Embed(title=f"Roles for {user.display_name}", description=roles_text, color=user.top_role.color if user.top_role else discord.Color.dark_gold(), timestamp=ctx.message.created_at)
             embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
             embed.add_field(name="Total Roles", value=str(len(user_roles)), inline=False)
@@ -103,7 +102,7 @@ class RoleManagement(commands.Cog):
             await ctx.send("⚠️ No roles found in this server.")
             return
         
-        role_list = "\n".join([f"• {r}" for r in role_names[:50]])
+        role_list = "\n".join([f" - `{r}`" for r in role_names[:50]])
         if len(role_names) > 50:
             role_list += f"\n...and {len(role_names) - 50} more"
 
