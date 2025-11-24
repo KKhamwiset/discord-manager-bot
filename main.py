@@ -120,8 +120,9 @@ class BotInitDB(commands.Bot):
                 schema[user_id][day] = []
             new_data = {
                 "name" : i.get("subject"),
-                "room" : "Unknown",
-                "time" : i.get("time")
+                "room" : i.get("room","Unknown"),
+                "time" : i.get("time"),
+                "professor" : "Unknown"
             }
             schema[user_id][day] += [new_data]
 

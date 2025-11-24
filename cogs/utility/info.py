@@ -53,6 +53,7 @@ class Info(commands.Cog):
                 name="🎓 Academic (Schedule & HW)",
                 value=(
                     "`addclass` → Add class to schedule\n"
+                    "`editclass` → Edit class info\n"
                     "`myschedule` → View schedule\n"
                     "`delclass` → Delete class\n"
                     "`addhw` → Add homework\n"
@@ -80,10 +81,11 @@ class Info(commands.Cog):
                 name="🛡️ Role Management (Mod Only)",
                 value=(
                     "`createrole` (cr) → Create role\n"
+                    "`editrole` (er) → Edit role name/color\n"
                     "`deleterole` (dr) → Delete role\n"
                     "`addrole` (ar) → Give role to user\n"
                     "`removerole` (rr) → Remove role from user\n"
-                    "`listrole` (lr) → List roles"
+                    "`listrole` (lr) [user/role] → List roles"
                 ),
                 inline=False,
             )
