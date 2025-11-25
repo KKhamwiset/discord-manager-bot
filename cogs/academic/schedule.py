@@ -74,8 +74,10 @@ class Schedule(commands.Cog):
                     t = sub.get("time", "-")
                     n = sub.get("name", "???")
                     r = sub.get("room", "")
-                    room_txt = f" (ห้อง **{r}**)" if r and r != "ไม่ระบุ" else ""
-                    lines.append(f"`{t}` **{n}**{room_txt}")
+                    p = sub.get("professor", "-")
+                    room_txt = f"**{r}**" if r and r != "ไม่ระบุ" else ""
+                    prof_txt = f"**{p}**" if p and p != "ไม่ระบุ" else ""
+                    lines.append(f"`{t}`**{n}**{room_txt}{prof_txt}\n")
                 
                 embed.add_field(name=f"🗓️ {day_th}", value="\n".join(lines), inline=False)
 

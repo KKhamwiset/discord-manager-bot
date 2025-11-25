@@ -95,10 +95,22 @@ class BotInitDB(commands.Bot):
         )
         if not TOKEN or not MONGO_URI:
             raise RuntimeError("Missing TOKEN or MONGO_URI")
+
+        self.is_paused = False
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
+        self.instance = ("Server" if os.getenv("INSTANCE") == "Server" else "Dev").lower()
         self.add_check(validation.channel)
+        self.add_check(self.check_maintenance_mode)
+
         print("✅ Mongo connected" if self.db is not None else "❌ Mongo failed")
+
+    async def check_maintenance_mode(self, ctx):
+        if not self.is_paused:
+            return True
+        if ctx.command.name == "resume":
+            return True
+        return False
 
     async def refactor_db(self,enabled=False):
         if not enabled:
@@ -120,8 +132,9 @@ class BotInitDB(commands.Bot):
                 schema[user_id][day] = []
             new_data = {
                 "name" : i.get("subject"),
-                "room" : "Unknown",
-                "time" : i.get("time")
+                "room" : i.get("room","Unknown"),
+                "time" : i.get("time"),
+                "professor" : "Unknown"
             }
             schema[user_id][day] += [new_data]
 
