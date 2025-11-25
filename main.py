@@ -1,3 +1,4 @@
+from discord.activity import Game
 import os, glob, logging, random, discord
 import validation
 from discord.ext import commands
@@ -92,6 +93,7 @@ class BotInitDB(commands.Bot):
             case_insensitive=True,
             intents=intents,
             help_command=None,
+            activity=Game(name="Nguyen~")
         )
         if not TOKEN or not MONGO_URI:
             raise RuntimeError("Missing TOKEN or MONGO_URI")
