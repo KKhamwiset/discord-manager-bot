@@ -285,7 +285,7 @@ class delSubjectSelect(BaseSubjectSelect):
 
     async def callback(self, interaction: discord.Interaction):
         selected_value = self.values[0]
-        name, day_key, time, room = await self._find_subject_data(selected_value)
+        name, day_key, time, room , prof= await self._find_subject_data(selected_value)
 
         if name:
             view = ConfirmView(
