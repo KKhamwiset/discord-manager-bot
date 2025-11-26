@@ -239,11 +239,11 @@ class BaseSubjectSelect(ui.Select):
     async def _find_subject_data(self, selected_value: str):
         doc = await self.db_collection.find_one({"user_id": self.author.id})
         if not doc:
-            return None, None, None, None
+            return None, None, None, None , None
         try:
             day_key, subject_name_query = selected_value.split('-', 1)
         except ValueError:
-            return None, None, None, None 
+            return None, None, None, None , None
         
         subjects = doc.get(day_key, [])
         for sub in subjects:
@@ -256,7 +256,7 @@ class BaseSubjectSelect(ui.Select):
                     sub.get("professor", "ไม่ระบุ")
                 )
                 
-        return None, None, None, None
+        return None, None, None, None , None
 
 class DaySelect(ui.Select):
     def __init__(self, db):
@@ -285,7 +285,7 @@ class delSubjectSelect(BaseSubjectSelect):
 
     async def callback(self, interaction: discord.Interaction):
         selected_value = self.values[0]
-        name, day_key, time, room = await self._find_subject_data(selected_value)
+        name, day_key, time, room , prof= await self._find_subject_data(selected_value)
 
         if name:
             view = ConfirmView(
