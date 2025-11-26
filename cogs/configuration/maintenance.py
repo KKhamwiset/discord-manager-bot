@@ -37,7 +37,7 @@ class Maintenance(commands.Cog):
             return
         if (self.bot.instance == instance):
             self.bot.is_paused = False
-            await self.bot.change_presence(status=discord.Status.online,activity=discord.Game(None))    
+            await self.bot.change_presence(status=discord.Status.online,activity=discord.Game("Nguyen~"))    
             await ctx.send(f"▶️ {instance} bot resumed. Back online!")
             logging.info(f"Bot resumed by {ctx.author}")
 
