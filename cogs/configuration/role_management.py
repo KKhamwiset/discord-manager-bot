@@ -139,9 +139,27 @@ class RoleManagement(commands.Cog):
         await ctx.send(f"🎉 Done! Role `{role.name}` removed from all mentioned users.")
 
     @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
-    async def addRole(self,ctx, role_name: str,*user: discord.Member):
+    async def addRole(self,ctx, role_name: str,*user: discord.Member | str):
+        
+        original_params = user
+        user = list(filter(lambda x : isinstance(x, discord.Member), original_params))
+        any_string = list(filter(lambda x : isinstance(x, str), original_params))
         mentioned_members = list(ctx.message.mentions)
-        mentioned_members += [i for i in user if i not in mentioned_members]
+
+        if "@here" not in any_string:
+            mentioned_members += [i for i in user if i not in mentioned_members]
+        else:
+            if isinstance(ctx.channel, discord.Thread):
+                member = await ctx.channel.fetch_members()
+                member = [
+                    discord.utils.get(ctx.guild.members,id = i.id) 
+                    for i in member if discord.utils.get(ctx.guild.members,id = i.id) not in mentioned_members and 
+                    not discord.utils.get(ctx.guild.members, id=i.id).bot
+                ]
+                mentioned_members += member
+            else:
+                await ctx.send("`@here` cannot be use here")
+                return 
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=role_name)
 

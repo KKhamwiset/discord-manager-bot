@@ -52,7 +52,7 @@ class Core(commands.Cog):
     @commands.command(help="Say hello to the bot")
     async def hello(self, ctx: commands.Context):
         await ctx.send(f"Hello! {ctx.author.name}")
-
+        
     @commands.hybrid_command(name="xdd", aliases=["xdx"], help="Random XD")
     async def greet(self, ctx: commands.Context):
         responses = [
