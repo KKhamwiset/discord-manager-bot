@@ -72,7 +72,7 @@ class Schedule(commands.Cog):
         doc = await self.db.find_one({"user_id": target_user})
         
         if not doc:
-            await ctx.send(f"🤔 ยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
+            await ctx.send(f"🤔 {target_display_name} ยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
             return
 
         embed = discord.Embed(
