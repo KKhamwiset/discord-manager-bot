@@ -28,7 +28,7 @@ async def _validate_time_room(interaction: discord.Interaction, time: str, room:
 
     room_final = "ไม่ระบุ"
     if room and room != "ไม่ระบุ":
-        room_pattern = r"(^\d{0,2}-\d{3,5}$)|^-$"
+        room_pattern = r"(^\d{0,2}-\d{3,5}(/\d)?$)|^-$"
         if not re.match(room_pattern, room):
             await interaction.response.send_message(
                 "❌ **รหัสห้องไม่ถูกต้อง**\nกรุณาใช้รูปแบบเช่น `72-405`(ตัวเลข 0-2 หลัก - ตัวเลข 3-5 หลัก)\nหรือ - หากไม่มีห้องเรียน",
