@@ -48,30 +48,31 @@ class Schedule(commands.Cog):
             )
     async def my_schedule(self, ctx: commands.Context, user : discord.Member | discord.User | str = None):
         if self.db is None: return await ctx.send("❌ DB Error")
-
-        try:
-            user = ctx.guild.get_member(user.id)
-
-        except:
-
-            user = str(user)
-            user = user.lower() if user.isalpha() else user
-            username = [i.name.lower() for i in ctx.guild.members]
-            display_name = [i.display_name.lower() if i.display_name.isalpha() else i.display_name for i in ctx.guild.members]
+        if user is None:
+            user = ctx.author
+        else:
+            try:
+                user = ctx.guild.get_member(user.id)
+            except:
+                user = str(user)
+                user = user.lower() if user.isalpha() else user
+                username = [i.name.lower() for i in ctx.guild.members]
+                display_name = [i.display_name.lower() if i.display_name.isalpha() else i.display_name for i in ctx.guild.members]
+                username.extend(display_name)
+                all_name = username
+                filter_member = list(filter(lambda i: i.startswith(user), all_name))
+                user = str(filter_member[0]) if filter_member else None
             
-            username.extend(display_name)
-            all_name = username
-            filter_member = list(filter(lambda i: i.startswith(user), all_name))
-            user = str(filter_member[0])
-
-        type_converter = discord.utils.get(ctx.guild.members, name=user) or discord.utils.get(ctx.guild.members, display_name=user)
-        true_user = ctx.guild.get_member(type_converter.id)
-        target_user = true_user.id if true_user is not None else ctx.author.id
-        target_display_name = true_user.display_name if true_user is not None else ctx.author.display_name
+        user = (
+               discord.utils.get(ctx.guild.members, name=user) or
+               discord.utils.get(ctx.guild.members, display_name=user) or
+               user )
+        target_user = user.id
+        target_display_name = user.display_name
         doc = await self.db.find_one({"user_id": target_user})
         
         if not doc:
-            await ctx.send("🤔 คุณยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
+            await ctx.send(f"🤔 ยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
             return
 
         embed = discord.Embed(
