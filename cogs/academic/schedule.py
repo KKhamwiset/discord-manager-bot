@@ -46,14 +46,33 @@ class Schedule(commands.Cog):
             aliases=["msch", "mc"],
             help="Show the subjects list of provided user if none show self"
             )
-    async def my_schedule(self, ctx: commands.Context, user : discord.Member = None):
+    async def my_schedule(self, ctx: commands.Context, user : discord.Member | discord.User | str = None):
         if self.db is None: return await ctx.send("❌ DB Error")
-        target_user = user.id if user is not None else ctx.author.id
-        target_display_name = user.display_name if user is not None else ctx.author.display_name
+        if user is None:
+            user = ctx.author
+        else:
+            try:
+                user = ctx.guild.get_member(user.id)
+            except:
+                user = str(user)
+                user = user.lower() if user.isalpha() else user
+                username = [i.name.lower() for i in ctx.guild.members]
+                display_name = [i.display_name.lower() if i.display_name.isalpha() else i.display_name for i in ctx.guild.members]
+                username.extend(display_name)
+                all_name = username
+                filter_member = list(filter(lambda i: i.startswith(user), all_name))
+                user = str(filter_member[0]) if filter_member else None
+            
+        user = (
+               discord.utils.get(ctx.guild.members, name=user) or
+               discord.utils.get(ctx.guild.members, display_name=user) or
+               user )
+        target_user = user.id
+        target_display_name = user.display_name
         doc = await self.db.find_one({"user_id": target_user})
         
         if not doc:
-            await ctx.send("🤔 คุณยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
+            await ctx.send(f"🤔 {target_display_name} ยังไม่มีตารางเรียนนะ! ลองใช้ `baddclass` ดูสิ")
             return
 
         embed = discord.Embed(
@@ -109,5 +128,5 @@ class Schedule(commands.Cog):
 
         await ctx.send("เลือกรายวิชาที่ต้องการจะลบ 👇", view=view)
 
-async def setup(bot):
+async def setup(bot): 
     await bot.add_cog(Schedule(bot))
