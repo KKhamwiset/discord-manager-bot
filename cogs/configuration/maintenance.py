@@ -20,7 +20,7 @@ class Maintenance(commands.Cog):
             return
         if (self.bot.instance == instance):
             await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name="Maintenance Mode"))
-            await ctx.send(f"⏸️ {instance} bot paused. Entering Maintenance Mode.")
+            await ctx.send(f"⏸️ {instance.title()} bot paused.")
             self.bot.is_paused = True
             logging.info(f"Bot paused by {ctx.author}")
 
@@ -37,8 +37,8 @@ class Maintenance(commands.Cog):
             return
         if (self.bot.instance == instance):
             self.bot.is_paused = False
-            await self.bot.change_presence(status=discord.Status.online,activity=discord.Game("Nguyen~"))    
-            await ctx.send(f"▶️ {instance} bot resumed. Back online!")
+            await self.bot.change_presence(status=discord.Status.online,activity=discord.Game("Nguyen~" if self.bot.instance == "server" else "Dev~"))    
+            await ctx.send(f"▶️ {instance.title()} bot resumed. Back online!")
             logging.info(f"Bot resumed by {ctx.author}")
 
 async def setup(bot):

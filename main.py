@@ -44,6 +44,12 @@ class Mongo:
 class Core(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+    @commands.hybrid_command(name="id",alias=["idc"],help="Get the ID of the current channel")
+    @validation.role()
+    async def get_channel_id(self,ctx :commands.Context):
+        dm = await ctx.author.create_dm()
+        await ctx.send(f"{ctx.author.mention} channel\\thread's ID sent to your dm")
+        await dm.send(f"ID of {ctx.channel.name} channel is: {ctx.channel.id}")
 
     @commands.hybrid_command(help="Check bot latency")
     async def ping(self, ctx: commands.Context):
@@ -93,7 +99,8 @@ class BotInitDB(commands.Bot):
             case_insensitive=True,
             intents=intents,
             help_command=None,
-            activity=Game(name="Nguyen~")
+            activity=Game(name="Nguyen~" if os.getenv("INSTANCE") == "Server" else "Dev~"),
+            status=discord.Status.online if os.getenv("INSTANCE") == "Server" else discord.Status.idle
         )
         if not TOKEN or not MONGO_URI:
             raise RuntimeError("Missing TOKEN or MONGO_URI")
@@ -102,11 +109,11 @@ class BotInitDB(commands.Bot):
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
         self.instance = ("Server" if os.getenv("INSTANCE") == "Server" else "Dev").lower()
-        self.add_check(validation.channel)
         self.add_check(self.check_maintenance_mode)
+        self.add_check(validation.channel)
 
         print("✅ Mongo connected" if self.db is not None else "❌ Mongo failed")
-
+    
     async def check_maintenance_mode(self, ctx):
         if not self.is_paused:
             return True
@@ -153,7 +160,7 @@ class BotInitDB(commands.Bot):
         print("Starting Setup Hook...")
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
-        await self._load_all_extensions() 
+        await self._load_all_extensions(["backup"]) 
 
         if os.getenv("ENV") == "SINGLE_GUILD":
             target_guild = discord.Object(id=GUILD_ID)
@@ -182,7 +189,7 @@ class BotInitDB(commands.Bot):
         paths = glob.glob("cogs/**/*.py", recursive=True)
         for path in paths:
             base = os.path.basename(path)
-            if base.startswith("_") or any(i in exclude for i in base.split(".")):
+            if base.startswith("_") or any(i in exclude for i in base.split("/")):
                 continue
             mod = path[:-3].replace(os.sep, ".")
             await self.load_extension(mod)
