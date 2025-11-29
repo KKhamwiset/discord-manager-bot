@@ -3,7 +3,7 @@
 import discord
 from discord.ext import commands
 from components.schedule_components import *
-
+from validation import resolve_members
 # --------------------------------------------------
 #Cog Logic
 # --------------------------------------------------
@@ -50,23 +50,10 @@ class Schedule(commands.Cog):
         if self.db is None: return await ctx.send("❌ DB Error")
         if user is None:
             user = ctx.author
-        else:
-            try:
-                user = ctx.guild.get_member(user.id)
-            except:
-                user = str(user)
-                user = user.lower() if user.isalpha() else user
-                username = [i.name.lower() for i in ctx.guild.members]
-                display_name = [i.display_name.lower() if i.display_name.isalpha() else i.display_name for i in ctx.guild.members]
-                username.extend(display_name)
-                all_name = username
-                filter_member = list(filter(lambda i: i.startswith(user), all_name))
-                user = str(filter_member[0]) if filter_member else None
-            
-        user = (
-               discord.utils.get(ctx.guild.members, name=user) or
-               discord.utils.get(ctx.guild.members, display_name=user) or
-               user )
+        user = await resolve_members(ctx, [user])
+        if not user:
+            return await ctx.send("❌ ไม่พบผู้ใช้ที่ระบุ")
+        user = user[0]
         target_user = user.id
         target_display_name = user.display_name
         doc = await self.db.find_one({"user_id": target_user})

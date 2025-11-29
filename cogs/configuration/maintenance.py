@@ -15,7 +15,7 @@ class Maintenance(commands.Cog):
             return
         if not instance:
             instance = self.bot.instance
-        if self.bot.is_paused:
+        if self.bot.is_paused and (self.bot.instance == instance):
             await ctx.send("⚠️ Bot is already paused.")
             return
         if (self.bot.instance == instance):
@@ -32,7 +32,7 @@ class Maintenance(commands.Cog):
             return
         if not instance:
             instance = self.bot.instance
-        if not self.bot.is_paused:
+        if not self.bot.is_paused and (self.bot.instance == instance):
             await ctx.send("⚠️ Bot is not paused.")
             return
         if (self.bot.instance == instance):

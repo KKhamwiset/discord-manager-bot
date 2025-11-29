@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from validation import resolve_members
 import random
 import validation
 
@@ -115,9 +116,8 @@ class RoleManagement(commands.Cog):
 
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
     @validation.role()
-    async def removeRoleFromUser(self,ctx, role_name: str,*user: discord.Member):
-        mentioned_members = list(ctx.message.mentions)
-        mentioned_members += [i for i in user if i not in mentioned_members]
+    async def removeRoleFromUser(self,ctx, role_name: str,*user: discord.Member | str):
+        mentioned_members = await resolve_members(ctx, user)
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=role_name)
 
@@ -127,7 +127,6 @@ class RoleManagement(commands.Cog):
         if not mentioned_members:
             await ctx.send("❌ You need to mention at least one user.")
             return
-
         for member in mentioned_members:
             if member.roles and role in member.roles:
                 await member.remove_roles(role)
@@ -141,25 +140,7 @@ class RoleManagement(commands.Cog):
     @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
     async def addRole(self,ctx, role_name: str,*user: discord.Member | str):
         
-        original_params = user
-        user = list(filter(lambda x : isinstance(x, discord.Member), original_params))
-        any_string = list(filter(lambda x : isinstance(x, str), original_params))
-        mentioned_members = list(ctx.message.mentions)
-
-        if "@here" not in any_string:
-            mentioned_members += [i for i in user if i not in mentioned_members]
-        else:
-            if isinstance(ctx.channel, discord.Thread):
-                member = await ctx.channel.fetch_members()
-                member = [
-                    discord.utils.get(ctx.guild.members,id = i.id) 
-                    for i in member if discord.utils.get(ctx.guild.members,id = i.id) not in mentioned_members and 
-                    not discord.utils.get(ctx.guild.members, id=i.id).bot
-                ]
-                mentioned_members += member
-            else:
-                await ctx.send("`@here` cannot be use here")
-                return 
+        mentioned_members = await resolve_members(ctx, user)
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=role_name)
 
@@ -172,6 +153,7 @@ class RoleManagement(commands.Cog):
             return
 
         for member in mentioned_members:
+            await ctx.send(f"⏳ Adding role `{role.name}` to user `{member.display_name}`... type = {type(member)}")
             if member.roles and role in member.roles:
                 await ctx.send(f"⚠️ User `{member.display_name}` already has the role `{role.name}`.")
                 await ctx.send("⏭️ Skipping to the next user.")
