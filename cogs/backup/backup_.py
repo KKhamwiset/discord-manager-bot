@@ -21,7 +21,7 @@ class Backup(commands.Cog):
     async def cog_unload(self):
         self.backup_task.cancel()
 
-    @tasks.loop(hours=16)
+    @tasks.loop(hours=8)
     async def backup_task(self):
         backup_channel_id = os.getenv("BACKUP_CHANNEL_ID")
         if not backup_channel_id:

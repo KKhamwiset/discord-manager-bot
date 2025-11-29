@@ -2,6 +2,15 @@ import discord, re, asyncio
 from discord import ui
 
 # --- Configuration ---
+DAY_ALIASES = {
+    "mon": ["monday", "mon", "m"],
+    "tue": ["tuesday", "tue", "t"],
+    "wed": ["wednesday", "wed", "w"],
+    "thu": ["thursday", "thu", "th"],
+    "fri": ["friday", "fri", "f"],
+    "sat": ["saturday", "sat", "s"],
+    "sun": ["sunday", "sun", "su"],
+}
 DAYS_TH_EN = [
     ("จันทร์", "Mon"),
     ("อังคาร", "Tue"),

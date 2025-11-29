@@ -4,8 +4,9 @@ import discord
 import discord
 
 
-async def resolve_members(ctx, raw_params: discord.Member | str):
-    
+async def resolve_members(ctx, raw_params: list[str]) -> list[discord.Member]:
+    if not isinstance(raw_params, (list, tuple)):
+        raw_params = [raw_params]
     original_params = raw_params
     user_params = list(filter(lambda x: isinstance(x, discord.Member), original_params))
     string_params = list(filter(lambda x: isinstance(x, str), original_params))
@@ -23,7 +24,6 @@ async def resolve_members(ctx, raw_params: discord.Member | str):
         for query in string_params:
             q = query.lower()
             matches = [name for name in name_map.keys() if name.startswith(q)]
-
             for match in matches:
                 m = name_map[match]
                 if m not in mentioned_members and not m.bot:
