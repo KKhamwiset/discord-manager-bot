@@ -1,0 +1,45 @@
+Dockerfile# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+env/
+env_py/
+venv/
+venv*/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.out
+
+# Git
+.git
+.gitignore
+
+# Editor settings
+.vscode/
+.idea/
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Dependencies installed locally
+site-packages/
+*.egg-info/
+
+# Build/dist artifacts
+build/
+dist/
+*.egg
+
+# Local config or secrets
+*.env
+.env.*

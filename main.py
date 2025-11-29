@@ -44,6 +44,8 @@ class Mongo:
 class Core(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.test_workflow = "workflow-1234abcd5678efghijkl" 
+        
     @commands.hybrid_command(name="id",alias=["idc"],help="Get the ID of the current channel")
     @validation.role()
     async def get_channel_id(self,ctx :commands.Context):
@@ -54,6 +56,7 @@ class Core(commands.Cog):
     @commands.hybrid_command(help="Check bot latency")
     async def ping(self, ctx: commands.Context):
         await ctx.send(f"Pong! {round(self.bot.latency * 1000)}ms")
+        await ctx.send(self.test_workflow)
 
     @commands.command(help="Say hello to the bot")
     async def hello(self, ctx: commands.Context):
