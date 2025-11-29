@@ -156,8 +156,8 @@ class EditInfoModal(ui.Modal,title="แก้ไขข้อมูลราย�
             f"✅ แก้ไขวิชา **{subject}** \n🗓️ วัน**{DAY_EN_TO_TH.get(self.date)}** เวลา `{time}` ห้อง `{room_final}` \nอาจารย์ `{prof}`",
             ephemeral=True
         )
-        
         await _regenerate_view(self.db_collection, interaction.user, self.original_msg, editSubjectSelect)
+    
 
 
 class AddClassModal(ui.Modal, title="เพิ่มวิชาในตารางเรียน"):
@@ -273,11 +273,9 @@ class DaySelect(ui.Select):
     async def callback(self, interaction: discord.Interaction):
         selected_day_th = self.values[0]
         modal = AddClassModal(self.db_collection, selected_day_th)
-        new_selector = DaySelect(self.db_collection)
-        new_view = AddClassView(interaction.user,self.db_collection,new_selector)
         await interaction.response.send_modal(modal)
         await asyncio.sleep(0.5)
-        await interaction.message.edit(view=new_view)
+        await _regenerate_view(self.db_collection, interaction.user, interaction.message, DaySelect)
 
 class delSubjectSelect(BaseSubjectSelect):
     def __init__(self, db, author, options):
@@ -327,6 +325,8 @@ class editSubjectSelect(BaseSubjectSelect):
                             original_msg=interaction.message
                             ) 
         await interaction.response.send_modal(modal)
+        await asyncio.sleep(0.5)
+        await _regenerate_view(self.db_collection, interaction.user, interaction.message, editSubjectSelect)
 
 
 class ConfirmView(ui.View):
