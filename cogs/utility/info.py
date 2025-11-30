@@ -1,10 +1,21 @@
-import discord , os 
+import discord
+import os
 from discord.ext import commands
 from discord import app_commands
 
 class Info(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot 
+        self.bot = bot
+        self.emoji = {
+            "Core": "⚙️",
+            "HomeworkManager": "📚",
+            "Schedule": "📅",
+            "ChannelManagement": "📺",
+            "Maintenance": "🔧",
+            "RoleManagement": "🛡️",
+            "Info": "ℹ️",
+            "Randomizer": "🎲"
+        }
 
     @commands.command(help="Show bot/server info")
     async def info(self, ctx: commands.Context):
@@ -35,74 +46,36 @@ class Info(commands.Cog):
             if ctx.author.avatar:
                 embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
-            # --- General / Fun ---
-            embed.add_field(
-                name="🧩 General & Fun",
-                value=(
-                    "`help` • `info` • `ping` • `hello`\n"
-                    "`rick [n]` → Send random emoji (1-10)\n"
-                    "`xdd` → Send random funny response"
-                ),
-                inline=False
-            )
+            for cog_name, cog in self.bot.cogs.items():
+                commands_list = cog.get_commands()
+                if not commands_list:
+                    continue
 
-            # --- Academic ---
-            embed.add_field(
-                name="🎓 Academic (Schedule & HW)",
-                value=(
-                    "`addclass` → Add class to schedule\n"
-                    "`editclass` → Edit class info\n"
-                    "`myschedule` → View schedule\n"
-                    "`delclass` → Delete class\n"
-                    "`addhw` → Add homework\n"
-                    "`hw` → View pending homework\n"
-                    "`delhw` → Delete homework"
-                ),
-                inline=False
-            )
+                visible_commands = [c for c in commands_list if not c.hidden]
+                if not visible_commands:
+                    continue
 
-            # --- Randomizer ---
-            embed.add_field(
-                name="🍱 Restaurant Randomizer",
-                value=(
-                    "`nrand` (sr) → Random Standard\n"
-                    "`srand` (ssr) → Random Special\n"
-                    "`lrand` (ls) → List all\n"
-                    "`arand` / `asrand` → Add Std/Special (Mod)\n"
-                    "`drand` → Delete restaurant (Mod)"
-                ),
-                inline=False
-            )
-            
-            # --- Moderation ---
-            embed.add_field(
-                name="🛡️ Role Management (Mod Only)",
-                value=(
-                    "`createrole` (cr) → Create role\n"
-                    "`editrole` (er) → Edit role name/color\n"
-                    "`deleterole` (dr) → Delete role\n"
-                    "`addrole` (ar) → Give role to user\n"
-                    "`removerole` (rr) → Remove role from user\n"
-                    "`listrole` (lr) [user/role] → List roles"
-                ),
-                inline=False,
-            )
+                command_names = [f"`{c.name} {"(" + ', '.join(c.aliases) + ")" if c.aliases else ''}`" for c in visible_commands]
+                cog_icon = self.emoji.get(cog_name, "📂")
+                
+                embed.add_field(
+                    name=f"{cog_icon} {cog_name}", 
+                    value=", ".join(command_names), 
+                    inline=False
+                )
 
-            # --- Channel Config ---
-            embed.add_field(
-                name="⚙️ Channel Config (Mod Only)",
-                value=(
-                    "`setbotchannel` → Set allowed commands\n"
-                    "`disablebotchannel` → Disable bot in channel\n"
-                    "`listbotchannels` → View config"
-                ),
-                inline=False,
-            )
+            uncogged_commands = [c for c in self.bot.commands if c.cog is None and not c.hidden]
+            if uncogged_commands:
+                command_names = [f"`{c.name}`" for c in uncogged_commands]
+                embed.add_field(
+                    name="🧩 Uncategorized",
+                    value=", ".join(command_names),
+                    inline=False
+                )
 
             embed.set_footer(text=f"Requested by {ctx.author.name}")
             return await ctx.send(embed=embed)
 
-        # --- Specific Command Help ---
         cmd = self.bot.get_command(command_name)
 
         if cmd is None:
@@ -114,11 +87,10 @@ class Info(commands.Cog):
             color=discord.Color.blurple(),
         )
 
-        # Usage
+    
         usage = f"{ctx.clean_prefix}{cmd.qualified_name} {cmd.signature}".strip()
         embed.add_field(name="Usage", value=f"`{usage}`", inline=False)
 
-        # Aliases
         if cmd.aliases:
             embed.add_field(
                 name="Aliases",
@@ -127,6 +99,7 @@ class Info(commands.Cog):
             )
 
         await ctx.send(embed=embed)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Info(bot))

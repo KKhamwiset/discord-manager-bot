@@ -1,5 +1,5 @@
 from discord.activity import Game
-import os, glob, logging, random, discord
+import os, glob, logging, discord
 import validation
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -44,7 +44,6 @@ class Mongo:
 class Core(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.test_workflow = "workflow-1234abcd5678efghijkl" 
         
     @commands.hybrid_command(name="id",alias=["idc"],help="Get the ID of the current channel")
     @validation.role()
@@ -75,7 +74,7 @@ class Core(commands.Cog):
             "LMAO!",
             "ROFL!",
             "nga",
-            "nigha",
+            "nigha",    
             "<:xdx:1438479283147243572>",
             "<:xdd:1438479267716534353>",
         ]
