@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from validation import resolve_members
+from validation import resolve_members, resolve_roles
 import random
 import validation
 
@@ -9,11 +9,9 @@ class RoleManagement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    
     @commands.command(name="createrole", aliases=["cr", "makerole"], help="Create a role")
     @validation.role()
     async def createRole(self, ctx, role_name: str, color: str = None):
-
         guild = ctx.guild
         existing_role = discord.utils.get(guild.roles, name=role_name)
 
@@ -38,8 +36,15 @@ class RoleManagement(commands.Cog):
     
     @commands.command(name="deleterole",aliases=["dr","delrole"], help="Delete a role")
     @validation.role()
-    async def removeRole(self,ctx, role_name: str):
+    async def removeRole(self,ctx, role_name: discord.Role | str):
         guild = ctx.guild
+        if isinstance(role_name, discord.Role):
+            role_name = role_name.name
+        else:
+            role_filter = await resolve_roles(ctx, [role_name])
+            if role_filter:
+                role_name = role_filter[0].name
+
         existing_role = discord.utils.get(guild.roles, name=role_name)
 
         if not existing_role:
@@ -49,19 +54,22 @@ class RoleManagement(commands.Cog):
         await ctx.send(f"✅ Deleted role `{role_name}`")
 
     @commands.command(name="listrole",aliases=["lr","roles"], help="List all roles in the server / List user roles")
-    async def listRoles(self,ctx, ctx_type : discord.Member | discord.guild.Role = None):
+    async def listRoles(self,ctx, params : discord.Member | discord.guild.Role | str = None):
         guild = ctx.guild
         user = None
         role = None
-        if ctx_type is not None:
-            if isinstance(ctx_type, discord.Member):
-                user = ctx_type
-            elif isinstance(ctx_type, discord.Role):
-                role = ctx_type
-            else:
-                await ctx.send("❌ Invalid type! Use a member or role.")
-                return
-        
+        if isinstance(params, discord.Member):
+            user = params
+        elif isinstance(params, discord.Role):
+            role = params
+        else:
+            if params is not None:
+                role_filter = await resolve_roles(ctx, [params])
+                if role_filter:
+                    role = role_filter[0]
+                user_filter = await resolve_members(ctx, [params])
+                if user_filter:
+                    user = user_filter[0] 
         if user is not None:
             user_roles = [role.name for role in user.roles if role.name != "@everyone"][::-1]
             if not user_roles:
@@ -116,9 +124,15 @@ class RoleManagement(commands.Cog):
 
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
     @validation.role()
-    async def removeRoleFromUser(self,ctx, role_name: str,*user: discord.Member | str):
+    async def removeRoleFromUser(self,ctx, role_name: discord.Role | str ,*user: discord.Member | str):
         mentioned_members = await resolve_members(ctx, user)
         guild = ctx.guild
+        if isinstance(role_name, discord.Role):
+            role = role_name
+        else:
+            role_filter = await resolve_roles(ctx, [role_name])
+            if role_filter:
+                role_name = role_filter[0].name 
         role = discord.utils.get(guild.roles, name=role_name)
 
         if not role:
@@ -138,22 +152,26 @@ class RoleManagement(commands.Cog):
         await ctx.send(f"🎉 Done! Role `{role.name}` removed from all mentioned users.")
 
     @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
-    async def addRole(self,ctx, role_name: str,*user: discord.Member | str):
-        
-        mentioned_members = await resolve_members(ctx, user)
+    async def addRole(self,ctx, role_name: discord.Role | str,*user: discord.Member | str):
         guild = ctx.guild
+        if isinstance(role_name, discord.Role):
+            role = role_name
+        else:
+            role_filter = await resolve_roles(ctx, [role_name])
+            if role_filter:
+                role_name = role_filter[0].name
         role = discord.utils.get(guild.roles, name=role_name)
 
         if not role:
             await ctx.send(f"⚠️ Role `{role_name}` does not exist.")
             return
- 
+        
+        mentioned_members = await resolve_members(ctx, user)
         if not mentioned_members:
             await ctx.send("❌ You need to mention at least one user.")
             return
 
         for member in mentioned_members:
-            await ctx.send(f"⏳ Adding role `{role.name}` to user `{member.display_name}`... type = {type(member)}")
             if member.roles and role in member.roles:
                 await ctx.send(f"⚠️ User `{member.display_name}` already has the role `{role.name}`.")
                 await ctx.send("⏭️ Skipping to the next user.")

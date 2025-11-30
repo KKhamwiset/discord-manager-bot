@@ -34,3 +34,27 @@ def role_validation():
 
         return True
     return commands.check(check_permissions)
+
+async def resolve_roles(ctx, raw_params: list[str]) -> list[discord.Role]:
+    if not isinstance(raw_params, (list, tuple)):
+        raw_params = [raw_params]
+    original_params = raw_params
+    role_params = list(filter(lambda x: isinstance(x, discord.Role), original_params))
+    string_params = list(filter(lambda x: isinstance(x, str), original_params))
+    mentioned_roles = list(ctx.message.role_mentions)
+
+    name_map = {}
+    for r in ctx.guild.roles:
+        normalized_name = r.name.lower()
+        name_map[normalized_name] = r
+
+    mentioned_roles += [r for r in role_params if r not in mentioned_roles]
+    for query in string_params:
+        q = query.lower()
+        matches = [name for name in name_map.keys() if name.startswith(q)]
+        for match in matches:
+            r = name_map[match]
+            if r not in mentioned_roles:
+                mentioned_roles.append(r)
+
+    return mentioned_roles
