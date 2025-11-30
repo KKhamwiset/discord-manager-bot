@@ -3,7 +3,7 @@ import asyncio
 import discord
 from discord.ext import commands
 import validation
-DELAY_SEC = 0.6
+DELAY_SEC = 0.2
 
 
 class Randomizer(commands.Cog):
