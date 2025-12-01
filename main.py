@@ -1,5 +1,5 @@
 from discord.activity import Game
-import os, glob, logging, discord
+import os, glob, logging, discord , random
 import validation
 from discord.ext import commands
 from dotenv import load_dotenv
