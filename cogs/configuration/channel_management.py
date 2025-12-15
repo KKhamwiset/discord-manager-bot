@@ -35,7 +35,7 @@ class ChannelManagement(commands.Cog):
             print(f"❌ ChannelManagement Cog connection failed: {e!r}")
 
     async def _get_guild_config(self, guild_id: int) -> Dict[str, Any]:
-        doc = await self.collection.find_one({"_id": guild_id})
+        doc = await self.collection.find_one({"_id": str(guild_id)})
         return doc if doc is not None else {}
 
     async def _check_guild_context(self, ctx: commands.Context) -> Optional[discord.Guild]:
@@ -98,7 +98,7 @@ class ChannelManagement(commands.Cog):
                 }
                 
                 await self.collection.update_one(
-                    {"_id": guild.id},
+                    {"_id": str(guild.id)},
                     {"$set": update_fields},
                     upsert=True,
                 )
@@ -114,7 +114,7 @@ class ChannelManagement(commands.Cog):
                 )
             else:
                 await self.collection.update_one(
-                    {"_id": guild.id},
+                    {"_id": str(guild.id)},
                     {"$set": {"allowed_channels": allowed_channels}},
                     upsert=True,
                 )
@@ -189,7 +189,7 @@ class ChannelManagement(commands.Cog):
     #                 ],
     #             })
     #     await self.collection.update_one(
-    #         {"_id": guild.id},
+    #         {"_id": str(guild.id)},
     #                 {
     #                     "$set": {
     #                         "mode": "whitelist",
@@ -281,7 +281,7 @@ class ChannelManagement(commands.Cog):
             title = "✅ Channel enabled"
 
         await self.collection.update_one(
-            {"_id": guild.id},
+            {"_id": str(guild.id)},
             update_data,
             upsert=True,
         )
@@ -320,7 +320,7 @@ class ChannelManagement(commands.Cog):
             return
 
         config = await self._get_guild_config(guild.id)
-        
+        await ctx.send(config)
         if config.get("mode", "all") == "all":
             await ctx.send("📢 Bot commands are allowed in **all** channels (Default Mode).")
             return
