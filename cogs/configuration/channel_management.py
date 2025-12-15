@@ -320,7 +320,6 @@ class ChannelManagement(commands.Cog):
             return
 
         config = await self._get_guild_config(guild.id)
-        await ctx.send(config)
         if config.get("mode", "all") == "all":
             await ctx.send("📢 Bot commands are allowed in **all** channels (Default Mode).")
             return
