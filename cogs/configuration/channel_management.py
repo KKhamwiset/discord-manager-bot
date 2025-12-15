@@ -140,8 +140,73 @@ class ChannelManagement(commands.Cog):
             )
             await ctx.send(embed=embed)
 
-    # --- setbotchannel command ---
+    # # --- allcommandsallowed command ---
+    # @validation.role()
+    # @commands.hybrid_command(
+    #     name="allchannelallowed",
+    #     description="Set the bot to allow commands in all channels (disable restrictions).",
+    #     help="Allow bot commands in all channels."
+    # )
+    # async def all_channel_allowed(self, ctx: commands.Context , name  = None):
+    #     guild = await self._check_guild_context(ctx)
+    #     if guild is None:
+    #         return
+    #     if name is None:
+    #         await ctx.send("❌ Please provide a name for the configuration.")
+    #         return
+        
+    #     config = await self._get_guild_config(guild.id)
+        
+    #     if config.get("mode", "all") == "all":
+    #         await ctx.send("📢 Bot commands are already allowed in **all channels**.")
+    #         return
+    #     all_channels = []
+    #     cmd = self.bot.get_command(name)
+    #     if cmd is None:
+    #         await ctx.send(f"❌ Command `{name}` not found.")
+    #         return
+    #     for channel in ctx.guild.text_channels:
+    #         channel_config = next((
+    #             (ch for ch in config.get("allowed_channels", []) if ch.get("channel_id") == channel.id)
+    #         ), None)
+    #         if channel_config and channel_config.get("cmd_mode") == "all" :
+    #             continue
+    #         all_channels.append({
+    #             "channel_id": channel.id,
+    #             "cmd_mode": "only",
+    #             "allowed_commands": [
+    #                 cmd.qualified_name,
+    #                 *cmd.aliases
+    #             ],
+    #         })
+    #         for thread in channel.threads:
+    #             all_channels.append({
+    #                 "channel_id": thread.id,
+    #                 "cmd_mode": "only",
+    #                 "allowed_commands": [
+    #                     cmd.qualified_name,
+    #                     *cmd.aliases
+    #                 ],
+    #             })
+    #     await self.collection.update_one(
+    #         {"_id": guild.id},
+    #                 {
+    #                     "$set": {
+    #                         "mode": "whitelist",
+    #                     },
+    #                     "$addToSet": {
+    #                         "allowed_channels": {
+    #                             "$each": all_channels
+    #                         }
+    #                     }
+    #                 },
+    #                 upsert=True,
+    #         )
+    #     await ctx.send(f"✅ {name} commands are now allowed in **all channels**.")
 
+
+    
+    # --- setbotchannel command ---
     @validation.role()
     @commands.hybrid_command(
         name="setbotchannel", 

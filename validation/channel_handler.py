@@ -2,6 +2,11 @@ from discord.ext import commands
 import discord
 
 async def global_channel_check(ctx: commands.Context) -> bool:
+
+    if isinstance(ctx.channel, discord.Thread):
+        if ctx.channel.me is None:
+            return False
+    
     if ctx.guild is None:
         return True
 
@@ -10,10 +15,10 @@ async def global_channel_check(ctx: commands.Context) -> bool:
 
     if ctx.command.name in ["setbotchannel", "listbotchannels","disablebotchannel","help"]:
         return True
-
+    
     collection = ctx.bot.db["guild_config"]
     doc = await collection.find_one({"_id": ctx.guild.id})
-
+    
     if not doc:
         return True
 
