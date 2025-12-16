@@ -10,11 +10,11 @@ def create_embed(title: str, description: str, color: discord.Color) -> discord.
     """Creates a standardized Discord embed."""
     return discord.Embed(title=title, description=description, color=color)
 
-def get_channel_entry_index(allowed_channels: List[Dict[str, Any]], channel_id: int) -> Optional[int]:
+def get_channel_entry_index(allowed_channels: List[Dict[str, Any]], channel_id: str) -> Optional[int]:
     """Finds the index of a channel entry in the allowed_channels list."""
     try:
         return next(
-            (i for i, ch in enumerate(allowed_channels) if ch.get("channel_id") == channel_id)
+            (i for i, ch in enumerate(allowed_channels) if ch.get("channel_id") == str(channel_id))
         )
     except StopIteration:
         return None
@@ -258,10 +258,10 @@ class ChannelManagement(commands.Cog):
         config = await self._get_guild_config(guild.id)
         allowed_channels = config.get("allowed_channels", [])
 
-        idx = get_channel_entry_index(allowed_channels, channel.id)
+        idx = get_channel_entry_index(allowed_channels, str(channel.id))
         
         new_entry = {
-            "channel_id": channel.id,
+            "channel_id": str(channel.id),
             "cmd_mode": cmd_mode,
             "allowed_commands": names if cmd_mode != "all" else []
         }

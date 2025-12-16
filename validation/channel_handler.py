@@ -17,8 +17,7 @@ async def global_channel_check(ctx: commands.Context) -> bool:
         return True
     
     collection = ctx.bot.db["guild_config"]
-    doc = await collection.find_one({"_id": ctx.guild.id})
-    
+    doc = await collection.find_one({"_id": str(ctx.guild.id)})
     if not doc:
         return True
 
@@ -28,10 +27,9 @@ async def global_channel_check(ctx: commands.Context) -> bool:
     allowed_channels = doc.get("allowed_channels", [])
 
     chan_cfg = next(
-        (c for c in allowed_channels if c.get("channel_id") == ctx.channel.id),
+        (c for c in allowed_channels if c.get("channel_id") == str(ctx.channel.id)),
         None,
     )
-
     if chan_cfg is None:
         await ctx.send(
             embed=discord.Embed(
