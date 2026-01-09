@@ -79,15 +79,31 @@ class Randomizer(commands.Cog):
         )
 
     @commands.command(name="nrand", aliases=["sr"], help="Pick a random standard restaurant.")
-    async def rand(self, ctx: commands.Context):
+    async def rand(self, ctx: commands.Context, *exclude: str):
+        import re
+        if exclude is None:
+            exclude = []
+        else:
+            exclude = ' '.join(list(exclude))
         """Pick a random restaurant from standard list."""
+        exclude = exclude.split(":")[-1].split() if exclude else []
+
+        match = {"type": "sr"}
+        if exclude:
+            escaped = [re.escape(x) for x in exclude]
+            match["restaurant"] = {
+                "$not": {
+                    "$regex": "|".join(escaped),
+                    "$options": "i"
+                }
+            }
+
         picked = await self.col.aggregate(
             [
-                {"$match": {"type": "sr"}},
+                {"$match": match},
                 {"$sample": {"size": 1}},
             ]
         ).to_list(length=1)
-
         if not picked:
             return await self.send_embed(
                 ctx,

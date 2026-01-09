@@ -2,8 +2,9 @@
 
 import discord
 from discord.ext import commands
+from flask import ctx
 from components.schedule_components import *
-from validation import resolve_members
+from validation import resolve_members, role
 import re,datetime
 # --------------------------------------------------
 #Cog Logic
@@ -20,7 +21,96 @@ class Schedule(commands.Cog):
     @property
     def db(self):
         return self.bot.db["schedules"]
+    
+    @property
+    def examdb(self):   
+        return self.bot.db["std_id"]
+    
+    @discord.app_commands.command(
+    name="addstdid",
+    description="Add student ID to fetch exam schedule"
+    )
+    @role()
+    async def add_std_id(
+        self,
+        interaction: discord.Interaction,
+        user_handler: discord.User | None,
+        std_id: str
+    ):
+        if self.examdb is None:
+            return await interaction.response.send_message(
+                "❌ DB Error",
+                ephemeral=True
+            )
+        # Validate student ID
+        if not std_id:
+            return await interaction.response.send_message(
+                "❌ กรุณาใส่รหัสนักศึกษา",
+                ephemeral=True
+            )
+        user = user_handler or interaction.user
+        user_id = user.id
+        await self.examdb.update_one(
+            {"user_id": user_id},
+            {"$set": {"std_id": std_id}},
+            upsert=True
+        )
+        await interaction.response.send_message(
+            f"✅ เพิ่มรหัสนักศึกษา `{std_id}` เรียบร้อยแล้ว"
+        )
 
+    @commands.command(
+            name="examschedule", 
+            aliases=["ex", "exam"],
+            help="Show exam schedule of provided user if none show self"
+    )
+    async def exam_schedule(self, ctx: commands.Context, user_handler : discord.Member | str = None):
+        if self.examdb is None:
+            return await ctx.send("❌ DB Error")
+        user = None
+        if user_handler is None:
+            user = ctx.author
+        else:
+            if isinstance(user_handler, (discord.Member, discord.User)):
+                user = user_handler
+            else:
+                user = await resolve_members(ctx, user_handler)
+                user = user[0]
+        doc = await self.examdb.find_one({"user_id": user.id})
+        if not doc:
+            return await ctx.send(f"🤔 {user.display_name} ยังไม่มีตารางสอบนะ!")
+        embed = discord.Embed(
+            title=f"🗓️ ตารางสอบของ {user.display_name}",
+            color=discord.Color.teal(),
+        )
+        import requests
+        from bs4 import BeautifulSoup
+
+        url = "http://www.scibase.kmutnb.ac.th/examroom/datatrain.php"
+        params = {"IDcard": doc.get("std_id","")}
+        r = requests.get(url, params=params)
+        r.encoding = "utf-8"
+        html = r.text
+        soup = BeautifulSoup(html, "html.parser")
+        data = []
+        rows = soup.find_all("tr")
+        if not rows:
+            await ctx.send("🤔 ไม่พบข้อมูลตารางสอบ")
+        else:
+            for tr in rows:
+                text = tr.get_text(strip=True, separator='|')
+                data.append(text)
+        print(data)
+        header = data[0]
+        for i in range(1,len(data)):
+            data[i] = data[i].split('|')
+            field = []
+            for j in range(len(data[i])):
+                field.append(f"**{header.split('|')[j]}**: {data[i][j]}")
+            embed.add_field(name=f"📄 รายการที่ {i}", value="\n".join(field), inline=False)
+        await ctx.send(embed=embed)
+        
+        
     @commands.command(name="addclass", 
                       aliases=["asch", "ac"],
                       help="Add subject data to user's database")
