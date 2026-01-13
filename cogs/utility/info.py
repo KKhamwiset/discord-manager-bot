@@ -47,20 +47,32 @@ class Info(commands.Cog):
                 embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
             for cog_name, cog in self.bot.cogs.items():
-                commands_list = cog.get_commands()
-                if not commands_list:
+                text_cmds = cog.get_commands()
+                slash_cmds = cog.get_app_commands()
+
+                if not text_cmds and not slash_cmds:
                     continue
 
-                visible_commands = [c for c in commands_list if not c.hidden]
-                if not visible_commands:
+                command_display_list = []
+                seen_commands = set()
+                for c in text_cmds:
+                    if not c.hidden:
+                        name_str = f"`{c.name} {'(' + ', '.join(c.aliases) + ')' if c.aliases else ''}`"
+                        command_display_list.append(name_str)
+                        seen_commands.add(c.name)
+
+                for c in slash_cmds:
+                    if c.name not in seen_commands:
+                        command_display_list.append(f"`/{c.name}`")
+                
+                if not command_display_list:
                     continue
 
-                command_names = [f"`{c.name} {"(" + ', '.join(c.aliases) + ")" if c.aliases else ''}`" for c in visible_commands]
                 cog_icon = self.emoji.get(cog_name, "📂")
                 
                 embed.add_field(
                     name=f"{cog_icon} {cog_name}", 
-                    value=", ".join(command_names), 
+                    value=", ".join(command_display_list), 
                     inline=False
                 )
 
@@ -76,18 +88,33 @@ class Info(commands.Cog):
             embed.set_footer(text=f"Requested by {ctx.author.name}")
             return await ctx.send(embed=embed)
 
+        # --- Specific Command Help Logic ---
+        
+        # Check text commands first
         cmd = self.bot.get_command(command_name)
-
+        
+        # If not found, check if it's a slash command in the tree
         if cmd is None:
+            for command in self.bot.tree.walk_commands():
+                if command.name == command_name:
+                    embed = discord.Embed(
+                        title=f"❓ Help: /{command.name}",
+                        description=command.description or "No description provided.",
+                        color=discord.Color.blurple(),
+                    )
+                    embed.add_field(name="Usage", value=f"`/{command.name}`", inline=False)
+                    return await ctx.send(embed=embed)
+            
+            # If still not found
             return await ctx.send(f"❌ Command `{command_name}` not found.")
 
+        # Text Command Help Embed
         embed = discord.Embed(
             title=f"❓ Help: {ctx.clean_prefix}{cmd.qualified_name}",
             description=cmd.help or "No description provided.",
             color=discord.Color.blurple(),
         )
 
-    
         usage = f"{ctx.clean_prefix}{cmd.qualified_name} {cmd.signature}".strip()
         embed.add_field(name="Usage", value=f"`{usage}`", inline=False)
 

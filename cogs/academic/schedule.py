@@ -2,7 +2,6 @@
 
 import discord
 from discord.ext import commands
-from flask import ctx
 from components.schedule_components import *
 from validation import resolve_members, role
 import re,datetime
@@ -30,11 +29,9 @@ class Schedule(commands.Cog):
     name="addstdid",
     description="Add student ID to fetch exam schedule"
     )
-    @role()
     async def add_std_id(
         self,
         interaction: discord.Interaction,
-        user_handler: discord.User | None,
         std_id: str
     ):
         if self.examdb is None:
@@ -42,31 +39,76 @@ class Schedule(commands.Cog):
                 "❌ DB Error",
                 ephemeral=True
             )
-        # Validate student ID
         if not std_id:
             return await interaction.response.send_message(
                 "❌ กรุณาใส่รหัสนักศึกษา",
                 ephemeral=True
             )
-        user = user_handler or interaction.user
+        user = interaction.user
         user_id = user.id
+        doc = await self.examdb.find_one({"user_id": user_id})
+        if doc and doc.get("std_id") is not None:
+            return await interaction.response.send_message(
+                f"รหัสนักศึกษาของ `{user.display_name}` ถูกเพิ่มไว้แล้ว",
+                ephemeral=True
+            )
+        
         await self.examdb.update_one(
             {"user_id": user_id},
             {"$set": {"std_id": std_id}},
             upsert=True
         )
         await interaction.response.send_message(
-            f"✅ เพิ่มรหัสนักศึกษา `{std_id}` เรียบร้อยแล้ว"
+            f"✅ เพิ่มรหัสนักศึกษา `{std_id}` เรียบร้อยแล้ว",
+            ephemeral=True
+        )
+    @discord.app_commands.command(
+            name="edit_stdid",
+            description="Edit student ID to fetch exam schedule"
+    )
+    async def edit_std_id(
+        self,
+        interaction: discord.Interaction,
+        std_id: str
+    ):
+        if self.examdb is None:
+            return await interaction.response.send_message(
+                "❌ DB Error",
+                ephemeral=True
+            )
+        if not std_id:
+            return await interaction.response.send_message(
+                "❌ กรุณาใส่รหัสนักศึกษา",
+                ephemeral=True
+            )
+        user = interaction.user
+        user_id = user.id
+        doc = await self.examdb.find_one({"user_id": user_id})
+        if not doc or doc.get("std_id") is None:
+            return await interaction.response.send_message(
+                f"❌ รหัสนักศึกษาของ `{user.display_name}` ยังไม่มีในระบบ กรุณาใช้คำสั่ง `/addstdid` ก่อน",
+                ephemeral=True
+            )
+        
+        await self.examdb.update_one(
+            {"user_id": user_id},
+            {"$set": {"std_id": std_id}},
+            upsert=True
+        )
+        await interaction.response.send_message(
+            f"✅ แก้ไขรหัสนักศึกษาเป็น `{std_id}` เรียบร้อยแล้ว",
+            ephemeral=True
         )
 
     @commands.command(
-            name="examschedule", 
-            aliases=["ex", "exam"],
-            help="Show exam schedule of provided user if none show self"
+        name="examschedule", 
+        aliases=["ex", "exam"],
+        help="Show exam schedule of provided user if none show self"
     )
     async def exam_schedule(self, ctx: commands.Context, user_handler : discord.Member | str = None):
         if self.examdb is None:
             return await ctx.send("❌ DB Error")
+        
         user = None
         if user_handler is None:
             user = ctx.author
@@ -76,38 +118,92 @@ class Schedule(commands.Cog):
             else:
                 user = await resolve_members(ctx, user_handler)
                 user = user[0]
+
         doc = await self.examdb.find_one({"user_id": user.id})
         if not doc:
             return await ctx.send(f"🤔 {user.display_name} ยังไม่มีตารางสอบนะ!")
-        embed = discord.Embed(
-            title=f"🗓️ ตารางสอบของ {user.display_name}",
-            color=discord.Color.teal(),
-        )
-        import requests
-        from bs4 import BeautifulSoup
 
-        url = "http://www.scibase.kmutnb.ac.th/examroom/datatrain.php"
-        params = {"IDcard": doc.get("std_id","")}
-        r = requests.get(url, params=params)
-        r.encoding = "utf-8"
-        html = r.text
-        soup = BeautifulSoup(html, "html.parser")
-        data = []
-        rows = soup.find_all("tr")
+
+        embed = discord.Embed(
+            title=f"🎓 ตารางสอบ: {user.display_name}",
+            color=discord.Color.gold(), 
+            timestamp=datetime.datetime.now()
+        )
+        embed.set_thumbnail(url=user.display_avatar.url)
+
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            
+            url = "http://www.scibase.kmutnb.ac.th/examroom/datatrain.php"
+            params = {"IDcard": doc.get("std_id", "")}
+            
+            r = await self.bot.loop.run_in_executor(None, lambda: requests.get(url, params=params))
+            r.encoding = "utf-8"
+            
+            soup = BeautifulSoup(r.text, "html.parser")
+            rows = soup.find_all("tr")
+            
+            name_tag = soup.find("font", attrs={"color": "#0000FF"})
+            student_name = name_tag.get_text(strip=True) if name_tag else "ไม่ระบุชื่อ"
+            embed.set_author(name=f"นักศึกษา: {student_name}", icon_url=self.bot.user.avatar.url)
+
+        except Exception as e:
+            return await ctx.send(f"⚠️ เกิดข้อผิดพลาดในการดึงข้อมูล: ||{e}||")
+
         if not rows:
-            await ctx.send("🤔 ไม่พบข้อมูลตารางสอบ")
-        else:
-            for tr in rows:
-                text = tr.get_text(strip=True, separator='|')
-                data.append(text)
-        print(data)
-        header = data[0]
-        for i in range(1,len(data)):
-            data[i] = data[i].split('|')
-            field = []
-            for j in range(len(data[i])):
-                field.append(f"**{header.split('|')[j]}**: {data[i][j]}")
-            embed.add_field(name=f"📄 รายการที่ {i}", value="\n".join(field), inline=False)
+            return await ctx.send("🤔 ไม่พบข้อมูลตารางสอบในระบบ")
+
+        def get_emoji(header_text):
+            h = header_text.lower()
+            if "วัน" in h or "date" in h: return "📅"
+            if "เวลา" in h or "time" in h: return "⏰"
+            if "ห้อง" in h or "room" in h: return "📍"
+            if "วิชา" in h or "subj" in h: return "📚"
+            if "ที่นั่ง" in h or "seat" in h: return "🪑"
+            if "กลุ่ม" in h or "sec" in h: return "👥"
+            return "🔹"
+
+        data_rows = []
+        for tr in rows:
+            cols = [td.get_text(strip=True) for td in tr.find_all(['td', 'th'])]
+            if cols:
+                data_rows.append(cols)
+
+        if not data_rows:
+            return await ctx.send("🤔 ตารางเปล่า")
+
+        headers = data_rows[0]
+        exam_entries = data_rows[1:]
+
+        embed.description = f"**จำนวนวิชาที่สอบ:** `{len(exam_entries)}` วิชา\n{'━'*20}"
+
+        for i, row in enumerate(exam_entries):
+            if len(row) != len(headers): continue
+
+            field_title = f"Exam #{i+1}"
+            field_details = []
+            
+            subject_found = False
+            
+            for idx, (head, val) in enumerate(zip(headers, row)):
+                emoji = get_emoji(head)
+                
+                if ("วิชา" in head or "รหัส" in head) and not subject_found:
+                    field_title = f"{emoji} {val}"
+                    subject_found = True 
+
+                else:
+
+                    field_details.append(f"> {emoji} **{head}:** {f"**{val}**" if head == "วิชาที่สอบ" else val}")
+
+            embed.add_field(
+                name=field_title, 
+                value="\n".join(field_details), 
+                inline=False
+            )
+        
+        embed.set_footer(text=f"Requested by {ctx.author.name} • Data from SCIBase KMUTNB")
         await ctx.send(embed=embed)
         
         
