@@ -86,6 +86,8 @@ class Randomizer(commands.Cog):
         else:
             exclude = ' '.join(list(exclude))
         """Pick a random restaurant from standard list."""
+        if ':' not in exclude and exclude:
+            return
         exclude = exclude.split(":")[-1].split() if exclude else []
 
         match = {"type": "sr"}
