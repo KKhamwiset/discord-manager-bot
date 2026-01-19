@@ -146,7 +146,11 @@ class Schedule(commands.Cog):
 
             # 
             strategy = ExamEmbedStrategy(headers=headers)
-            view = PaginationView(data=exam_entries, strategy=strategy, user=user, sep=2)
+            view = PaginationView(data=exam_entries,
+                                  strategy=strategy, 
+                                  user=user,
+                                  invoke=ctx.author,
+                                  sep=2)
             
             await msg.delete()
             view.message = await ctx.send(embed=view.get_current_embed(), view=view)
@@ -207,7 +211,11 @@ class Schedule(commands.Cog):
         if not active_days:
             return await ctx.send("🤔 ตารางเรียนว่างเปล่า")
         strategy = ClassEmbedStrategy()
-        view = PaginationView(data=active_days, strategy=strategy, user=user, sep=3)
+        view = PaginationView(data=active_days, 
+                              strategy=strategy, 
+                              user=user,
+                              invoke=ctx.author,
+                              sep=3)
         view.message = await ctx.send(embed=view.get_current_embed(), view=view)
 
     @commands.command(name="delclass", 
@@ -216,7 +224,6 @@ class Schedule(commands.Cog):
                       )
     async def delete_class(self, ctx: commands.Context):
         if self.db is None: return await ctx.send("❌ DB Error")
-        
         doc = await self.db.find_one({"user_id" : ctx.author.id})
         if not doc:
             await ctx.send("🤔 คุณยังไม่มีตารางเรียน")

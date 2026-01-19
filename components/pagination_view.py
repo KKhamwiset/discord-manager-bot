@@ -98,11 +98,12 @@ class ClassEmbedStrategy(ScheduleEmbedStrategy):
 # 4. The Pagination View (Context)
 # ==========================================
 class PaginationView(discord.ui.View):
-    def __init__(self, data, strategy: ScheduleEmbedStrategy, user: discord.Member, sep=5):
+    def __init__(self, data, strategy: ScheduleEmbedStrategy, user: discord.Member, invoke: discord.Member, sep=5):
         super().__init__(timeout=60)
         self.data = data
-        self.strategy = strategy # The Factory/Strategy instance
+        self.strategy = strategy
         self.user = user
+        self.invoke = invoke
         self.sep = sep
         self.current_page = 0
         self.total_pages = (len(data) + sep - 1) // sep
@@ -124,16 +125,16 @@ class PaginationView(discord.ui.View):
 
     @discord.ui.button(label="◀", style=discord.ButtonStyle.primary)
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.user != interaction.user:
-            return
+        if self.invoke != interaction.user:
+            return await interaction.response.defer()
         self.current_page -= 1
         self.update_buttons()
         await interaction.response.edit_message(embed=self.get_current_embed(), view=self)
 
     @discord.ui.button(label="▶", style=discord.ButtonStyle.primary)
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.user != interaction.user:
-            return
+        if self.invoke != interaction.user:
+            return await interaction.response.defer()
         self.current_page += 1
         self.update_buttons()
         await interaction.response.edit_message(embed=self.get_current_embed(), view=self)
