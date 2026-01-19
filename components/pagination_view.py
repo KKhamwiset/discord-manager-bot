@@ -124,12 +124,16 @@ class PaginationView(discord.ui.View):
 
     @discord.ui.button(label="◀", style=discord.ButtonStyle.primary)
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.user != interaction.user:
+            return
         self.current_page -= 1
         self.update_buttons()
         await interaction.response.edit_message(embed=self.get_current_embed(), view=self)
 
     @discord.ui.button(label="▶", style=discord.ButtonStyle.primary)
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.user != interaction.user:
+            return
         self.current_page += 1
         self.update_buttons()
         await interaction.response.edit_message(embed=self.get_current_embed(), view=self)
@@ -137,7 +141,6 @@ class PaginationView(discord.ui.View):
     async def on_timeout(self):
         for child in self.children:
             child.disabled = True
-        # Try to edit the message to disable buttons, handling error if message is deleted
         try:
             await self.message.edit(view=self)
         except:
