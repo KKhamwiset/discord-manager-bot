@@ -108,6 +108,7 @@ class Schedule(commands.Cog):
         if self.examdb is None: return await ctx.send("❌ DB Error")
         
         user = ctx.author
+
         if user_handler:
             if isinstance(user_handler, (discord.Member, discord.User)):
                 user = user_handler
@@ -115,7 +116,17 @@ class Schedule(commands.Cog):
                 resolved = await resolve_members(ctx, user_handler)
                 if resolved: user = resolved[0]
 
-        doc = await self.examdb.find_one({"user_id": user.id})
+        main_cursor = await self.examdb.find_one({
+            "guild_id": str(ctx.guild.id)
+        })
+
+        if main_cursor is None: 
+            return await ctx.send("DB Error")
+        
+        doc = next((
+            (item for item in main_cursor.get("member_id", []) if item["user_id"] == user.id)
+        ), None)
+
         if not doc:
             return await ctx.send(f"🤔 {user.display_name} ยังไม่มีตารางสอบนะ!")
 

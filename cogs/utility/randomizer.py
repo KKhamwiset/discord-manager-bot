@@ -1,10 +1,11 @@
 import random
 import asyncio
 import discord
+import re
 from discord.ext import commands
-import validation
-DELAY_SEC = 0.2
+import validation 
 
+DELAY_SEC = 0.2
 
 class Randomizer(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -36,7 +37,12 @@ class Randomizer(commands.Cog):
             await asyncio.sleep(DELAY_SEC)
             await ctx.send(embed=embed)
 
+    async def get_guild_doc(self, guild_id: str):
+        """Helper to get the guild document, ensuring the array exists."""
+        return await self.col.find_one({"guild_id": guild_id})
+
     # ---------- commands ----------
+
     @commands.command(
         name="arand",
         aliases=["asr", "asrand", "assr"],
@@ -45,7 +51,6 @@ class Randomizer(commands.Cog):
     @validation.role()
     async def add_rand(self, ctx: commands.Context, *args):
         """Add a restaurant to the randomizer list (standard or special)."""
-
         name = " ".join(args).strip()
         if not name:
             return await self.send_embed(
@@ -58,8 +63,17 @@ class Randomizer(commands.Cog):
 
         invoked = (ctx.invoked_with or "").lower()
         rtype = "sr" if invoked in ("arand", "asr") else "ssr"
+        guild_id = str(ctx.guild.id)
+        exists = await self.col.find_one({
+            "guild_id": guild_id,
+            "restaurant": {
+                "$elemMatch": {
+                    "restaurant": {"$regex":f"^{re.escape(name)}$", "$options": "i"}, 
+                    "type": rtype
+                }
+            }
+        })
 
-        exists = await self.col.find_one({"type": rtype, "restaurant": name})
         if exists:
             return await self.send_embed(
                 ctx,
@@ -69,7 +83,14 @@ class Randomizer(commands.Cog):
                 discord.Color.orange(),
             )
 
-        await self.col.insert_one({"type": rtype, "restaurant": name})
+        await self.col.update_one(
+            {"guild_id": guild_id},
+            {
+                "$push": {"restaurant": {"restaurant": name, "type": rtype}}
+            },
+            upsert=True
+        )
+
         await self.send_embed(
             ctx,
             "Added",
@@ -80,59 +101,70 @@ class Randomizer(commands.Cog):
 
     @commands.command(name="nrand", aliases=["sr"], help="Pick a random standard restaurant.")
     async def rand(self, ctx: commands.Context, *exclude: str):
-        import re
+        """Pick a random restaurant from standard list."""
+        guild_id = str(ctx.guild.id)
+        
         if exclude is None:
             exclude = []
         else:
-            exclude = ' '.join(list(exclude))
-        """Pick a random restaurant from standard list."""
-        if ':' not in exclude and exclude:
-            return
-        exclude = exclude.split(":")[-1].split() if exclude else []
+            exclude_str = ' '.join(list(exclude))
+            if ':' in exclude_str:
+                 exclude = exclude_str.split(":")[-1].split()
+            else:
+                 exclude = []
 
-        match = {"type": "sr"}
-        if exclude:
-            escaped = [re.escape(x) for x in exclude]
-            match["restaurant"] = {
-                "$not": {
-                    "$regex": "|".join(escaped),
-                    "$options": "i"
-                }
-            }
+        doc = await self.get_guild_doc(guild_id)
+        if not doc or "restaurant" not in doc:
+            return await self.send_embed(
+                ctx, "No Choices", "⚠️ No restaurants found for this server.", discord.Color.orange()
+            )
 
-        picked = await self.col.aggregate(
-            [
-                {"$match": match},
-                {"$sample": {"size": 1}},
-            ]
-        ).to_list(length=1)
-        if not picked:
+        candidates = []
+        for item in doc["restaurant"]:
+            if item.get("type") == "sr":
+                r_name = item.get("restaurant", "")
+                is_excluded = False
+                for ex in exclude:
+                    if re.search(re.escape(ex), r_name, re.IGNORECASE):
+                        is_excluded = True
+                        break
+                
+                if not is_excluded:
+                    candidates.append(r_name)
+
+        if not candidates:
             return await self.send_embed(
                 ctx,
                 "No Choices",
-                "⚠️ No **standard** restaurants available.",
+                "⚠️ No **standard** restaurants available (or all were excluded).",
                 discord.Color.orange(),
-                footer="Add one with !asr <name>",
+                footer="Add one with !arand <name>",
             )
+
+        picked = random.choice(candidates)
 
         await self.send_embed(
             ctx,
             "Today's Pick (Standard)",
-            f"🍽️ **{picked[0]['restaurant']}** 🎉",
+            f"🍽️ **{picked}** 🎉",
             discord.Color.purple(),
         )
 
     @commands.command(name="srand", aliases=["ssr"], help="Pick a random special restaurant.")
     async def special_rand(self, ctx: commands.Context):
         """Pick a random restaurant from special list."""
-        picked = await self.col.aggregate(
-            [
-                {"$match": {"type": "ssr"}},
-                {"$sample": {"size": 1}},
-            ]
-        ).to_list(length=1)
+        guild_id = str(ctx.guild.id)
+        doc = await self.get_guild_doc(guild_id)
+        
+        candidates = []
+        if doc and "restaurant" in doc:
+             candidates = [
+                 item["restaurant"] 
+                 for item in doc["restaurant"] 
+                 if item.get("type") == "ssr"
+             ]
 
-        if not picked:
+        if not candidates:
             return await self.send_embed(
                 ctx,
                 "No Choices",
@@ -141,24 +173,36 @@ class Randomizer(commands.Cog):
                 footer="Add one with !assr <name>",
             )
 
+        picked = random.choice(candidates)
+
         await self.send_embed(
             ctx,
             "Today's Pick (Special)",
-            f"🍽️ **{picked[0]['restaurant']}** 🎉",
+            f"🍽️ **{picked}** 🎉",
             discord.Color.yellow(),
         )
 
     @commands.command(name="lrand", aliases=["ls"], help="List all restaurants by type.")
     async def list_rand(self, ctx: commands.Context):
         """List all restaurants by type."""
-        cursor = self.col.find(
-            {"restaurant": {"$exists": True, "$type": "string", "$ne": ""}},
-            {"_id": 0, "restaurant": 1, "type": 1},
-        )
-        docs = [d async for d in cursor]
-        sr = sorted([d["restaurant"] for d in docs if d["type"] == "sr"], key=str.casefold)
-        ssr = sorted([d["restaurant"] for d in docs if d["type"] == "ssr"], key=str.casefold)
+        guild_id = str(ctx.guild.id)
+        doc = await self.get_guild_doc(guild_id)
+        
+        sr_list = []
+        ssr_list = []
 
+        if doc and "restaurant" in doc:
+            for item in doc["restaurant"]:
+                name = item.get("restaurant", "Unknown")
+                if item.get("type") == "sr":
+                    sr_list.append(name)
+                elif item.get("type") == "ssr":
+                    ssr_list.append(name)
+
+        sr = sorted(sr_list, key=str.casefold)
+        ssr = sorted(ssr_list, key=str.casefold)
+
+        # Helper functions for Embeds (Same as your old code)
         def bullets(items: list[str]) -> str:
             return "\n".join(f"• {name}" for name in items)
 
@@ -216,13 +260,19 @@ class Randomizer(commands.Cog):
                 "Usage: `!drand <restaurant_name>`",
                 discord.Color.orange(),
             )
+        
+        guild_id = str(ctx.guild.id)
+        
+        result = await self.col.update_one(
+            {"guild_id": guild_id},
+            {"$pull": {"restaurant": {"restaurant": name}}}
+        )
 
-        result = await self.col.delete_one({"restaurant": name})
-        if result.deleted_count == 0:
+        if result.modified_count == 0:
             await self.send_embed(
                 ctx,
                 "Not Found",
-                f"⚠️ **{name}** was not found in the randomizer list.",
+                f"⚠️ **{name}** was not found in the randomizer list (or DB error).",
                 discord.Color.orange(),
             )
         else:
@@ -232,7 +282,6 @@ class Randomizer(commands.Cog):
                 f"✅ Removed **{name}** from the randomizer list.",
                 discord.Color.green(),
             )
-
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Randomizer(bot))
