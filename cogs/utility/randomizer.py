@@ -8,6 +8,7 @@ import validation
 DELAY_SEC = 0.2
 
 class Randomizer(commands.Cog):
+
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.col = self.bot.db["restaurant_choices"]
@@ -17,7 +18,15 @@ class Randomizer(commands.Cog):
             print("❌ Randomizer Cog connection failed.")
 
     # ---------- util ----------
-
+    def _filtering(self, name: str, exclude: list[str]) -> bool:
+        """Helper to check if name matches any exclude patterns."""
+        candidate = []
+        for ex in exclude:
+            if re.search(re.escape(ex), name, re.IGNORECASE):
+                return True
+            candidate.append(name)
+        return candidate
+    
     async def send_embed(
         self,
         ctx: commands.Context,
@@ -99,9 +108,9 @@ class Randomizer(commands.Cog):
             discord.Color.green(),
         )
 
-    @commands.command(name="nrand", aliases=["sr"], help="Pick a random standard restaurant.")
+    @commands.command(name="nrand", aliases=["sr","ssr"], help="Pick a random restaurant.")
     async def rand(self, ctx: commands.Context, *exclude: str):
-        """Pick a random restaurant from standard list."""
+        """Pick a random restaurant from list."""
         guild_id = str(ctx.guild.id)
         
         if exclude is None:
@@ -109,9 +118,9 @@ class Randomizer(commands.Cog):
         else:
             exclude_str = ' '.join(list(exclude))
             if ':' in exclude_str:
-                 exclude = exclude_str.split(":")[-1].split()
+                exclude = exclude_str.split(":")[-1].split()
             else:
-                 exclude = []
+                exclude = []
 
         doc = await self.get_guild_doc(guild_id)
         if not doc or "restaurant" not in doc:
@@ -120,8 +129,13 @@ class Randomizer(commands.Cog):
             )
 
         candidates = []
+
+        invoke_with = ctx.invoked_with.lower()
+        is_ssr = invoke_with == "ssr"
+        type_selection =  lambda item: item.get("type") == "ssr" if is_ssr else item.get("type") == "sr"
+
         for item in doc["restaurant"]:
-            if item.get("type") == "sr":
+            if type_selection(item):
                 r_name = item.get("restaurant", "")
                 is_excluded = False
                 for ex in exclude:
@@ -150,37 +164,6 @@ class Randomizer(commands.Cog):
             discord.Color.purple(),
         )
 
-    @commands.command(name="srand", aliases=["ssr"], help="Pick a random special restaurant.")
-    async def special_rand(self, ctx: commands.Context):
-        """Pick a random restaurant from special list."""
-        guild_id = str(ctx.guild.id)
-        doc = await self.get_guild_doc(guild_id)
-        
-        candidates = []
-        if doc and "restaurant" in doc:
-             candidates = [
-                 item["restaurant"] 
-                 for item in doc["restaurant"] 
-                 if item.get("type") == "ssr"
-             ]
-
-        if not candidates:
-            return await self.send_embed(
-                ctx,
-                "No Choices",
-                "⚠️ No **special** restaurants available.",
-                discord.Color.orange(),
-                footer="Add one with !assr <name>",
-            )
-
-        picked = random.choice(candidates)
-
-        await self.send_embed(
-            ctx,
-            "Today's Pick (Special)",
-            f"🍽️ **{picked}** 🎉",
-            discord.Color.yellow(),
-        )
 
     @commands.command(name="lrand", aliases=["ls"], help="List all restaurants by type.")
     async def list_rand(self, ctx: commands.Context):
@@ -248,8 +231,9 @@ class Randomizer(commands.Cog):
         await send_list_embed("🍱 Standard Restaurants", discord.Color.purple(), sr, "No standard restaurants found.")
         await send_list_embed("⭐ Special Restaurants", discord.Color.gold(), ssr, "No special restaurants found.")
 
-    @validation.role()
+    
     @commands.command(name="drand", aliases=["dres"], help="Delete a randomizer entry by name.")
+    @validation.role()
     async def del_rand(self, ctx: commands.Context, *, name: str | None = None):
         """Delete a restaurant by exact name."""
         if not name:

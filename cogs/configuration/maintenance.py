@@ -5,6 +5,7 @@ import os
 import validation
 
 class Maintenance(commands.Cog):
+    
     def __init__(self, bot):
         self.bot = bot
     @commands.hybrid_command(name="pause", help="Pauses the bot (Maintenance Mode).")

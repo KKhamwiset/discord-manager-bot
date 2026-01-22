@@ -48,8 +48,26 @@ async def _validate_time_room(interaction: discord.Interaction, time: str, room:
         
     return time, room_final
 
-async def generate_options(db, user_id):
-    doc = await db.find_one({"user_id": user_id})
+
+async def get_user_schedule(db_collection, guild_id: int, user_id: int):
+        main_doc = await db_collection.find_one({
+            "guild_id": str(guild_id)
+        })
+        if not main_doc:
+            return None
+
+        for wrapper in main_doc.get("schedules", []):
+            if not wrapper:
+                continue
+            sched = wrapper[0]
+            if sched.get("user_id") == user_id:
+                print("Found schedule for user:", user_id)
+                return sched
+
+        return None
+
+async def generate_options(db, guild_id, user_id):
+    doc = await get_user_schedule(db, guild_id, user_id)
     if not doc:
         return []
 
@@ -73,8 +91,8 @@ async def generate_options(db, user_id):
     return options
 
 async def _regenerate_view(db_collection, user, original_msg, SelectorClass):
-    new_options = await generate_options(db_collection, user.id)
-    
+    new_options = await generate_options(db_collection, user.guild.id, user.id)
+
     if new_options:
         new_selector = SelectorClass(db_collection, user, options=new_options[:25]) 
         new_view = AddClassView(user, db_collection, new_selector)
@@ -246,7 +264,7 @@ class BaseSubjectSelect(ui.Select):
         )
 
     async def _find_subject_data(self, selected_value: str):
-        doc = await self.db_collection.find_one({"user_id": self.author.id})
+        doc = await get_user_schedule(self.db_collection, self.author.guild.id, self.author.id)
         if not doc:
             return None, None, None, None , None
         try:
