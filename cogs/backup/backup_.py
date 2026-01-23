@@ -23,6 +23,7 @@ class Backup(commands.Cog):
 
     @tasks.loop(time=datetime.time(hour=0, minute=0,tzinfo=datetime.timezone(datetime.timedelta(hours=7))))
     async def backup_task(self):
+        
         backup_channel_id = os.getenv("BACKUP_CHANNEL_ID")
         if not backup_channel_id:
              print("❌ BACKUP_CHANNEL_ID is not set.")
@@ -51,7 +52,8 @@ class Backup(commands.Cog):
                 command = (
                     f'mongoexport --uri="{self.mongo_uri}" '
                     f'--db={self.db_name} --collection={col} '
-                    f'--out={json_filename} --jsonArray --pretty'
+                    f'--out={json_filename} --jsonArray --pretty '
+                    f'--jsonFormat=canonical'
                 )
                 
                 process = await asyncio.create_subprocess_shell(
@@ -81,7 +83,7 @@ class Backup(commands.Cog):
                 else:
                     file = discord.File(zip_filename)
                     await channel.send(
-                        f"📦 **Async Backup** for `{self.db_name}`\nCollections: {len(generated_files)}", 
+                        f"**Backup** for `{self.db_name}`\nCollections: {len(generated_files)}", 
                         file=file
                     )
             else:
