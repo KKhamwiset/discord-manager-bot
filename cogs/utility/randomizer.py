@@ -113,6 +113,11 @@ class Randomizer(commands.Cog):
         """Pick a random restaurant from list."""
         guild_id = str(ctx.guild.id)
         
+        is_params = ':' in ''.join(exclude)
+
+        if exclude and not is_params:
+            return
+            
         if exclude is None:
             exclude = []
         else:
