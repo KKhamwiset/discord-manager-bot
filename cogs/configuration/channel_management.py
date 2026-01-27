@@ -216,55 +216,72 @@ class ChannelManagement(commands.Cog):
         )
         await ctx.send(f"✅ `{name}` command is now allowed in **all channels**.")
 
-    # @commands.hybrid_command(
-    #     name="command-add",
-    #     description="Add a specific command to work in current channel.",
-    #     help="Add a command in current channel."
-    # )
-    # @validation.role()
-    # async def command_add(self, ctx: commands.Context, name: Optional[str] = None):
-    #     guild = await self._check_guild_context(ctx)
-    #     if guild is None:
-    #         return
-    #     if name is None:
-    #         await ctx.send("❌ Please provide a command name.")
-    #         return
+    @commands.hybrid_command(
+        name="command-add",
+        description="Add a specific command to work in current channel.",
+        help="Add a command in current channel."
+    )
+    @validation.role()
+    async def command_add(self, ctx: commands.Context, name: Optional[str] = None):
+        guild = await self._check_guild_context(ctx)
+        if guild is None:
+            return
+        if name is None:
+            await ctx.send("❌ Please provide a command name.")
+            return
         
-    #     config = await self._get_guild_config(guild.id)
-        
-    #     if config.get("mode", "all") == "all":
-    #         await ctx.send("📢 Bot commands are already allowed in **all channels**.")
-    #         return
-        
-    #     cmd = self.bot.get_command(name)
-    #     if cmd is None:
-    #         await ctx.send(f"❌ Command `{name}` not found.")
-    #         return
+        config = await self._get_guild_config(guild.id)
 
-    #     existing_channels = {
-    #         ch.get("channel_id"): ch 
-    #         for ch in config.get("allowed_channels", [])
-    #     }
-    #     all_channels = []
-
-    #     for channel in ctx.guild.text_channels:
-    #         channel_id = str(channel.id)
-    #         all_channels.append(
-    #             build_channel_entry(channel_id, existing_channels.get(channel_id), cmd.qualified_name)
-    #         )
-            
-    #         for thread in channel.threads:
-    #             thread_id = str(thread.id)
-    #             all_channels.append(
-    #                 build_channel_entry(thread_id, existing_channels.get(thread_id), cmd.qualified_name)
-    #             )
+        if not config:
+            await ctx.send("DB Error")
+            return
         
-    #     await self.collection.update_one(
-    #         {"_id": str(guild.id)},
-    #         {"$set": {"allowed_channels": all_channels}},
-    #         upsert=True
-    #     )
-    #     await ctx.send(f"✅ `{name}` command is now allowed in **all channels**.")
+        if config.get("mode", "all") == "all":
+            await ctx.send("📢 Bot commands are already allowed in **all channels**.")
+            return
+        
+        cmd = self.bot.get_command(name)
+        if cmd is None:
+            await ctx.send(f"Command `{name}` not found.")
+            return
+
+        idx = next(
+            (
+                i 
+                for i, ch in enumerate(config.get("allowed_channels", [])) 
+                if ch.get("channel_id") == str(ctx.channel.id)
+            ),
+            -1,
+        )
+        if idx == -1:
+
+            await self.collection.update_one(
+                {"_id": str(guild.id)},
+                {"$addToSet": 
+                {"allowed_channels": 
+                        {"channel_id": str(ctx.channel.id), 
+                        "cmd_mode": "only", 
+                        "allowed_commands": [name]}
+                }}, upsert=True
+            )
+            await ctx.send(f"Command `{name}` added to allowed commands in this channel.")
+        else:
+            query = f"allowed_channels.{idx}.allowed_commands"
+            old_commands = config.get("allowed_channels", [])[idx].get("allowed_commands", [])
+
+            if name in old_commands:
+                await ctx.send("Command already allowed in this channel.")
+                return
+            query = f"allowed_channels.{idx}.allowed_commands"
+            await self.collection.update_one(
+                {"_id": str(guild.id)},
+                {"$addToSet": {query: name}},
+                upsert=True
+            )
+            await ctx.send(f"Command `{name}` added to allowed commands in this channel.")
+        
+
+        
     
     @validation.role()
     @commands.hybrid_command(

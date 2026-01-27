@@ -13,7 +13,13 @@ async def global_channel_check(ctx: commands.Context) -> bool:
     if ctx.command is None:
         return True
 
-    if ctx.command.name in ["setbotchannel", "listbotchannels","disablebotchannel","help"]:
+    if ctx.command.name in ["command-add"
+                        , "channel-configure"
+                        , "channel-remove"
+                        , "channel-list"
+                        , "help"
+                        , "command-allow-all"
+                        , "info"]:
         return True
     
     collection = ctx.bot.db["guild_config"]
