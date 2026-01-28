@@ -133,7 +133,10 @@ class Schedule(commands.Cog):
         # Scrape Data
         msg = await ctx.send("🔄 กำลังดึงข้อมูลจาก REG...")
         try:
-            url = "http://www.scibase.kmutnb.ac.th/examroom/datatrain.php"
+            url = os.getenv("API_ENDPOINT","")
+            if url == "":
+                return await msg.edit(content="API Endpoint not found")
+
             params = {"IDcard": doc.get("std_id", "")}
             
             r = await self.bot.loop.run_in_executor(None, lambda: requests.get(url, params=params))

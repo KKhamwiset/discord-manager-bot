@@ -190,9 +190,8 @@ class Randomizer(commands.Cog):
         sr = sorted(sr_list, key=str.casefold)
         ssr = sorted(ssr_list, key=str.casefold)
 
-        # Helper functions for Embeds (Same as your old code)
         def bullets(items: list[str]) -> str:
-            return "\n".join(f"• {name}" for name in items)
+            return "\n".join(f"• `{name}`" for name in items)
 
         def chunk_text(text: str, maxlen: int = 1024) -> list[str]:
             if len(text) <= maxlen:
