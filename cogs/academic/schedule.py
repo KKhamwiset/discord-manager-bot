@@ -5,7 +5,7 @@ from discord.ext import commands
 from components.pagination_view import PaginationView, ExamEmbedStrategy, ClassEmbedStrategy
 from components.schedule_components import * 
 from validation import resolve_members 
-import re, datetime
+import re, datetime , os
 import requests
 from bs4 import BeautifulSoup
 # --------------------------------------------------
