@@ -1,8 +1,10 @@
 import discord
 import validation
+import os
 from discord import app_commands
 from discord.ext import commands
 from typing import Literal, Optional, Any, Dict, List
+
 
 # --- Utility Functions ---
 
@@ -90,8 +92,39 @@ class ChannelManagement(commands.Cog):
         return unique_names, aliases, invalid
 
 
-    # --- disablebotchannel command ---
+    
+    @commands.hybrid_command(
+        name="thread-nuke",
+        help="This command is nothing",
+        aliases=["nt"],
+        hidden=True
+    )
+    async def thread_nuke(self, ctx: commands.Context):
+        preserve_users = {"274127380577124352", "273760138135863296", 
+                          "316152771642654722", "997460686185701466"}
 
+        dest_channel = int(os.getenv("TRIO"))
+        if ctx.channel.id != dest_channel:
+            await ctx.send("Why are you calling this command blud?")
+            return
+        thread_users = await self.bot.get_channel(dest_channel).fetch_members()
+
+        to_remove = [
+            i for i in thread_users 
+            if str(i.id) not in preserve_users 
+            and not ctx.guild.get_member(i.id).bot
+        ]
+        
+        if not to_remove:
+            await ctx.send("No one to kick")
+            return
+        
+        for i in to_remove:
+            await ctx.channel.remove_user(i)
+            await ctx.send(f"{ctx.guild.get_member(i.id).display_name} has been kicked from the thread.")
+
+
+    # --- disablebotchannel command ---
     @validation.role()
     @commands.hybrid_command(
         name="channel-remove",
