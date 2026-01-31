@@ -134,7 +134,7 @@ class RoleManagement(commands.Cog):
             if role_filter:
                 role_name = role_filter[0].name 
         role = discord.utils.get(guild.roles, name=role_name)
-        await ctx.send(role,role_name)
+        await ctx.send(f"{role} - {role_name}")
         if not role:
             await ctx.send(f"⚠️ Role `{role_name}` does not exist.")
             return
