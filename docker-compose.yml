@@ -1,0 +1,52 @@
+services:
+  # Discord Bot
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: discord-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - INSTANCE=Server
+    depends_on:
+      - api
+    networks:
+      - bot-network
+
+  # Flask API Backend
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: bot-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - API_PORT=5000
+    networks:
+      - bot-network
+
+  # Next.js Dashboard
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: bot-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:5000
+    depends_on:
+      - api
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge

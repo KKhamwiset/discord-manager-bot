@@ -1,0 +1,56 @@
+# Unified Dockerfile for single-container deployment (Render)
+# Runs: Discord Bot + Flask API + Next.js Dashboard
+
+FROM python:3.13-slim AS python-base
+
+# Install Node.js
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    libkrb5-3 \
+    libgssapi-krb5-2 \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download MongoDB tools
+RUN wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian10-x86_64-100.9.4.tgz && \
+    tar -zxvf mongodb-database-tools-debian10-x86_64-100.9.4.tgz && \
+    mv mongodb-database-tools-debian10-x86_64-100.9.4/bin/mongoexport /usr/local/bin/mongoexport && \
+    rm -rf mongodb-database-tools-*
+
+WORKDIR /app
+
+# ============ Build Dashboard ============
+WORKDIR /app/dashboard
+COPY dashboard/package*.json ./
+RUN npm ci
+COPY dashboard/ ./
+RUN npm run build
+
+# ============ Install API Dependencies ============
+WORKDIR /app/api
+COPY api/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY api/ ./
+
+# ============ Install Bot Dependencies ============
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy bot files (exclude dashboard and api folders which are already copied)
+COPY main.py ./
+COPY validation/ ./validation/
+COPY cogs/ ./cogs/
+COPY components/ ./components/
+
+# Copy startup script
+COPY start.sh ./
+RUN chmod +x start.sh
+
+# Expose ports
+EXPOSE 3000 5000
+
+# Start all services
+CMD ["./start.sh"]

@@ -4,7 +4,6 @@ import validation
 from discord.ext import commands
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
-from web_server import keep_alive
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -193,7 +192,6 @@ class BotInitDB(commands.Bot):
 
 # ------------ run -----------
 
-keep_alive()
 Bot = BotInitDB()
 log_level_shift = logging.ERROR if bool(os.getenv("DEV")) == True else logging.DEBUG
 Bot.run(TOKEN, log_handler=handler, log_level=log_level_shift)
