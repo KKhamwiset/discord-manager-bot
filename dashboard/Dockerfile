@@ -2,7 +2,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_URL=https://discordbot-api-latest.onrender.com
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 COPY package*.json ./
@@ -10,7 +10,6 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Production image
 FROM node:20-alpine AS runner
 WORKDIR /app
 
