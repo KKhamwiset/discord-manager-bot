@@ -34,35 +34,34 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{}'
 
-      # ============ API (SKIPPED) ============
-      # TODO: Add API_SERVICE_ID secret to GitHub, then uncomment
-      # - name: Build API image
-      #   run: docker build -t kkhw/discordbot-api:latest ./api
-      #
-      # - name: Push API image
-      #   run: docker push kkhw/discordbot-api:latest
-      #
-      # - name: Trigger Render deploy - API
-      #   env:
-      #     RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-      #   run: |
-      #     curl -X POST https://api.render.com/v1/services/${{ secrets.API_SERVICE_ID }}/deploys \
-      #     -H "Authorization: Bearer $RENDER_API_KEY" \
-      #     -H "Content-Type: application/json" \
-      #     -d '{}'
+      # ============ API ============
+      - name: Build API image
+        run: docker build -t kkhw/discordbot-api:latest ./api
 
-      # ============ DASHBOARD (SKIPPED) ============
-      # - name: Build Dashboard image
-      #   run: docker build -t kkhw/discordbot-dashboard:latest ./dashboard
-      #
-      # - name: Push Dashboard image
-      #   run: docker push kkhw/discordbot-dashboard:latest
-      #
-      # - name: Trigger Render deploy - Dashboard
-      #   env:
-      #     RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-      #   run: |
-      #     curl -X POST https://api.render.com/v1/services/${{ secrets.DASHBOARD_SERVICE_ID }}/deploys \
-      #     -H "Authorization: Bearer $RENDER_API_KEY" \
-      #     -H "Content-Type: application/json" \
-      #     -d '{}'
+      - name: Push API image
+        run: docker push kkhw/discordbot-api:latest
+
+      - name: Trigger Render deploy - API
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -X POST https://api.render.com/v1/services/${{ secrets.API_SERVICE_ID }}/deploys \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{}'
+
+      # ============ DASHBOARD ============
+      - name: Build Dashboard image
+        run: docker build -t kkhw/discordbot-dashboard:latest ./dashboard
+
+      - name: Push Dashboard image
+        run: docker push kkhw/discordbot-dashboard:latest
+
+      - name: Trigger Render deploy - Dashboard
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -X POST https://api.render.com/v1/services/${{ secrets.WEB_SERVICE_ID }}/deploys \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{}'
