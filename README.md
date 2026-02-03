@@ -1,76 +1,43 @@
-# Discord Bot
+# 🤖 Discord Manager Bot
 
-A multi-purpose Discord bot for server management, academic scheduling, and utility.
+A multi-purpose Discord bot for server management, academic scheduling, and utility — featuring a modern web dashboard and REST API.
 
-## 🚀 Features
+## ✨ Features
 
-- **General Utility**: Ping, greetings, and fun commands.
-- **Academic Schedule**: Manage your class schedule (add, edit, delete, view).
-- **Role Management**: Create, delete, add, and remove roles easily.
-- **Channel Management**: Control where the bot can operate.
-- **Maintenance**: Pause/Resume bot operations (Moderators only).
+- **Server Management** — Role creation, assignment, and channel permissions
+- **Academic Tools** — Class schedules and exam tracking with student ID integration
+- **Web Dashboard** — Real-time analytics and command usage monitoring (Next.js)
+- **REST API** — Statistics and bot control endpoints (Flask)
+- **Docker Ready** — Containerized deployment with Docker Compose
 
-## 🛠️ Commands
+## 🛠️ Tech Stack
 
-### 🌐 General
-| Command | Aliases | Description |
-| :--- | :--- | :--- |
-| `ping` | - | Check bot latency. |
-| `hello` | - | Say hello to the bot. |
-| `xdd` | `xdx` | Random XD response. |
-| `rick` | `ing` | Generate random Ting emoji. |
+- **Bot**: Python 3.10+, discord.py, Motor (MongoDB)
+- **API**: Flask
+- **Dashboard**: Next.js, TypeScripts
+- **Database**: MongoDB
+- **Deployment**: Docker, Docker Compose
 
-### 📅 Academic (Schedule)
-| Command | Aliases | Description |
-| :--- | :--- | :--- |
-| `addclass` | `asch`, `ac` | Add a subject to your schedule. |
-| `editclass` | `ec`, `esch` | Edit subject information. |
-| `delclass` | `delsch`, `dc` | Delete a subject from your schedule. |
-| `myschedule` | `msch`, `mc` | View your (or another user's) class schedule. |
-
-### 🎭 Role Management
-| Command | Aliases | Description |
-| :--- | :--- | :--- |
-| `createrole` | `cr`, `makerole` | Create a new role with optional hex color. |
-| `deleterole` | `dr`, `delrole` | Delete a role by name. |
-| `addrole` | `ar`, `arole` | Add a role to mentioned users. |
-| `removerole` | `rr` | Remove a role from mentioned users. |
-| `listrole` | `lr`, `roles` | List all roles in the server or for a user. |
-
-### 📺 Channel Management
-> **Note:** Requires **Moderator** role.
-
-| Command | Description |
-| :--- | :--- |
-| `setbotchannel` | Set the current channel mode (all, specific, or excluded commands). |
-| `disablebotchannel` | Disable the bot in the current channel. |
-| `listbotchannels` | List configured channels and their modes. |
-
-### 🔧 Maintenance
-> **Note:** Requires **Moderator** role. Supports Slash Commands.
-
-| Command | Slash Command | Description |
-| :--- | :--- | :--- |
-| `stop` | `/stop` | Shut down the bot process. |
-| `pause` | `/pause` | Pause the bot (Maintenance Mode). |
-| `resume` | `/resume` | Resume the bot from Maintenance Mode. |
-
-## 🧰 Requirements
-
-* Python **3.10+**
-* `discord.py`
-* `python-dotenv`
-* `Flask` (for keep-alive web server)
-* `pymongo` & `motor`
-
-## ⚙️ Setup
+## ⚙️ Quick Start
 
 1. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-2. Configure `.env` file with your tokens and database URI.
+
+2. Configure `.env` with your tokens and MongoDB URI
+
 3. Run the bot:
    ```bash
    python main.py
    ```
+
+## 🐳 Docker Deployment
+
+```bash
+docker-compose up -d --build
+```
+
+This starts the bot, API (port 5000), and dashboard (port 3000).
+
+---
