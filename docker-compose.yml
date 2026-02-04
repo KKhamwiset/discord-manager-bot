@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     environment:
-      - INSTANCE=Server
+      - INSTANCE=Devs
     depends_on:
       - api
     networks:

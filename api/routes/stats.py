@@ -23,14 +23,11 @@ def overview():
     """Get bot and server overview statistics"""
     async def get_stats():
         db = current_app.db
-        
-        # Get guild info from database (stored by bot)
+
         guild_info = await db.guild_info.find_one({'guild_id': os.getenv('GUILD_ID')})
         
-        # Get command usage stats
         command_logs = await db.command_logs.count_documents({})
         
-        # Get recent activity (last 24h)
         yesterday = datetime.now(timezone.utc).timestamp() - 86400
         recent_commands = await db.command_logs.count_documents({
             'timestamp': {'$gte': yesterday}
@@ -83,6 +80,7 @@ def command_stats():
 def activity():
     """Get activity data for charts (last 7 days)"""
     async def get_activity():
+        
         db = current_app.db
         
         # Get command usage per day for last 7 days

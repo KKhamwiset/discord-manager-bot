@@ -71,6 +71,7 @@ class Core(commands.Cog):
             "nga",
             "nigha",    
             "<:xdx:1438479283147243572>",
+            "<:unxdd:1468624889073373285>",
             "<:xdd:1438479267716534353>",
         ]
         await ctx.send(random.choice(responses))

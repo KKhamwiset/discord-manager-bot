@@ -101,7 +101,8 @@ class ChannelManagement(commands.Cog):
     )
     async def thread_nuke(self, ctx: commands.Context):
         preserve_users = {"274127380577124352", "273760138135863296", 
-                          "316152771642654722", "997460686185701466"}
+                          "316152771642654722", "997460686185701466",
+                          "689023150834712586"}
 
         dest_channel = int(os.getenv("TRIO"))
         if ctx.channel.id != dest_channel:
@@ -116,7 +117,7 @@ class ChannelManagement(commands.Cog):
         ]
         
         if not to_remove:
-            await ctx.send("No one to kick")
+            await ctx.send("All members are ParaZ verified 😎")
             return
         
         for i in to_remove:
