@@ -26,9 +26,8 @@ function CallbackHandler() {
             }
 
             try {
-                // Exchange code for token via our Flask API
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-                const response = await fetch(`${apiUrl}/api/auth/callback?code=${code}`);
+                // Exchange code for token via our Flask API (proxied through Next.js)
+                const response = await fetch(`/api/proxy/api/auth/callback?code=${code}`);
 
                 if (!response.ok) {
                     throw new Error('Failed to authenticate');

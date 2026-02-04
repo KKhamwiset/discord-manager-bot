@@ -20,8 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
@@ -41,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/auth/login`);
+            const response = await fetch('/api/proxy/api/auth/login');
             const data = await response.json();
             window.location.href = data.url;
         } catch (error) {

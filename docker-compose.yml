@@ -41,7 +41,7 @@ services:
     ports:
       - "10000:10000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://api:5000
+      - API_URL=http://api:5000
     depends_on:
       - api
     networks:
