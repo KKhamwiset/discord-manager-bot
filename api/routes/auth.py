@@ -95,6 +95,8 @@ def callback():
         headers={'Content-Type': 'application/x-www-form-urlencoded'}
     )
     
+    print(f"token_response: {token_response.json()}")
+
     if token_response.status_code != 200:
         return jsonify({'error': 'Failed to get access token'}), 400
     
