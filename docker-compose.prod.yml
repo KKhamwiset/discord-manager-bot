@@ -1,0 +1,46 @@
+services:
+  # Discord Bot
+  bot:
+    image: kkhw/discord-manager-bot:bot
+    container_name: discord-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - INSTANCE=Devs
+    depends_on:
+      - api
+    networks:
+      - bot-network
+
+  # Flask API Backend
+  api:
+    image: kkhw/discord-manager-bot:api
+    container_name: bot-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - API_PORT=5000
+    networks:
+      - bot-network
+
+  # Next.js Dashboard
+  dashboard:
+    image: kkhw/discord-manager-bot:dashboard
+    container_name: bot-dashboard
+    restart: unless-stopped
+    ports:
+      - "10000:10000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:5000
+    depends_on:
+      - api
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
