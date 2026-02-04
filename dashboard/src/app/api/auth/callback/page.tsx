@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -9,7 +9,12 @@ function CallbackHandler() {
     const router = useRouter();
     const { setAuth } = useAuth();
 
+    const hasRunRef = useRef(false);
+
     useEffect(() => {
+        if (hasRunRef.current) return;
+        hasRunRef.current = true;
+
         const handleCallback = async () => {
             const code = searchParams.get('code');
             const error = searchParams.get('error');
@@ -26,19 +31,22 @@ function CallbackHandler() {
             }
 
             try {
+                const response = await fetch(
+                    `/api/proxy/api/auth/callback?code=${encodeURIComponent(code)}`
+                );
 
-                const response = await fetch(`/api/proxy/api/auth/callback?code=${code}`);
+                const text = await response.text();
+                console.log('STATUS:', response.status);
+                console.log('RAW RESPONSE:', text);
 
                 if (!response.ok) {
                     throw new Error('Failed to authenticate');
                 }
 
-                const data = await response.json();
+                const data = JSON.parse(text);
 
-                // Store auth data
                 setAuth(data.token, data.user);
-
-                router.push('/dashboard');
+                router.replace('/dashboard');
             } catch (err) {
                 console.error('Auth error:', err);
                 router.push('/?error=auth_failed');
@@ -51,19 +59,25 @@ function CallbackHandler() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mb-6"></div>
-            <h2 className="text-xl font-semibold text-gray-300">Authenticating with Discord...</h2>
-            <p className="text-gray-500 mt-2">Please wait while we verify your account</p>
+            <h2 className="text-xl font-semibold text-gray-300">
+                Authenticating with Discord...
+            </h2>
+            <p className="text-gray-500 mt-2">
+                Please wait while we verify your account
+            </p>
         </div>
     );
 }
 
 export default function CallbackPage() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
-            </div>
-        }>
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+                </div>
+            }
+        >
             <CallbackHandler />
         </Suspense>
     );

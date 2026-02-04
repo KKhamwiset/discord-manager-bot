@@ -8,9 +8,13 @@ async function proxyRequest(request: NextRequest, path: string[]) {
     const queryString = url.search;
     const targetUrl = `${API_URL}${targetPath}${queryString}`;
 
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = {};
+
+    const contentType = request.headers.get('Content-Type');
+
+    if (contentType) {
+        headers['Content-Type'] = contentType;
+    }
 
     const authHeader = request.headers.get('Authorization');
     if (authHeader) {
