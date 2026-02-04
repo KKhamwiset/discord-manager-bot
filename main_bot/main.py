@@ -148,7 +148,7 @@ class BotInitDB(commands.Bot):
         db = self.db["schedules"]
         await db.insert_one(schema)
         print("Migration Completed.")
-        print("Secrete varaibles testing")
+
 
                 
 
