@@ -18,12 +18,12 @@ def create_app():
     # Discord OAuth2 config
     app.config['DISCORD_CLIENT_ID'] = os.getenv('DISCORD_CLIENT_ID')
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
-    app.config['OAUTH_REDIRECT_URI'] = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:3000/api/auth/callback')
+    app.config['OAUTH_REDIRECT_URI'] = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:10000/api/auth/callback')
     
     # CORS - allow Next.js frontend
     CORS(app, origins=[
-        'http://localhost:3000',
-        os.getenv('FRONTEND_URL', 'http://localhost:3000')
+        'http://localhost:10000',
+        os.getenv('FRONTEND_URL', 'http://localhost:10000')
     ], supports_credentials=True)
     
     # MongoDB connection
