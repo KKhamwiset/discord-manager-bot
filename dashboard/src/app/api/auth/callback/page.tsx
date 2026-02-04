@@ -26,7 +26,7 @@ function CallbackHandler() {
             }
 
             try {
-                // Exchange code for token via our Flask API (proxied through Next.js)
+
                 const response = await fetch(`/api/proxy/api/auth/callback?code=${code}`);
 
                 if (!response.ok) {
@@ -38,7 +38,6 @@ function CallbackHandler() {
                 // Store auth data
                 setAuth(data.token, data.user);
 
-                // Redirect to dashboard
                 router.push('/dashboard');
             } catch (err) {
                 console.error('Auth error:', err);

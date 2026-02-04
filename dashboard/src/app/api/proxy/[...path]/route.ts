@@ -7,7 +7,7 @@ async function proxyRequest(request: NextRequest, path: string[]) {
     const url = new URL(request.url);
     const queryString = url.search;
     const targetUrl = `${API_URL}${targetPath}${queryString}`;
-    console.log(targetUrl);
+
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
