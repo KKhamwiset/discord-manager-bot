@@ -20,7 +20,7 @@ jobs:
 
       # ============ BOT (ACTIVE) ============
       - name: Build Bot image
-        run: docker build -t kkhw/discordbot-bot:latest .
+        run: docker build -t kkhw/discordbot-bot:latest ./main_bot
 
       - name: Push Bot image
         run: docker push kkhw/discordbot-bot:latest

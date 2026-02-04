@@ -114,8 +114,7 @@ def callback():
     
     # Create JWT token
     jwt_token = create_token(user_data)
-    
-    # Return token (frontend will handle storage)
+
     return jsonify({
         'token': jwt_token,
         'user': {
@@ -135,6 +134,7 @@ def me():
         'user_id': request.user['user_id'],
         'username': request.user['username'],
         'avatar': request.user['avatar']
+
     })
 
 

@@ -191,9 +191,10 @@ class BotInitDB(commands.Bot):
 
 
 # ------------ run -----------
-from web_server import keep_alive
+from internal_api import keep_alive, set_bot
 
 Bot = BotInitDB()
+set_bot(Bot)
 keep_alive()
 log_level_shift = logging.ERROR if bool(os.getenv("DEV")) == True else logging.DEBUG
 Bot.run(TOKEN, log_handler=handler, log_level=log_level_shift)

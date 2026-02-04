@@ -2,7 +2,7 @@ services:
   # Discord Bot
   bot:
     build:
-      context: .
+      context: ./main_bot
       dockerfile: Dockerfile
     container_name: discord-bot
     restart: unless-stopped

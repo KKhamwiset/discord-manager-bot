@@ -1,6 +1,6 @@
 import os
 import asyncio
-import glob
+import requests
 from flask import Blueprint, jsonify, request, current_app
 from routes.auth import token_required
 
@@ -8,7 +8,6 @@ commands_bp = Blueprint('commands', __name__)
 
 
 def run_async(coro):
-    """Helper to run async code in sync Flask context"""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
@@ -17,25 +16,18 @@ def run_async(coro):
         loop.close()
 
 
+BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')
+
+
 def get_available_commands():
-    """Scan cogs directory to get available commands"""
-    commands = []
-    cog_files = glob.glob('cogs/**/*.py', recursive=True)
-    
-    for cog_file in cog_files:
-        if os.path.basename(cog_file).startswith('_'):
-            continue
-            
-        cog_name = os.path.basename(cog_file).replace('.py', '')
-        category = os.path.dirname(cog_file).replace('cogs/', '').replace('cogs\\', '')
-        
-        commands.append({
-            'cog': cog_name,
-            'category': category or 'general',
-            'file': cog_file
-        })
-    
-    return commands
+    """Get commands from the running bot via internal API"""
+    try:
+        response = requests.get(f'{BOT_INTERNAL_URL}/commands', timeout=5)
+        if response.status_code == 200:
+            return response.json().get('commands', [])
+        return []
+    except requests.RequestException:
+        return []
 
 
 @commands_bp.route('/')
@@ -49,18 +41,19 @@ def list_commands():
         config = await db.command_config.find({}).to_list(length=100)
         config_map = {c['command_name']: c for c in config}
         
-        # Get cog info
-        cogs = get_available_commands()
+        # Get live commands from bot
+        bot_commands = get_available_commands()
         
         # Merge with config
         result = []
-        for cog in cogs:
-            cmd_config = config_map.get(cog['cog'], {})
+        for cmd in bot_commands:
+            cmd_config = config_map.get(cmd['name'], {})
             result.append({
-                'name': cog['cog'],
-                'category': cog['category'],
-                'enabled': cmd_config.get('enabled', True),
-                'description': cmd_config.get('description', ''),
+                'name': cmd['name'],
+                'cog': cmd.get('cog', 'Unknown'),
+                'description': cmd.get('description', ''),
+                'aliases': cmd.get('aliases', []),
+                'enabled': cmd_config.get('enabled', cmd.get('enabled', True)),
                 'usage_count': cmd_config.get('usage_count', 0)
             })
         

@@ -40,7 +40,7 @@ def overview():
             'guild': guild_info or {},
             'total_commands': command_logs,
             'commands_24h': recent_commands,
-            'bot_status': 'online'  # Could be enhanced with actual bot status
+            'bot_status': 'online'
         }
     
     stats = run_async(get_stats())
