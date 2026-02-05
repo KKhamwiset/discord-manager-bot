@@ -30,6 +30,8 @@ services:
       - .env
     environment:
       - API_PORT=5000
+      - BOT_INTERNAL_URL=http://bot:8080
+      - FRONTEND_URL=http://dashboard:10000
     networks:
       - bot-network
 
