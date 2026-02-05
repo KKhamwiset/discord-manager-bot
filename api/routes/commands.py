@@ -35,7 +35,7 @@ def get_available_commands():
 def list_commands():
     """List all available bot commands"""
     async def get_commands():
-        db = current_app.db
+        bot_instance = os.getenv("BOT_INTERNAL_URL")
         
         # Get command config from database
         config = await db.command_config.find({}).to_list(length=100)

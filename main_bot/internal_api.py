@@ -20,6 +20,27 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+
+@app.route('/',methods=['GET'])
+def home():
+    return jsonify({"message": "Bot is running", "instance": os.getenv("INSTANCE")}), 200
+
+@app.route('/commands',methods=['GET'])
+def get_commands():
+    if not bot_instance:
+        return jsonify({"error": "Bot instance not ready"}), 503
+        
+    commands_list = []
+    for command in bot_instance.commands:
+        commands_list.append({
+            "name": command.name,
+            "description": command.help or "No description",
+            "aliases": command.aliases,
+            "hidden": command.hidden,
+            "cog": command.cog_name
+        })
+    return jsonify({"commands": commands_list}), 200
+
 @app.route('/is_ready', methods=['GET'])
 def is_ready():
     ready = bot_instance.is_ready() if bot_instance else False
