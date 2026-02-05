@@ -46,6 +46,21 @@ def is_ready():
     ready = bot_instance.is_ready() if bot_instance else False
     return jsonify({"is_ready": ready}), 200
 
+@app.route('/guilds', methods=['GET'])
+def get_guilds():
+    if not bot_instance:
+        return jsonify({"error": "Bot instance not ready"}), 503
+    guilds_list = []
+    for guild in bot_instance.guilds:
+        guilds_list.append({
+            "id": str(guild.id),
+            "name": guild.name,
+            "icon": guild.icon.key if guild.icon else None,
+            "members": guild.member_count,
+            "region": str(guild.preferred_locale)
+        })
+    return jsonify({"guilds": guilds_list}), 200
+
 @app.route('/status', methods=['GET'])
 def status():
     return jsonify({"status": "running"}), 200

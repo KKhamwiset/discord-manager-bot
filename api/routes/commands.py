@@ -31,36 +31,22 @@ def get_available_commands():
 
 
 @commands_bp.route('/')
-@token_required
 def list_commands():
     """List all available bot commands"""
-    async def get_commands():
-        bot_instance = os.getenv("BOT_INTERNAL_URL")
-        
-        # Get command config from database
-        config = await db.command_config.find({}).to_list(length=100)
-        config_map = {c['command_name']: c for c in config}
-        
-        # Get live commands from bot
-        bot_commands = get_available_commands()
-        
-        # Merge with config
-        result = []
-        for cmd in bot_commands:
-            cmd_config = config_map.get(cmd['name'], {})
-            result.append({
-                'name': cmd['name'],
-                'cog': cmd.get('cog', 'Unknown'),
-                'description': cmd.get('description', ''),
-                'aliases': cmd.get('aliases', []),
-                'enabled': cmd_config.get('enabled', cmd.get('enabled', True)),
-                'usage_count': cmd_config.get('usage_count', 0)
-            })
-        
-        return result
+    bot_commands = get_available_commands()
+    url = f"Full request on : {BOT_INTERNAL_URL}/commands"
+    # Merge with config
+    result = []
+    for cmd in bot_commands:
+        result.append({
+            'name': cmd['name'],
+            'cog': cmd.get('cog', 'Unknown'),
+            'description': cmd.get('description', ''),
+            'aliases': cmd.get('aliases', []),
+            'hidden' : cmd.get('hidden', False)
+        })
     
-    commands = run_async(get_commands())
-    return jsonify({'commands': commands})
+    return jsonify({'commands': result , 'response_url' :  url})
 
 
 @commands_bp.route('/<command_name>', methods=['PATCH'])

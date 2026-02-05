@@ -3,17 +3,15 @@
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { commandsApi, Command, CommandLog } from '@/lib/api';
+import { commandsApi, Command } from '@/lib/api';
 import Link from 'next/link';
 
 export default function CommandsPage() {
     const { user, token, isLoading, logout } = useAuth();
     const router = useRouter();
     const [commands, setCommands] = useState<Command[]>([]);
-    const [logs, setLogs] = useState<CommandLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>('all');
-    const [updating, setUpdating] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -26,13 +24,11 @@ export default function CommandsPage() {
             if (!token) return;
 
             try {
-                const [cmdData, logsData] = await Promise.all([
+                const [cmdData] = await Promise.all([
                     commandsApi.list(token),
-                    commandsApi.getLogs(token, 20),
                 ]);
 
                 setCommands(cmdData.commands || []);
-                setLogs(logsData.logs || []);
             } catch (error) {
                 console.error('Failed to fetch commands:', error);
             } finally {
@@ -45,23 +41,6 @@ export default function CommandsPage() {
         }
     }, [token]);
 
-    const toggleCommand = async (commandName: string, currentEnabled: boolean) => {
-        if (!token) return;
-
-        setUpdating(commandName);
-        try {
-            await commandsApi.toggle(token, commandName, !currentEnabled);
-            setCommands(prev =>
-                prev.map(cmd =>
-                    cmd.name === commandName ? { ...cmd, enabled: !currentEnabled } : cmd
-                )
-            );
-        } catch (error) {
-            console.error('Failed to toggle command:', error);
-        } finally {
-            setUpdating(null);
-        }
-    };
 
     if (isLoading || !user) {
         return (
@@ -75,15 +54,11 @@ export default function CommandsPage() {
         ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
         : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
 
-    const categories = ['all', ...new Set(commands.map(c => c.category))];
+    const categories = ['all', ...new Set(commands.map(c => c.cog))];
     const filteredCommands = filter === 'all'
         ? commands
-        : commands.filter(c => c.category === filter);
+        : commands.filter(c => c.cog === filter);
 
-    const formatTime = (timestamp: number) => {
-        const date = new Date(timestamp * 1000);
-        return date.toLocaleString();
-    };
 
     return (
         <div className="min-h-screen">
@@ -125,109 +100,95 @@ export default function CommandsPage() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold mb-2">Command Management</h2>
-                    <p className="text-gray-400">Enable or disable bot commands</p>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                    <div>
+                        <h2 className="text-2xl font-bold mb-2">Command Management</h2>
+                        <p className="text-gray-400">View and explore all available bot commands</p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setFilter(cat)}
+                                className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 capitalize ${filter === cat
+                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
+                                    : 'bg-gray-800/50 text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Commands List */}
-                    <div className="lg:col-span-2">
-                        <div className="glass rounded-xl overflow-hidden">
-                            {/* Filter Tabs */}
-                            <div className="p-4 border-b border-gray-800 flex flex-wrap gap-2">
-                                {categories.map(cat => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setFilter(cat)}
-                                        className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize ${filter === cat
-                                                ? 'bg-purple-600 text-white'
-                                                : 'bg-gray-800 text-gray-400 hover:text-white'
-                                            }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {loading ? (
+                        [...Array(6)].map((_, i) => (
+                            <div key={i} className="glass rounded-xl p-6 h-48 animate-pulse">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gray-800 rounded-lg" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 bg-gray-800 rounded w-3/4" />
+                                        <div className="h-3 bg-gray-800 rounded w-1/2" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-3 bg-gray-800 rounded w-full" />
+                                    <div className="h-3 bg-gray-800 rounded w-full" />
+                                </div>
                             </div>
-
-                            {/* Command Table */}
-                            <div className="divide-y divide-gray-800">
-                                {loading ? (
-                                    [...Array(5)].map((_, i) => (
-                                        <div key={i} className="p-4 flex items-center gap-4">
-                                            <div className="h-10 w-24 bg-gray-800 rounded animate-pulse" />
-                                            <div className="flex-1 h-4 bg-gray-800 rounded animate-pulse" />
-                                            <div className="h-6 w-12 bg-gray-800 rounded animate-pulse" />
+                        ))
+                    ) : filteredCommands.length > 0 ? (
+                        filteredCommands.map(cmd => (
+                            <div key={cmd.name} className="glass rounded-xl p-6 group hover:border-purple-500/50 transition-all duration-300 hover:translate-y-[-4px]">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                                            <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
                                         </div>
-                                    ))
-                                ) : filteredCommands.length > 0 ? (
-                                    filteredCommands.map(cmd => (
-                                        <div key={cmd.name} className="p-4 flex items-center justify-between hover:bg-gray-800/50 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-medium">{cmd.name}</h4>
-                                                    <p className="text-sm text-gray-500">{cmd.category}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-sm text-gray-500">{cmd.usage_count} uses</span>
-                                                <button
-                                                    onClick={() => toggleCommand(cmd.name, cmd.enabled)}
-                                                    disabled={updating === cmd.name}
-                                                    className={`relative w-12 h-6 rounded-full transition-colors ${cmd.enabled ? 'bg-green-600' : 'bg-gray-700'
-                                                        }`}
-                                                >
-                                                    <span
-                                                        className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${cmd.enabled ? 'left-7' : 'left-1'
-                                                            } ${updating === cmd.name ? 'opacity-50' : ''}`}
-                                                    />
-                                                </button>
-                                            </div>
+                                        <div>
+                                            <h4 className="font-bold text-lg">{cmd.name}</h4>
+                                            <span className="text-xs font-medium px-2 py-0.5 bg-gray-800 text-gray-400 rounded-full uppercase tracking-wider">
+                                                {cmd.cog}
+                                            </span>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="p-8 text-center text-gray-500">
-                                        No commands found
+                                    </div>
+                                    {cmd.hidden && (
+                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
+                                            Hidden
+                                        </span>
+                                    )}
+                                </div>
+
+                                <p className="text-sm text-gray-400 line-clamp-2 mb-4 min-h-[40px]">
+                                    {cmd.description || "No description available for this command."}
+                                </p>
+
+                                {cmd.aliases && cmd.aliases.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-auto">
+                                        {cmd.aliases.map(alias => (
+                                            <span key={alias} className="text-[10px] bg-gray-800/50 text-gray-500 px-2 py-1 rounded">
+                                                {alias}
+                                            </span>
+                                        ))}
                                     </div>
                                 )}
                             </div>
+                        ))
+                    ) : (
+                        <div className="col-span-full py-20 text-center">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 text-gray-600 mb-4">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-medium text-gray-400">No commands found</h3>
+                            <p className="text-gray-500">Try adjusting your filters or search query.</p>
                         </div>
-                    </div>
-
-                    {/* Recent Logs */}
-                    <div className="glass rounded-xl p-4">
-                        <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                        {loading ? (
-                            <div className="space-y-3">
-                                {[...Array(5)].map((_, i) => (
-                                    <div key={i} className="h-16 bg-gray-800 rounded animate-pulse" />
-                                ))}
-                            </div>
-                        ) : logs.length > 0 ? (
-                            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                                {logs.map((log, i) => (
-                                    <div key={i} className="p-3 bg-gray-800/50 rounded-lg">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="font-medium text-sm">{log.command}</span>
-                                            <span className={`w-2 h-2 rounded-full ${log.success ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        </div>
-                                        <p className="text-xs text-gray-500">by {log.user}</p>
-                                        <p className="text-xs text-gray-600">{formatTime(log.timestamp)}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center text-gray-500 py-8">
-                                No recent activity
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
             </main>
         </div>

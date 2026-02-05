@@ -30,41 +30,30 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
 
 // Stats API
 export interface StatsOverview {
-    guild: Record<string, unknown>;
-    total_commands: number;
-    commands_24h: number;
+    guild: {
+        id?: string;
+        name?: string;
+        icon?: string;
+        members?: number;
+        region?: string;
+        [key: string]: any;
+    };
     bot_status: string;
 }
 
-export interface CommandStat {
-    command: string;
-    usage_count: number;
-    last_used: number | null;
-}
-
-export interface ActivityData {
-    date: string;
-    commands: number;
-}
 
 export const statsApi = {
-    getOverview: (token: string) =>
-        apiFetch<StatsOverview>('/api/stats/overview', { token }),
-
-    getCommandStats: (token: string) =>
-        apiFetch<{ commands: CommandStat[] }>('/api/stats/commands', { token }),
-
-    getActivity: (token: string) =>
-        apiFetch<{ activity: ActivityData[] }>('/api/stats/activity', { token }),
+    getOverview: () =>
+        apiFetch<StatsOverview>('/api/stats/overview'),
 };
 
 // Commands API
 export interface Command {
     name: string;
-    category: string;
-    enabled: boolean;
+    cog: string;
     description: string;
-    usage_count: number;
+    aliases: string[];
+    hidden: boolean
 }
 
 export interface CommandLog {

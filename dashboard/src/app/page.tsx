@@ -2,17 +2,31 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { statsApi, StatsOverview } from "@/lib/api";
 
 export default function Home() {
   const { user, isLoading, login } = useAuth();
   const router = useRouter();
+  const [overview, setOverview] = useState<StatsOverview | null>(null);
 
   useEffect(() => {
     if (!isLoading && user) {
       router.push('/dashboard');
     }
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    const fetchOverview = async () => {
+      try {
+        const data = await statsApi.getOverview();
+        setOverview(data);
+      } catch (error) {
+        console.error("Failed to fetch bot overview:", error);
+      }
+    };
+    fetchOverview();
+  }, []);
 
   if (isLoading) {
     return (
@@ -32,6 +46,16 @@ export default function Home() {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
 
       <div className="relative z-10 text-center max-w-2xl">
+        {/* Bot Status Badge */}
+        <div className="mb-6 flex justify-center">
+          <div className="glass px-4 py-1.5 rounded-full flex items-center gap-2 border border-white/5">
+            <div className={`w-2 h-2 rounded-full ${overview?.bot_status === 'online' ? 'bg-green-500 pulse-glow' : 'bg-gray-500'}`} />
+            <span className="text-xs font-medium tracking-wider uppercase text-gray-300">
+              Bot Status: {overview?.bot_status || 'Checking...'}
+            </span>
+          </div>
+        </div>
+
         {/* Logo / Title */}
         <div className="mb-8">
           <h1 className="text-6xl font-bold mb-4 gradient-text">
@@ -45,7 +69,12 @@ export default function Home() {
         {/* Description */}
         <p className="text-gray-400 mb-12 text-lg leading-relaxed">
           Manage your Discord bot with a modern, intuitive dashboard.
-          View stats, manage commands, and monitor activity in real-time.
+          {overview?.guild?.name && (
+            <span className="block mt-2 text-purple-400/80">
+              Currently serving <b>{overview.guild.name}</b>
+              {overview.guild.members && ` with ${overview.guild.members} members`}
+            </span>
+          )}
         </p>
 
         {/* Login Button */}
@@ -64,17 +93,7 @@ export default function Home() {
         </button>
 
         {/* Features */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass p-6 rounded-xl card-hover">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold mb-2">Real-time Stats</h3>
-            <p className="text-sm text-gray-400">Monitor command usage and server activity</p>
-          </div>
-
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="glass p-6 rounded-xl card-hover">
             <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
               <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
