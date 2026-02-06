@@ -57,7 +57,7 @@ def get_guilds():
             "id": str(guild.id),
             "name": guild.name,
             "icon": guild.icon.key if guild.icon else None,
-            "member_count": guild.member_count,
+            "members": guild.member_count,
             "region": str(guild.preferred_locale)
         })
     return jsonify({"guilds": guilds_list}), 200
