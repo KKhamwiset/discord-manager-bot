@@ -34,8 +34,6 @@ def get_available_commands():
 def list_commands():
     """List all available bot commands"""
     bot_commands = get_available_commands()
-    url = f"Full request on : {BOT_INTERNAL_URL}/commands"
-    # Merge with config
     result = []
     for cmd in bot_commands:
         result.append({
@@ -71,28 +69,3 @@ def update_command(command_name):
     
     result = run_async(update())
     return jsonify(result)
-
-
-@commands_bp.route('/logs')
-@token_required
-def command_logs():
-    """Get recent command execution logs"""
-    limit = request.args.get('limit', 50, type=int)
-    limit = min(limit, 100)  # Cap at 100
-    
-    async def get_logs():
-        db = current_app.db
-        
-        cursor = db.command_logs.find({}).sort('timestamp', -1).limit(limit)
-        logs = await cursor.to_list(length=limit)
-        
-        return [{
-            'command': log.get('command_name'),
-            'user': log.get('user_name'),
-            'channel': log.get('channel_name'),
-            'timestamp': log.get('timestamp'),
-            'success': log.get('success', True)
-        } for log in logs]
-    
-    logs = run_async(get_logs())
-    return jsonify({'logs': logs})

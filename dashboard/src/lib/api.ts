@@ -56,13 +56,7 @@ export interface Command {
     hidden: boolean
 }
 
-export interface CommandLog {
-    command: string;
-    user: string;
-    channel: string;
-    timestamp: number;
-    success: boolean;
-}
+
 
 export const commandsApi = {
     list: (token: string) =>
@@ -74,7 +68,4 @@ export const commandsApi = {
             token,
             body: JSON.stringify({ enabled }),
         }),
-
-    getLogs: (token: string, limit = 50) =>
-        apiFetch<{ logs: CommandLog[] }>(`/api/commands/logs?limit=${limit}`, { token }),
-};
+}

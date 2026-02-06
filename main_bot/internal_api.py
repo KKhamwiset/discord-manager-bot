@@ -37,7 +37,8 @@ def get_commands():
             "description": command.help or "No description",
             "aliases": command.aliases,
             "hidden": command.hidden,
-            "cog": command.cog_name
+            "cog": command.cog_name,
+            "enabled": command.enabled
         })
     return jsonify({"commands": commands_list}), 200
 
@@ -56,7 +57,7 @@ def get_guilds():
             "id": str(guild.id),
             "name": guild.name,
             "icon": guild.icon.key if guild.icon else None,
-            "members": guild.member_count,
+            "member_count": guild.member_count,
             "region": str(guild.preferred_locale)
         })
     return jsonify({"guilds": guilds_list}), 200

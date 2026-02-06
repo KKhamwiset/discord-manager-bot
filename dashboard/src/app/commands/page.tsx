@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { commandsApi, Command } from '@/lib/api';
 import Link from 'next/link';
+import Header from '@/components/Header';
 
 export default function CommandsPage() {
     const { user, token, isLoading, logout } = useAuth();
@@ -50,9 +51,6 @@ export default function CommandsPage() {
         );
     }
 
-    const avatarUrl = user.avatar
-        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-        : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
 
     const categories = ['all', ...new Set(commands.map(c => c.cog))];
     const filteredCommands = filter === 'all'
@@ -62,41 +60,7 @@ export default function CommandsPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Header */}
-            <header className="glass sticky top-0 z-50 border-b border-gray-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center gap-8">
-                            <h1 className="text-xl font-bold gradient-text">Bot Dashboard</h1>
-                            <nav className="hidden md:flex gap-6">
-                                <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                                    Overview
-                                </Link>
-                                <Link href="/commands" className="text-white font-medium">
-                                    Commands
-                                </Link>
-                            </nav>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-3">
-                                <img
-                                    src={avatarUrl}
-                                    alt={user.username}
-                                    className="w-8 h-8 rounded-full ring-2 ring-purple-500/50"
-                                />
-                                <span className="text-sm font-medium hidden sm:block">{user.username}</span>
-                            </div>
-                            <button
-                                onClick={logout}
-                                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <Header />
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
