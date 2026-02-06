@@ -4,6 +4,7 @@ import requests
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 import asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
 from flask import Blueprint, request, jsonify, redirect, current_app
 
 auth_bp = Blueprint('auth', __name__)
@@ -156,15 +157,23 @@ def logout():
 @auth_bp.route('/authorized-user', methods=['GET'])
 @token_required
 def authorized_user():
-    db = current_app.db
-    collection = db['authorize_user']
+    mongo_uri = current_app.config['MONGO_URI']
+    mongo_db = current_app.config['MONGO_DB']
+    
     async def get_authorized():
-        user = await collection.find_one(
-            {
-                'guild_id': os.getenv('GUILD_ID'),
-                'user_id': str(request.user['user_id'])
-            }
-        )
-        return user
+        client = AsyncIOMotorClient(mongo_uri)
+        db = client[mongo_db]
+        collection = db['authorize_user']
+        try:
+            user = await collection.find_one(
+                {
+                    'guild_id': os.getenv('GUILD_ID'),
+                    'user_id': str(request.user['user_id'])
+                }
+            )
+            return user
+        finally:
+            client.close()
+            
     result = run_async(get_authorized())
     return jsonify({'authorized': result is not None})
