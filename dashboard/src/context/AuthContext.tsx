@@ -32,8 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const initAuth = async () => {
             const storedToken = localStorage.getItem('auth_token');
             const storedUser = localStorage.getItem('auth_user');
+            const storedIsAuthorizedUser = localStorage.getItem('auth_is_authorized');
 
-            if (!storedToken || !storedUser) {
+            if (!storedToken || !storedUser || !storedIsAuthorizedUser) {
                 setIsLoading(false);
                 return;
             }
@@ -42,14 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await authApi.me(storedToken);
                 setToken(storedToken);
                 setUser(JSON.parse(storedUser));
+                setIsAuthorizedUser(JSON.parse(storedIsAuthorizedUser));
 
-                try {
-                    const authData = await authApi.authorizedUser(storedToken);
-                    setIsAuthorizedUser(authData.authorized);
-                } catch (e) {
-                    console.error('Failed to check permission:', e);
-                    setIsAuthorizedUser(false);
-                }
             } catch (error) {
                 console.error('Session validation failed:', error);
                 logout();
@@ -73,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_is_authorized');
         setToken(null);
         setUser(null);
         setIsAuthorizedUser(false);
@@ -81,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const setAuth = (newToken: string, newUser: User, isAuthorized: boolean) => {
         localStorage.setItem('auth_token', newToken);
         localStorage.setItem('auth_user', JSON.stringify(newUser));
+        localStorage.setItem('auth_is_authorized', JSON.stringify(isAuthorized));
         setToken(newToken);
         setUser(newUser);
         setIsAuthorizedUser(isAuthorized);

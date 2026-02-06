@@ -43,6 +43,7 @@ function CallbackHandler() {
                 }
 
                 const data = JSON.parse(text);
+
                 const authData = await authApi.authorizedUser(data.token);
                 setAuth(data.token, data.user, authData.authorized);
 
