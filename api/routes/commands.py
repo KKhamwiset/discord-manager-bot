@@ -41,10 +41,11 @@ def list_commands():
             'cog': cmd.get('cog', 'Unknown'),
             'description': cmd.get('description', ''),
             'aliases': cmd.get('aliases', []),
-            'hidden' : cmd.get('hidden', False)
+            'hidden' : cmd.get('hidden', False),
+            'enable' : cmd.get('enabled', True)
         })
     
-    return jsonify({'commands': result , 'response_url' :  url})
+    return jsonify({'commands': result})
 
 
 @commands_bp.route('/<command_name>', methods=['PATCH'])

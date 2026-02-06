@@ -125,6 +125,15 @@ export default function CommandsPage() {
                                             Hidden
                                         </span>
                                     )}
+                                    {cmd.enable ? (
+                                        <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
+                                            Enabled
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
+                                            Disabled
+                                        </span>
+                                    )}
                                 </div>
 
                                 <p className="text-sm text-gray-400 line-clamp-2 mb-4 min-h-[40px]">

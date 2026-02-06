@@ -54,6 +54,7 @@ export interface Command {
     description: string;
     aliases: string[];
     hidden: boolean
+    enable: boolean
 }
 
 
