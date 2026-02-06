@@ -33,14 +33,30 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{}'
-      - name : Trigger Railway deploy - Bot
+      - name: Trigger Railway deploy - Bot
         env:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          SERVICE_ID: ${{ secrets.BOT_SERVICE_ID_RAILWAY }}
         run: |
+          # 1. Fetch the latest deployment ID for the service
+          DEPLOYMENT_ID=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Authorization: Bearer $RAILWAY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"query { service(id: \\\"$SERVICE_ID\\\") { deployments(first: 1) { edges { node { id } } } } }\"}" \
+            | jq -r '.data.service.deployments.edges[0].node.id')
+
+          echo "Latest Deployment ID: $DEPLOYMENT_ID"
+
+          if [ -z "$DEPLOYMENT_ID" ] || [ "$DEPLOYMENT_ID" == "null" ]; then
+            echo "Error: Could not find a deployment for service $SERVICE_ID"
+            exit 1
+          fi
+
+          # 2. Trigger the redeploy
           curl -X POST https://backboard.railway.com/graphql/v2 \
           -H "Authorization: Bearer $RAILWAY_API_KEY" \
           -H "Content-Type: application/json" \
-          -d '{"query":"mutation deploymentRedeploy($id: String!) {\n  deploymentRedeploy(id: $id) {\n    id\n    status\n  }\n}","variables":{"id":"${{ secrets.BOT_SERVICE_ID_RAILWAY}}"}}'
+          -d "{\"query\":\"mutation deploymentRedeploy(\$id: String!) { deploymentRedeploy(id: \$id) { id status } }\",\"variables\":{\"id\":\"$DEPLOYMENT_ID\"}}"
 
       # ============ API ============
       - name: Build API image
@@ -57,14 +73,30 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{}'
-      - name : Trigger Railway deploy - API
+      - name: Trigger Railway deploy - API
         env:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          SERVICE_ID: ${{ secrets.API_SERVICE_ID_RAILWAY }}
         run: |
+          # 1. Fetch the latest deployment ID for the service
+          DEPLOYMENT_ID=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Authorization: Bearer $RAILWAY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"query { service(id: \\\"$SERVICE_ID\\\") { deployments(first: 1) { edges { node { id } } } } }\"}" \
+            | jq -r '.data.service.deployments.edges[0].node.id')
+
+          echo "Latest Deployment ID: $DEPLOYMENT_ID"
+
+          if [ -z "$DEPLOYMENT_ID" ] || [ "$DEPLOYMENT_ID" == "null" ]; then
+            echo "Error: Could not find a deployment for service $SERVICE_ID"
+            exit 1
+          fi
+
+          # 2. Trigger the redeploy
           curl -X POST https://backboard.railway.com/graphql/v2 \
           -H "Authorization: Bearer $RAILWAY_API_KEY" \
           -H "Content-Type: application/json" \
-          -d '{"query":"mutation deploymentRedeploy($id: String!) {\n  deploymentRedeploy(id: $id) {\n    id\n    status\n  }\n}","variables":{"id":"${{ secrets.API_SERVICE_ID_RAILWAY}}"}}'
+          -d "{\"query\":\"mutation deploymentRedeploy(\$id: String!) { deploymentRedeploy(id: \$id) { id status } }\",\"variables\":{\"id\":\"$DEPLOYMENT_ID\"}}"
 
       # ============ DASHBOARD ============
       - name: Build Dashboard image
@@ -81,11 +113,27 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{}'
-      - name : Trigger Railway deploy - Dashboard
+      - name: Trigger Railway deploy - Dashboard
         env:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          SERVICE_ID: ${{ secrets.WEB_SERVICE_ID_RAILWAY }}
         run: |
+          # 1. Fetch the latest deployment ID for the service
+          DEPLOYMENT_ID=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Authorization: Bearer $RAILWAY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"query { service(id: \\\"$SERVICE_ID\\\") { deployments(first: 1) { edges { node { id } } } } }\"}" \
+            | jq -r '.data.service.deployments.edges[0].node.id')
+
+          echo "Latest Deployment ID: $DEPLOYMENT_ID"
+
+          if [ -z "$DEPLOYMENT_ID" ] || [ "$DEPLOYMENT_ID" == "null" ]; then
+            echo "Error: Could not find a deployment for service $SERVICE_ID"
+            exit 1
+          fi
+
+          # 2. Trigger the redeploy
           curl -X POST https://backboard.railway.com/graphql/v2 \
           -H "Authorization: Bearer $RAILWAY_API_KEY" \
           -H "Content-Type: application/json" \
-          -d '{"query":"mutation deploymentRedeploy($id: String!) {\n  deploymentRedeploy(id: $id) {\n    id\n    status\n  }\n}","variables":{"id":"${{ secrets.WEB_SERVICE_ID_RAILWAY}}"}}'
+          -d "{\"query\":\"mutation deploymentRedeploy(\$id: String!) { deploymentRedeploy(id: \$id) { id status } }\",\"variables\":{\"id\":\"$DEPLOYMENT_ID\"}}"
