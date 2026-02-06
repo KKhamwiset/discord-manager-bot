@@ -3,6 +3,7 @@
 import { useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { authApi } from '@/lib/api';
 
 function CallbackHandler() {
     const searchParams = useSearchParams();
@@ -36,16 +37,15 @@ function CallbackHandler() {
                 );
 
                 const text = await response.text();
-                console.log('STATUS:', response.status);
-                console.log('RAW RESPONSE:', text);
 
                 if (!response.ok) {
                     throw new Error('Failed to authenticate');
                 }
 
                 const data = JSON.parse(text);
+                const authData = await authApi.authorizedUser(data.token);
+                setAuth(data.token, data.user, authData.authorized);
 
-                setAuth(data.token, data.user);
                 router.replace('/dashboard');
             } catch (err) {
                 console.error('Auth error:', err);

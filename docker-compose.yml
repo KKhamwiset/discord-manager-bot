@@ -34,6 +34,8 @@ services:
       - FRONTEND_URL=http://dashboard:10000
     networks:
       - bot-network
+    volumes:
+      - ./api:/app
 
   # Next.js Dashboard
   dashboard:

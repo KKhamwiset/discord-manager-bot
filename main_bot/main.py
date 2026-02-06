@@ -123,31 +123,18 @@ class BotInitDB(commands.Bot):
             return
 
         print("Starting Migration...")
-        db = self.db["schedules"]
-        docs = await db.find({}).to_list(length=None)
-
-        new_docs = []
-
-        for document in docs:
-            merged_doc = {
-                "user_id": document.get("user_id")
-            }
-
-            for key, value in document.items():
-                if key not in ["_id", "user_id"]:
-                    merged_doc[key] = value
-
-            # 👇 wrap into another array layer
-            new_docs.append([merged_doc])
-
+        db = self.db["authorize_user"]
         schema = {
-            "guild_id": str(os.getenv("GUILD_ID")),
-            "schedules": new_docs
+            "guild_id" : str(os.getenv("GUILD_ID")),
+            "user_id" : ["273760138135863296","274127380577124352"]
         }
-
-        db = self.db["schedules"]
-        await db.insert_one(schema)
-        print("Migration Completed.")
+        await db.update_one(
+            {"guild_id": schema["guild_id"]},
+            {"$set": schema},                 
+            upsert=True                   
+        )
+        print("✅ Migration completed")
+        
 
 
                 
@@ -157,7 +144,7 @@ class BotInitDB(commands.Bot):
         print("Starting Setup Hook...")
         await self.mongo.pingdb()
         await self.add_cog(Core(self))
-        await self._load_all_extensions(["backup"]) 
+        await self._load_all_extensions() 
 
         if os.getenv("ENV") == "SINGLE_GUILD":
             target_guild = discord.Object(id=GUILD_ID)

@@ -1,4 +1,5 @@
 'use client';
+import { authApi } from '@/lib/api';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
@@ -13,9 +14,10 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
+    isAuthorizedUser: boolean;
     login: () => void;
     logout: () => void;
-    setAuth: (token: string, user: User) => void;
+    setAuth: (token: string, user: User, isAuthorized: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,23 +26,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
 
     useEffect(() => {
+        const initAuth = async () => {
+            const storedToken = localStorage.getItem('auth_token');
+            const storedUser = localStorage.getItem('auth_user');
 
-        const storedToken = localStorage.getItem('auth_token');
-        const storedUser = localStorage.getItem('auth_user');
+            if (!storedToken || !storedUser) {
+                setIsLoading(false);
+                return;
+            }
 
-        if (storedToken && storedUser) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
-        }
-        setIsLoading(false);
+            try {
+                await authApi.me(storedToken);
+                setToken(storedToken);
+                setUser(JSON.parse(storedUser));
+
+                try {
+                    const authData = await authApi.authorizedUser(storedToken);
+                    setIsAuthorizedUser(authData.authorized);
+                } catch (e) {
+                    console.error('Failed to check permission:', e);
+                    setIsAuthorizedUser(false);
+                }
+            } catch (error) {
+                console.error('Session validation failed:', error);
+                logout();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initAuth();
     }, []);
 
     const login = async () => {
         try {
-            const response = await fetch('/api/proxy/api/auth/login');
-            const data = await response.json();
+            const data = await authApi.login();
             window.location.href = data.url;
         } catch (error) {
             console.error('Login error:', error);
@@ -52,17 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('auth_user');
         setToken(null);
         setUser(null);
+        setIsAuthorizedUser(false);
     };
 
-    const setAuth = (newToken: string, newUser: User) => {
+    const setAuth = (newToken: string, newUser: User, isAuthorized: boolean) => {
         localStorage.setItem('auth_token', newToken);
         localStorage.setItem('auth_user', JSON.stringify(newUser));
         setToken(newToken);
         setUser(newUser);
+        setIsAuthorizedUser(isAuthorized);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout, setAuth }}>
+        <AuthContext.Provider value={{ user, token, isLoading, isAuthorizedUser, login, logout, setAuth, }}>
             {children}
         </AuthContext.Provider>
     );

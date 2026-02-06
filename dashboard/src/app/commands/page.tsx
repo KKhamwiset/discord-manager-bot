@@ -8,11 +8,30 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 
 export default function CommandsPage() {
-    const { user, token, isLoading, logout } = useAuth();
+    const { user, token, isLoading, isAuthorizedUser, logout } = useAuth();
     const router = useRouter();
     const [commands, setCommands] = useState<Command[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>('all');
+    const [toggling, setToggling] = useState<string | null>(null);
+
+    const handleToggle = async (commandName: string, currentStatus: boolean) => {
+        if (!token || toggling) return;
+
+        setToggling(commandName);
+        try {
+            await commandsApi.toggle(token, commandName, !currentStatus);
+            setCommands(prev => prev.map(cmd =>
+                cmd.name === commandName
+                    ? { ...cmd, enable: !currentStatus }
+                    : cmd
+            ));
+        } catch (error) {
+            console.error('Failed to toggle command:', error);
+        } finally {
+            setToggling(null);
+        }
+    };
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -125,14 +144,28 @@ export default function CommandsPage() {
                                             Hidden
                                         </span>
                                     )}
-                                    {cmd.enable ? (
-                                        <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
-                                            Enabled
-                                        </span>
+                                    {isAuthorizedUser ? (
+                                        <button
+                                            onClick={() => handleToggle(cmd.name, cmd.enable)}
+                                            disabled={toggling === cmd.name}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${cmd.enable ? 'bg-purple-600' : 'bg-gray-700'
+                                                } ${toggling === cmd.name ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cmd.enable ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                            />
+                                        </button>
                                     ) : (
-                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
-                                            Disabled
-                                        </span>
+                                        cmd.enable ? (
+                                            <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
+                                                Enabled
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
+                                                Disabled
+                                            </span>
+                                        )
                                     )}
                                 </div>
 

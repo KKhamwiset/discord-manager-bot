@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 
 export default function DashboardPage() {
-    const { user, token, isLoading, logout } = useAuth();
+    const { user, token, isLoading, isAuthorizedUser, logout } = useAuth();
     const router = useRouter();
 
     const [stats, setStats] = useState<StatsOverview | null>(null);
@@ -97,14 +97,14 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-4">
+                                    {isAuthorizedUser && (<div className="flex gap-4">
                                         <Link
                                             href="/commands"
                                             className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-purple-600/20 active:scale-95"
                                         >
                                             Manage Commands
                                         </Link>
-                                    </div>
+                                    </div>)}
                                 </div>
                             </div>
                         </div>

@@ -3,9 +3,18 @@ import jwt
 import requests
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+import asyncio
 from flask import Blueprint, request, jsonify, redirect, current_app
 
 auth_bp = Blueprint('auth', __name__)
+
+def run_async(coro):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
 
 DISCORD_API_URL = 'https://discord.com/api/v10'
 DISCORD_OAUTH_URL = 'https://discord.com/api/oauth2'
@@ -103,7 +112,6 @@ def callback():
     token_data = token_response.json()
     access_token = token_data['access_token']
     
-    # Get user info from Discord
     user_response = requests.get(
         f"{DISCORD_API_URL}/users/@me",
         headers={'Authorization': f"Bearer {access_token}"}
@@ -114,7 +122,6 @@ def callback():
     
     user_data = user_response.json()
     
-    # Create JWT token
     jwt_token = create_token(user_data)
 
     return jsonify({
@@ -145,3 +152,19 @@ def me():
 def logout():
     """Logout user (client should delete token)"""
     return jsonify({'message': 'Logged out successfully'})
+
+@auth_bp.route('/authorized-user', methods=['GET'])
+@token_required
+def authorized_user():
+    db = current_app.db
+    collection = db['authorize_user']
+    async def get_authorized():
+        user = await collection.find_one(
+            {
+                'guild_id': os.getenv('GUILD_ID'),
+                'user_id': str(request.user['user_id'])
+            }
+        )
+        return user
+    result = run_async(get_authorized())
+    return jsonify({'authorized': result is not None})

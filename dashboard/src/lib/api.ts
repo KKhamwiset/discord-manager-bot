@@ -40,24 +40,38 @@ export interface StatsOverview {
     };
     bot_status: string;
 }
-
-
-export const statsApi = {
-    getOverview: () =>
-        apiFetch<StatsOverview>('/api/stats/overview'),
-};
-
 // Commands API
 export interface Command {
     name: string;
     cog: string;
     description: string;
     aliases: string[];
-    hidden: boolean
-    enable: boolean
+    hidden: boolean;
+    enable: boolean;
 }
 
+export interface User {
+    id: string;
+    username: string;
+    avatar: string | null;
+    global_name?: string;
+}
 
+export const statsApi = {
+    getOverview: () =>
+        apiFetch<StatsOverview>('/api/stats/overview'),
+};
+
+export const authApi = {
+    me: (token: string) =>
+        apiFetch<User & { user_id: string }>('/api/auth/me', { token }),
+
+    authorizedUser: (token: string) =>
+        apiFetch<{ authorized: boolean }>('/api/auth/authorized-user', { token }),
+
+    login: () =>
+        apiFetch<{ url: string }>('/api/auth/login'),
+};
 
 export const commandsApi = {
     list: (token: string) =>
