@@ -19,6 +19,8 @@ def create_app():
     app.config['DISCORD_CLIENT_ID'] = os.getenv('DISCORD_CLIENT_ID')
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
     app.config['OAUTH_REDIRECT_URI'] = os.getenv('OAUTH_REDIRECT_URI')
+    app.url_map.strict_slashes = False
+
     
 
     CORS(app, origins=[
