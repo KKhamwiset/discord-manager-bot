@@ -83,7 +83,7 @@ export const authApi = {
 
 export const commandsApi = {
     list: (token: string) =>
-        apiFetch<{ commands: Command[] }>('/api/commands', { token }),
+        apiFetch<{ commands: Command[] }>('/api/commands/', { token }),
 
     toggle: (token: string, commandName: string, enabled: boolean) =>
         apiFetch<{ command: string; enabled: boolean }>(`/api/commands/${commandName}`, {
