@@ -17,8 +17,13 @@ async function proxyRequest(request: NextRequest, path: string[]) {
     }
 
     const authHeader = request.headers.get('Authorization');
+    console.log(`[Proxy] Request to ${targetUrl}`);
+    console.log(`[Proxy] Incoming Auth Header length: ${authHeader?.length || 0}`);
+
     if (authHeader) {
         headers['Authorization'] = authHeader;
+    } else {
+        console.log('[Proxy] WARNING: No Authorization header found on incoming request');
     }
 
     const fetchOptions: RequestInit = {
@@ -40,6 +45,7 @@ async function proxyRequest(request: NextRequest, path: string[]) {
 
     try {
         const response = await fetch(targetUrl, fetchOptions);
+        console.log(`[Proxy] Backend Response Status: ${response.status} for ${targetUrl}`);
         const data = await response.text();
 
         return new NextResponse(data, {
