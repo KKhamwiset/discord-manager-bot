@@ -24,7 +24,7 @@ def get_available_commands():
         return []
 
 
-@commands_bp.route('')
+@commands_bp.route('/')
 def list_commands():
     """List all available bot commands"""
     bot_commands = get_available_commands()
