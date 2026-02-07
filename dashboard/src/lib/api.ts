@@ -57,6 +57,14 @@ export interface User {
     global_name?: string;
 }
 
+export interface Channel {
+    id: string;
+    name: string;
+}
+export const channelAPI = {
+    getChannel: (token: string) => apiFetch<{ channels: Channel[] }>('/api/channels', { token }),
+};
+
 export const statsApi = {
     getOverview: () =>
         apiFetch<StatsOverview>('/api/stats/overview'),

@@ -19,7 +19,7 @@ async def global_channel_check(ctx: commands.Context) -> bool:
                         , "channel-list"
                         , "help"
                         , "command-allow-all"
-                        , "info"]:
+                        ] or (ctx.command.cog_name and ctx.command.cog_name in ["Core", "Maintenance", "Info"]):
         return True
     
     collection = ctx.bot.db["guild_config"]

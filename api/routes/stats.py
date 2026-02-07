@@ -1,14 +1,9 @@
 import os
-import asyncio
 import requests
-from datetime import datetime, timezone
 from flask import Blueprint, jsonify, current_app
 from routes.auth import token_required
 
 stats_bp = Blueprint('stats', __name__)
-
-
-
 
 
 BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')

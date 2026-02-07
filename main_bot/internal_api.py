@@ -1,7 +1,8 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from threading import Thread
 from waitress import serve
 import os
+import asyncio
 
 app = Flask('Bot')
 bot_instance = None 
@@ -42,6 +43,7 @@ def get_commands():
         })
     return jsonify({"commands": commands_list}), 200
 
+
 @app.route('/is_ready', methods=['GET'])
 def is_ready():
     ready = bot_instance.is_ready() if bot_instance else False
@@ -61,6 +63,37 @@ def get_guilds():
             "region": str(guild.preferred_locale)
         })
     return jsonify({"guilds": guilds_list}), 200
+
+@app.route('/channel_name',methods=['GET'])
+def get_channel_name():
+    id = request.args.get('id')
+    if not id:
+         return jsonify({"error": "Missing id parameter"}), 400
+         
+    if not bot_instance:
+        return jsonify({"error": "Bot instance not ready"}), 503
+    
+    guild_id = os.getenv("GUILD_ID")
+    if not guild_id:
+        return jsonify({"error": "GUILD_ID not set"}), 500
+        
+    guild = bot_instance.get_guild(int(guild_id))
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+        
+    channel = guild.get_channel(int(id)) or guild.get_thread(int(id))
+
+    if not channel:
+        try:
+             future = asyncio.run_coroutine_threadsafe(guild.fetch_channel(int(id)), bot_instance.loop)
+             channel = future.result(timeout=5)
+        except Exception as e:
+             message = f"Failed to fetch channel {id}: {e}"
+             print(message)
+    
+    if not channel:
+        return jsonify({"error": "Channel not found"}), 404
+    return jsonify({"name": channel.name}), 200
 
 @app.route('/status', methods=['GET'])
 def status():
