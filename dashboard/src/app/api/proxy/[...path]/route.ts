@@ -21,6 +21,10 @@ async function proxyRequest(request: NextRequest, path: string[]) {
     if (authHeader) {
         headers['Authorization'] = authHeader;
     }
+    const cookie = request.headers.get('cookie');
+    if (cookie) {
+        headers['Cookie'] = cookie;
+    }
 
     const fetchOptions: RequestInit = {
         method: request.method,

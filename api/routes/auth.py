@@ -31,9 +31,11 @@ def token_required(f):
         
         print(f"Authorization header: {request.headers}")
         auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            token = auth_header.split(' ')[1]
-        
+        if auth_header:
+            parts = auth_header.split()
+            if len(parts) == 2 and parts[0].lower() == 'bearer':
+                token = parts[1]
+
         # Check cookie fallback
         if not token:
             token = request.cookies.get('auth_token')

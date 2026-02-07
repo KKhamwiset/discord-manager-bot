@@ -9,6 +9,7 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        "credentials": "include"
     };
 
     if (token) {
