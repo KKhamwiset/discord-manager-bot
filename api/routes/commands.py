@@ -1,5 +1,5 @@
 import os
-import asyncio
+
 import requests
 from flask import Blueprint, jsonify, request, current_app
 from routes.auth import token_required
@@ -7,13 +7,7 @@ from routes.auth import token_required
 commands_bp = Blueprint('commands', __name__)
 
 
-def run_async(coro):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+
 
 
 BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')
@@ -57,16 +51,13 @@ def update_command(command_name):
     if 'enabled' not in data:
         return jsonify({'error': 'Missing enabled field'}), 400
     
-    async def update():
-        db = current_app.db
-        
-        await db.command_config.update_one(
-            {'command_name': command_name},
-            {'$set': {'enabled': data['enabled']}},
-            upsert=True
-        )
-        
-        return {'command': command_name, 'enabled': data['enabled']}
+    db = current_app.db
     
-    result = run_async(update())
+    db.command_config.update_one(
+        {'command_name': command_name},
+        {'$set': {'enabled': data['enabled']}},
+        upsert=True
+    )
+    
+    result = {'command': command_name, 'enabled': data['enabled']}
     return jsonify(result)

@@ -8,14 +8,7 @@ from routes.auth import token_required
 stats_bp = Blueprint('stats', __name__)
 
 
-def run_async(coro):
-    """Helper to run async code in sync Flask context"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+
 
 
 BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')

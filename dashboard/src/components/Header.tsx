@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 
 export default function Header() {
-    const { user, logout } = useAuth();
+    const { user, isAuthorizedUser, logout } = useAuth();
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -38,6 +38,14 @@ export default function Header() {
                             >
                                 Commands
                             </Link>
+                            {isAuthorizedUser && (
+                                <Link
+                                    href="/channels"
+                                    className={`font-medium transition-colors ${isActive('/channels') ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                                >
+                                    Channels
+                                </Link>
+                            )}
                         </nav>
                     </div>
 
@@ -91,8 +99,8 @@ export default function Header() {
                         <Link
                             href="/dashboard"
                             className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/dashboard')
-                                    ? 'bg-purple-600/10 text-purple-400'
-                                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                ? 'bg-purple-600/10 text-purple-400'
+                                : 'text-gray-300 hover:text-white hover:bg-gray-800'
                                 }`}
                             onClick={() => setIsMenuOpen(false)}
                         >
@@ -101,8 +109,8 @@ export default function Header() {
                         <Link
                             href="/commands"
                             className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/commands')
-                                    ? 'bg-purple-600/10 text-purple-400'
-                                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                ? 'bg-purple-600/10 text-purple-400'
+                                : 'text-gray-300 hover:text-white hover:bg-gray-800'
                                 }`}
                             onClick={() => setIsMenuOpen(false)}
                         >

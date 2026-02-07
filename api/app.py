@@ -2,10 +2,10 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
-
+from pymongo import MongoClient
 # Load environment variables
 load_dotenv()
+
 
 def create_app():
     app = Flask(__name__)
@@ -20,13 +20,13 @@ def create_app():
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
     app.config['OAUTH_REDIRECT_URI'] = os.getenv('OAUTH_REDIRECT_URI')
     
-    # CORS - allow Next.js frontend
+
     CORS(app, origins=[
         os.getenv('FRONTEND_URL')
     ], supports_credentials=True)
     
     # MongoDB connection
-    mongo_client = AsyncIOMotorClient(
+    mongo_client = MongoClient(
         app.config['MONGO_URI'],
         serverSelectionTimeoutMS=5000,
         maxPoolSize=20
@@ -37,10 +37,12 @@ def create_app():
     from routes.auth import auth_bp
     from routes.stats import stats_bp
     from routes.commands import commands_bp
+    from routes.channel import channel_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(stats_bp, url_prefix='/api/stats')
     app.register_blueprint(commands_bp, url_prefix='/api/commands')
+    app.register_blueprint(channel_bp, url_prefix='/api/channels')
     
     # Health check endpoint
     @app.route('/health')
