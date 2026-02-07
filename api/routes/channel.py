@@ -7,7 +7,7 @@ channel_bp = Blueprint('channel', __name__)
 
 BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')
 
-@channel_bp.route('/', methods=['GET'])
+@channel_bp.route('', methods=['GET'])
 @token_required
 def list_channels():
     "Get channel that are available for configuration"
