@@ -139,7 +139,7 @@ class Schedule(commands.Cog):
 
             params = {"IDcard": doc.get("std_id", "")}
             
-            r = await self.bot.loop.run_in_executor(None, lambda: requests.get(url, params=params))
+            r = await self.bot.loop.run_in_executor(None, lambda: requests.get(url, params=params, timeout=5))
             r.encoding = "utf-8"
             soup = BeautifulSoup(r.text, "html.parser")
             rows = soup.find_all("tr")
