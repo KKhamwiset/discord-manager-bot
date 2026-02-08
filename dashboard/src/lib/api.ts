@@ -60,9 +60,18 @@ export interface User {
 export interface Channel {
     id: string;
     name: string;
+    cmd_mode: string;
+    allowed_commands: string[];
 }
 export const channelAPI = {
     getChannel: (token: string) => apiFetch<{ channels: Channel[] }>('/api/channels/', { token }),
+
+    updateChannelCommand: (token: string, channelId: string, command: string, action: 'add' | 'remove') =>
+        apiFetch<{ success: boolean; action: string; command: string }>(`/api/channels/${channelId}`, {
+            method: 'PATCH',
+            token,
+            body: JSON.stringify({ action, command }),
+        }),
 };
 
 export const statsApi = {
