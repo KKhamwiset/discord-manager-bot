@@ -116,6 +116,16 @@ export default function Header() {
                         >
                             Commands
                         </Link>
+                        <Link
+                            href="/channels"
+                            className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/channels')
+                                ? 'bg-purple-600/10 text-purple-400'
+                                : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                }`}
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            Channels
+                        </Link>
 
                         <div className="border-t border-gray-800 my-2 pt-2">
                             <div className="px-3 py-2 flex items-center gap-3">
