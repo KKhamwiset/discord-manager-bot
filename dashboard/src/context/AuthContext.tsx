@@ -40,9 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             try {
-                await authApi.me(storedToken);
+                const data = await authApi.me(storedToken);
                 setToken(storedToken);
-                setUser(JSON.parse(storedUser));
+                setUser(data);
                 setIsAuthorizedUser(JSON.parse(storedIsAuthorizedUser));
 
             } catch (error) {
