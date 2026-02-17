@@ -142,17 +142,21 @@ def me():
 @auth_bp.route('/logout', methods=['POST'])
 @token_required
 def logout():
-    """Logout user (client should delete token)"""
     return jsonify({'message': 'Logged out successfully'})
 
 @auth_bp.route('/authorized-user', methods=['GET'])
 @token_required
 def authorized_user():
+    data = request.get_json()
+    user_id_from_body = data.get('user_id')
+
+    if not user_id_from_body:
+        return jsonify({'error': 'Missing user_id in request body'}), 400
     collection = current_app.db['authorize_user']
     user = collection.find_one(
         {
             'guild_id': os.getenv('GUILD_ID'),
-            'user_id': str(request.user['user_id'])
+            'user_id': str(user_id_from_body)
         }
     )
     result = user is not None
