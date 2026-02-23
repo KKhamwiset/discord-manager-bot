@@ -83,8 +83,8 @@ export const authApi = {
     me: (token: string) =>
         apiFetch<User & { user_id: string }>('/api/auth/me', { token }),
 
-    authorizedUser: (token: string) =>
-        apiFetch<{ authorized: boolean }>('/api/auth/authorized-user', { token }),
+    authorizedUser: (token: string, userId: string) =>
+        apiFetch<{ authorized: boolean }>('/api/auth/authorized-user', { token, body: JSON.stringify({ user_id: userId }) }),
 
     login: () =>
         apiFetch<{ url: string }>('/api/auth/login'),

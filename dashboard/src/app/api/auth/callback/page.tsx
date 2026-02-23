@@ -43,7 +43,7 @@ function CallbackHandler() {
                 }
 
                 const data = JSON.parse(text);
-                const authData = await authApi.authorizedUser(data.token);
+                const authData = await authApi.authorizedUser(data.token, data.user.user_id);
 
                 setAuth(data.token, data.user, authData.authorized);
                 router.replace('/dashboard');
