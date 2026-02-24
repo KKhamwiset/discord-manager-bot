@@ -3,15 +3,32 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { authApi } from '@/lib/api';
+import { on, once } from 'events';
 
 export default function Header() {
-    const { user, isAuthorizedUser, logout } = useAuth();
+    const { user, logout } = useAuth();
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+    const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+    async function getAuthData() {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            try {
+                const authData = await authApi.authorizedUser(token);
+                setIsAuthorizedUser(authData.authorized);
+            } catch (error) {
+                console.error('Failed to get authorized user data:', error);
+            }
+        }
+        return null;
+    }
     const isActive = (path: string) => pathname === path;
-
+    useEffect(() => {
+        getAuthData();
+    },[user, logout]);
+    
     if (!user) return null;
 
     const avatarUrl = user.avatar
