@@ -14,10 +14,9 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    isAuthorizedUser: boolean;
     login: () => void;
     logout: () => void;
-    setAuth: (token: string, user: User, isAuthorized: boolean) => void;
+    setAuth: (token: string, user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,15 +25,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+   
 
     useEffect(() => {
         const initAuth = async () => {
             const storedToken = localStorage.getItem('auth_token');
             const storedUser = localStorage.getItem('auth_user');
-            const storedIsAuthorizedUser = localStorage.getItem('auth_is_authorized');
+    
 
-            if (!storedToken || !storedUser || !storedIsAuthorizedUser) {
+            if (!storedToken || !storedUser) {
                 setIsLoading(false);
                 return;
             }
@@ -43,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const data = await authApi.me(storedToken);
                 setToken(storedToken);
                 setUser(data);
-                setIsAuthorizedUser(JSON.parse(storedIsAuthorizedUser));
 
             } catch (error) {
                 console.error('Session validation failed:', error);
@@ -68,23 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
-        localStorage.removeItem('auth_is_authorized');
         setToken(null);
         setUser(null);
-        setIsAuthorizedUser(false);
     };
 
-    const setAuth = (newToken: string, newUser: User, isAuthorized: boolean) => {
+    const setAuth = (newToken: string, newUser: User) => {
         localStorage.setItem('auth_token', newToken);
         localStorage.setItem('auth_user', JSON.stringify(newUser));
-        localStorage.setItem('auth_is_authorized', JSON.stringify(isAuthorized));
         setToken(newToken);
         setUser(newUser);
-        setIsAuthorizedUser(isAuthorized);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, isAuthorizedUser, login, logout, setAuth, }}>
+        <AuthContext.Provider value={{ user, token, isLoading, login, logout, setAuth, }}>
             {children}
         </AuthContext.Provider>
     );

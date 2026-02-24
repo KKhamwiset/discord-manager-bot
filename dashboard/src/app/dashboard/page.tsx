@@ -6,13 +6,30 @@ import { useEffect, useState } from 'react';
 import { statsApi, StatsOverview } from '@/lib/api';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { authApi } from '@/lib/api';
 
 export default function DashboardPage() {
-    const { user, token, isLoading, isAuthorizedUser, logout } = useAuth();
+    const { user, token, isLoading, logout } = useAuth();
     const router = useRouter();
 
     const [stats, setStats] = useState<StatsOverview | null>(null);
     const [loading, setLoading] = useState(true);
+const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+    async function getAuthData() {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            try {
+                const authData = await authApi.authorizedUser(token);
+                setIsAuthorizedUser(authData.authorized);
+            } catch (error) {
+                console.error('Failed to get authorized user data:', error);
+            }
+        }
+        return null;
+    }
+    useEffect(() => {
+        getAuthData();
+    },[user, logout]);
 
     useEffect(() => {
         if (!isLoading && !user) {

@@ -6,14 +6,31 @@ import { useEffect, useState } from 'react';
 import { commandsApi, Command } from '@/lib/api';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { authApi } from '@/lib/api';
 
 export default function CommandsPage() {
-    const { user, token, isLoading, isAuthorizedUser, logout } = useAuth();
+    const { user, token, isLoading, logout } = useAuth();
     const router = useRouter();
     const [commands, setCommands] = useState<Command[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>('all');
     const [toggling, setToggling] = useState<string | null>(null);
+    const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+        async function getAuthData() {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                try {
+                    const authData = await authApi.authorizedUser(token);
+                    setIsAuthorizedUser(authData.authorized);
+                } catch (error) {
+                    console.error('Failed to get authorized user data:', error);
+                }
+            }
+            return null;
+        }
+    useEffect(() => {
+        getAuthData();
+    },[user, logout]);
 
     const handleToggle = async (commandName: string, currentStatus: boolean) => {
         if (!token || toggling) return;
