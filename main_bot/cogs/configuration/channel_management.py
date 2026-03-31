@@ -102,7 +102,7 @@ class ChannelManagement(commands.Cog):
     async def thread_nuke(self, ctx: commands.Context):
         preserve_users = {"274127380577124352", "273760138135863296", 
                           "316152771642654722", "997460686185701466",
-                          "689023150834712586"}
+                          "689023150834712586","688008838044975116"}
 
         dest_channel = int(os.getenv("TRIO"))
         if ctx.channel.id != dest_channel:
