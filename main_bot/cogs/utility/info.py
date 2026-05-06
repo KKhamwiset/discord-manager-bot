@@ -36,7 +36,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="wd", help="Convert TWD to THB or show current THB to TWD rate")
-    async def twd(self, ctx: commands.Context, amount: int = None):
+    async def twd(self, ctx: commands.Context, amount: int | float = None):
         url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/thb.json"
         try:
             response = requests.get(url)
