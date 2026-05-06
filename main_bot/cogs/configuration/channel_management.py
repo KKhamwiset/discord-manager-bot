@@ -92,7 +92,51 @@ class ChannelManagement(commands.Cog):
         return unique_names, aliases, invalid
 
 
-    
+    @validation.role()
+    @commands.hybrid_command(
+        name="add-user-to-thread",
+        help="Add a user to the thread.",
+        aliases=["aut"]
+    )
+    async def add_user_to_thread(self, ctx: commands.Context, user: str):
+        guild = await self._check_guild_context(ctx)
+        if guild is None:
+            return
+
+        dest_channel_id = int(os.getenv("TRIO"))
+        dest_thread = self.bot.get_channel(dest_channel_id)
+
+        if dest_thread is None or not isinstance(dest_thread, discord.Thread):
+            await ctx.send("❌ Destination thread not found or is not a thread.")
+            return
+
+        try:
+            if not isinstance(user, discord.Member):
+                resolved_users = await validation.resolve_members(ctx, user)
+                if resolved_users:
+                    user = resolved_users[0]
+                else:
+                    try:
+                        user = self.bot.get_user(int(user))
+                    except (ValueError, TypeError):
+                        user = None
+                        
+            if user is None:
+                await ctx.send("❌ Could not find or resolve the specified user.")
+                return
+
+            await dest_thread.add_user(user)
+
+            # Add user to thread-nuke db
+            await self.collection.update_one(
+                {"_id": str(guild.id)},
+                {"$addToSet": {"tnt_allowed_users": str(user.id)}},
+                upsert=True,
+            )
+        except Exception as e:
+            await ctx.send(f"❌ Error adding user to thread: {e!r}")
+
+    @validation.role()
     @commands.hybrid_command(
         name="thread-nuke",
         help="This command is nothing",

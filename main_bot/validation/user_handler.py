@@ -1,33 +1,31 @@
 import discord
+from typing import Optional, Union, List
 
-
-import discord
-
-
-async def resolve_members(ctx, raw_params: list[str]) -> list[discord.Member]:
+async def resolve_members(ctx, raw_params: Union[List[str], str]) -> Optional[List[discord.Member]]:
     if not isinstance(raw_params, (list, tuple)):
         raw_params = [raw_params]
-    original_params = raw_params
-    user_params = list(filter(lambda x: isinstance(x, discord.Member), original_params))
-    string_params = list(filter(lambda x: isinstance(x, str), original_params))
+        
+    user_params = [x for x in raw_params if isinstance(x, discord.Member)]
+    string_params = [x for x in raw_params if isinstance(x, str)]
     mentioned_members = list(ctx.message.mentions)
-
-    name_map = {}
-    for m in ctx.guild.members:
-        normalized_name = m.name.lower()
-        normalized_display = m.display_name.lower()
-        name_map[normalized_name] = m
-        name_map[normalized_display] = m
 
     if "@here" not in string_params:
         mentioned_members += [m for m in user_params if m not in mentioned_members]
-        for query in string_params:
-            q = query.lower()
-            matches = [name for name in name_map.keys() if name.startswith(q)]
-            for match in matches:
-                m = name_map[match]
-                if m not in mentioned_members and not m.bot:
+        
+        # Lowercase queries once
+        queries = [q.lower() for q in string_params]
+        
+        for m in ctx.guild.members:
+            if m.bot or m in mentioned_members:
+                continue
+                
+            name_lower = m.name.lower()
+            display_lower = m.display_name.lower()
+            
+            for q in queries:
+                if name_lower.startswith(q) or display_lower.startswith(q):
                     mentioned_members.append(m)
+                    break
 
     else:
         if isinstance(ctx.channel, discord.Thread):
