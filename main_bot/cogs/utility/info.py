@@ -1,5 +1,6 @@
 import discord
 import os
+import requests
 from discord.ext import commands
 from discord import app_commands
 
@@ -33,6 +34,36 @@ class Info(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author.name}")
 
         await ctx.send(embed=embed)
+
+    @commands.hybrid_command(name="wd", help="Convert TWD to THB or show current THB to TWD rate")
+    async def twd(self, ctx: commands.Context, amount: int = None):
+        url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/thb.json"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            rate = data["thb"]["twd"]
+            date = data["date"]
+            
+            if amount is None:
+                await ctx.send(
+                    f"📅 **Date:** {date}\n"
+                    f"💱 **Current Rates:**\n"
+                    f"🇹🇭 1 THB = **{rate:.4f}** TWD\n"
+                    f"🇹🇼 1 TWD = **{(1/rate):.4f}** THB"
+                )
+            else:
+                converted_thb = amount / rate
+                converted_twd = amount * rate
+                to_thb = amount is None
+                result = f"🇹🇭 **{amount} THB** is approximately 🇹🇼 **{converted_twd:.2f} TWD**\n" if to_thb else ""
+                await ctx.send(
+                    f"🇹🇼 **{amount} TWD** is approximately 🇹🇭 **{converted_thb:.2f} THB**\n"
+                    f"{result}"
+                    f"*(Rate: 1 THB = {rate:.4f} TWD on {date})*"
+                )
+        except Exception as e:
+            await ctx.send(f"❌ Error fetching currency data: {e}")
 
     @commands.hybrid_command(name="help", description="Show the help menu or details for a specific command")
     @app_commands.describe(command_name="The name of the command you want to check")
