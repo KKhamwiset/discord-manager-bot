@@ -144,5 +144,5 @@ class PaginationView(discord.ui.View):
             child.disabled = True
         try:
             await self.message.edit(view=self)
-        except:
+        except discord.HTTPException:
             pass
