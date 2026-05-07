@@ -36,7 +36,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="wd", help="Convert TWD to THB or show current THB to TWD rate")
-    async def twd(self, ctx: commands.Context, amount: int | float = None):
+    async def twd(self, ctx: commands.Context, amount: float = None):
         url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/thb.json"
         try:
             response = requests.get(url)
@@ -55,12 +55,9 @@ class Info(commands.Cog):
             else:
                 converted_thb = amount / rate
                 converted_twd = amount * rate
-                to_thb = amount is None
-                result = f"🇹🇭 **{amount} THB** is approximately 🇹🇼 **{converted_twd:.2f} TWD**\n" if to_thb else ""
                 await ctx.send(
                     f"🇹🇼 **{amount} TWD** is approximately 🇹🇭 **{converted_thb:.2f} THB**\n"
-                    f"{result}"
-                    f"*(Rate: 1 THB = {rate:.4f} TWD on {date})*"
+                    f"*(Rate: 1 THB = {rate:.4f} TWD on {date} | 1 TWD = {(1/rate):.4f} THB)*"
                 )
         except Exception as e:
             await ctx.send(f"❌ Error fetching currency data: {e}")
