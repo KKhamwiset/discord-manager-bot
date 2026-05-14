@@ -1,0 +1,12 @@
+{
+  "tools": {
+    "allowed": [
+      "run_shell_command",
+      "write_file",
+      "replace",
+      "delete_file",
+      "invoke_agent",
+      "update_topic"
+    ]
+  }
+}
