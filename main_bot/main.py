@@ -75,7 +75,9 @@ class Core(commands.Cog):
             "<:xdd:1438479267716534353>",
         ]
         await ctx.send(random.choice(responses))
-
+    @commands.hybrid_command(name="test")
+    async def test(self, ctx: commands.Context):
+        await ctx.send("amath 10+20")
     @commands.hybrid_command(name="rick", aliases=["ing"], help="Generate random Ting emoji")
     async def generateEmoji(self, ctx: commands.Context, * ,amount="1"):
         faces = ["<:ting2:1433595520424742983>", "<:ting:1433593486883684393>"]

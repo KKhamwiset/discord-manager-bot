@@ -4,6 +4,9 @@ import asyncio
 import zipfile
 import os
 import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Backup(commands.Cog):
     def __init__(self, bot):
@@ -21,29 +24,39 @@ class Backup(commands.Cog):
     async def cog_unload(self):
         self.backup_task.cancel()
 
-    @tasks.loop(time=datetime.time(hour=0, minute=0,tzinfo=datetime.timezone(datetime.timedelta(hours=7))))
+    @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=datetime.timezone(datetime.timedelta(hours=7))))
     async def backup_task(self):
-        
+        await self.run_backup()
+
+    async def run_backup(self, ctx=None):
         backup_channel_id = os.getenv("BACKUP_CHANNEL_ID")
         if not backup_channel_id:
-             print("❌ BACKUP_CHANNEL_ID is not set.")
+             msg = "❌ BACKUP_CHANNEL_ID is not set."
+             logger.error(msg)
+             if ctx: await ctx.send(msg)
              return
 
         channel = self.bot.get_channel(int(backup_channel_id))
         if not channel:
-            print("❌ Backup channel not found.")
+            msg = "❌ Backup channel not found."
+            logger.error(msg)
+            if ctx: await ctx.send(msg)
             return
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         zip_filename = f"db_backup_{timestamp}.zip"
         generated_files = [] 
 
-        try:
+        if ctx: await ctx.send(f"⏳ Starting backup for `{self.db_name}`...")
+        logger.info(f"Starting backup for {self.db_name}")
 
+        try:
             collections = await self.db.list_collection_names()
 
             if not collections:
-                print("❌ No collections found.")
+                msg = "❌ No collections found."
+                logger.warning(msg)
+                if ctx: await ctx.send(msg)
                 return
             
             for col in collections:
@@ -64,10 +77,17 @@ class Backup(commands.Cog):
                 stdout, stderr = await process.communicate()
 
                 if process.returncode != 0:
-                    print(f"Failed to export {col}: {stderr.decode()}")
+                    err_msg = f"Failed to export {col}: {stderr.decode()}"
+                    logger.error(err_msg)
+                    if ctx: await ctx.send(f"⚠️ {err_msg}")
                     continue
                 
                 generated_files.append(json_filename)
+
+            if not generated_files:
+                logger.warning("No files were exported during backup.")
+                if ctx: await ctx.send("❌ No files were exported.")
+                return
 
             with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for f in generated_files:
@@ -80,18 +100,26 @@ class Backup(commands.Cog):
 
                 if file_size > (limit / (1024*1024)):
                     await channel.send(f"⚠️ Backup too large ({file_size:.2f}MB).")
+                    if ctx: await ctx.send(f"⚠️ Backup too large ({file_size:.2f}MB).")
+                    logger.warning(f"Backup too large ({file_size:.2f}MB)")
                 else:
                     file = discord.File(zip_filename)
                     await channel.send(
                         f"**Backup** for `{self.db_name}`\nCollections: {len(generated_files)}", 
                         file=file
                     )
+                    if ctx: await ctx.send(f"✅ Backup completed and sent to <#{backup_channel_id}>.")
+                    logger.info("Backup completed successfully and sent to Discord.")
             else:
-                print("❌ Zip file creation failed.")
+                msg = "❌ Zip file creation failed."
+                logger.error(msg)
+                if ctx: await ctx.send(msg)
 
         except Exception as e:
-            await channel.send(f"❌ Backup Error: {e}")
-            print(f"Backup Error: {e}")
+            err_msg = f"❌ Backup Error: {e}"
+            await channel.send(err_msg)
+            logger.exception("Backup Error")
+            if ctx: await ctx.send(err_msg)
 
         finally:
             # Cleanup
@@ -100,6 +128,11 @@ class Backup(commands.Cog):
             for f in generated_files:
                 if os.path.exists(f):
                     os.remove(f)
+
+    @commands.command(name="backup", help="Manually trigger a database backup")
+    @commands.is_owner()
+    async def manual_backup(self, ctx):
+        await self.run_backup(ctx)
 
     @backup_task.before_loop
     async def before_backup_task(self):
