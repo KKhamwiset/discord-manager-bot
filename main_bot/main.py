@@ -98,7 +98,7 @@ class BotInitDB(commands.Bot):
             case_insensitive=True,
             intents=intents,
             help_command=None,
-            activity=Game(name="Nguyen~" if os.getenv("INSTANCE") == "Server" else "Dev~"),
+            activity=Game(name="🌸 in Sakura Garden"),
             status=discord.Status.online if os.getenv("INSTANCE") == "Server" else discord.Status.idle
         )
         if not TOKEN or not MONGO_URI:
