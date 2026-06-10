@@ -81,9 +81,6 @@ class HeartbeatMonitor(commands.Cog):
             return
         if message.channel.id != HEARTBEAT_CHANNEL_ID:
             return
-        if message.author == self.bot.user:
-            return
-
         if HEARTBEAT_EMOJI in message.content:
             self.last_heartbeat = message.created_at
             logger.debug(f"💓 Heartbeat received at {self.last_heartbeat}")
