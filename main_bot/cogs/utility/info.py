@@ -9,7 +9,6 @@ class Info(commands.Cog):
         self.bot = bot
         self.emoji = {
             "Core": "⚙️",
-            "HomeworkManager": "📚",
             "Schedule": "📅",
             "ChannelManagement": "📺",
             "Maintenance": "🔧",
@@ -22,7 +21,7 @@ class Info(commands.Cog):
     async def info(self, ctx: commands.Context):
         embed = discord.Embed(
             title="Bot Info",
-            description="General เบ๊ Bot - Your Discord Utility Assistant",
+            description="Mochi Bot - Your cute Discord utility assistant",
             color=discord.Color.blue()
         )
         embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar.url)

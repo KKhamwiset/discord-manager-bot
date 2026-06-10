@@ -59,16 +59,17 @@ export default function Home() {
         {/* Logo / Title */}
         <div className="mb-8">
           <h1 className="text-6xl font-bold mb-4 gradient-text">
-            General เบ๊ Bot
+            Mochi’s Cozy Command Center 🌸
           </h1>
           <p className="text-xl text-gray-400">
-            Dashboard
+            Cute Discord utility dashboard
           </p>
         </div>
 
         {/* Description */}
         <p className="text-gray-400 mb-12 text-lg leading-relaxed">
-          Manage your Discord bot with a modern, intuitive dashboard.
+          Manage your Discord bot with a cozy, intuitive dashboard.
+          Let Mochi keep your server tidy and your day sparkling~ ✨
           {overview?.guild?.name && (
             <span className="block mt-2 text-purple-400/80">
               Currently serving <b>{overview.guild.name}</b>
