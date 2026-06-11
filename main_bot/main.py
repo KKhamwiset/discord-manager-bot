@@ -163,36 +163,59 @@ class BotInitDB(commands.Bot):
         if message.author.bot and message.author.id != 1433517074994430126:
             return
 
-        # If it is our gateway bot, bypass standard process_commands (which filters bots) and invoke directly
+        # If it is our gateway bot, process the command directly
         if message.author.id == 1433517074994430126:
-            # Temporarily fake author as a non-bot so get_context doesn't immediately return empty context
-            original_bot = message.author.bot
-            try:
-                message.author.bot = False
-            except AttributeError:
-                try:
-                    message.author._user.bot = False
-                except AttributeError:
-                    pass
-
             ctx = await self.get_context(message)
-            print(f"DEBUG: Received message from self/gateway: {message.content}, valid: {ctx.valid}, command: {ctx.command}")
+            print(f"DEBUG: gateway msg: {message.content!r}, valid: {ctx.valid}, command: {ctx.command}")
             if ctx.valid:
-                print(f"DEBUG: Invoking command {ctx.command}!")
+                print(f"DEBUG: Invoking {ctx.command}!")
                 await self.invoke(ctx)
-
-            # Restore bot status
-            try:
-                message.author.bot = original_bot
-            except AttributeError:
-                try:
-                    message.author._user.bot = original_bot
-                except AttributeError:
-                    pass
             return
 
         # For regular users, process commands normally
         await self.process_commands(message)
+
+    async def get_context(self, message, *, cls=None):
+        """Override get_context to bypass self-message check for our own gateway bot."""
+        if cls is None:
+            cls = commands.Context
+
+        # For our gateway bot messages, temporarily swap author.id so discord.py
+        # doesn't short-circuit on `origin.author.id == self.user.id`
+        if message.author.id == 1433517074994430126 and message.guild:
+            bot_member = message.guild.get_member(message.author.id)
+            if bot_member:
+                # Create a proxy that copies the member but with a different id
+                # so discord.py's self-message check passes
+                class FakeAuthor:
+                    def __init__(self, member, fake_id):
+                        self.id = fake_id
+                        self.name = member.name
+                        self.display_name = member.display_name
+                        self.mention = member.mention
+                        self.avatar = member.avatar
+                        self.bot = False
+                        self.discriminator = member.discriminator
+                        self._public_flags = member._public_flags if hasattr(member, '_public_flags') else 0
+
+                # Use Conde's user ID (273760138135863296) as the fake author
+                # so permission checks still work correctly
+                original_author = message._author if hasattr(message, '_author') else message.author
+                fake = FakeAuthor(bot_member, 273760138135863296)
+                if hasattr(message, '_author'):
+                    message._author = fake
+                else:
+                    message.author = fake
+                try:
+                    ctx = await super(BotInitDB, self).get_context(message, cls=cls)
+                finally:
+                    if hasattr(message, '_author'):
+                        message._author = original_author
+                    else:
+                        message.author = original_author
+                return ctx
+
+        return await super(BotInitDB, self).get_context(message, cls=cls)
 
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
