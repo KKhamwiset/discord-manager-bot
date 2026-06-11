@@ -176,46 +176,77 @@ class BotInitDB(commands.Bot):
         await self.process_commands(message)
 
     async def _get_context_for_self(self, message):
-        """Create a Context from our own bot message, bypassing discord.py's self-message check."""
+        """Create a Context from our own bot message, bypassing discord.py's self-message check.
+        
+        If the message mentions a user, that user becomes ctx.author for validation.
+        Otherwise falls back to Conde (273760138135863296) as the sender.
+        """
         from discord.ext.commands import Context
         from discord.ext.commands.view import StringView
 
-        view = StringView(message.content)
-        ctx = Context(prefix=None, view=view, bot=self, message=message)
+        original_author = message.author
+        real_author = None
 
-        prefix = await self.get_prefix(message)
-        invoked_prefix = prefix
+        # Try to find the real sender from mentions in the message
+        if message.mentions:
+            mentioned_user = message.mentions[0]
+            if message.guild:
+                real_author = message.guild.get_member(mentioned_user.id)
+            if not real_author:
+                real_author = mentioned_user
 
-        if isinstance(prefix, str):
-            if not view.skip_string(prefix):
-                return ctx
-        else:
-            try:
-                if message.content.startswith(tuple(prefix)):
-                    invoked_prefix = discord.utils.find(view.skip_string, prefix)
-                else:
+        # Fallback to Conde if no mention found
+        if not real_author and message.guild:
+            real_author = message.guild.get_member(273760138135863296)
+
+        # Temporarily swap message.author to bypass discord.py's self-message check
+        if real_author:
+            message.author = real_author
+
+        try:
+            view = StringView(message.content)
+            ctx = Context(prefix=None, view=view, bot=self, message=message)
+
+            prefix = await self.get_prefix(message)
+            invoked_prefix = prefix
+
+            if isinstance(prefix, str):
+                if not view.skip_string(prefix):
                     return ctx
-            except TypeError:
-                if not isinstance(prefix, list):
-                    raise TypeError(
-                        f'get_prefix must return either a string or a list of string, not {prefix.__class__.__name__}'
-                    )
-                for value in prefix:
-                    if not isinstance(value, str):
+            else:
+                try:
+                    if message.content.startswith(tuple(prefix)):
+                        invoked_prefix = discord.utils.find(view.skip_string, prefix)
+                    else:
+                        return ctx
+                except TypeError:
+                    if not isinstance(prefix, list):
                         raise TypeError(
-                            'Iterable command_prefix or list returned from get_prefix must '
-                            f'contain only strings, not {value.__class__.__name__}'
+                            f'get_prefix must return either a string or a list of string, not {prefix.__class__.__name__}'
                         )
-                raise
+                    for value in prefix:
+                        if not isinstance(value, str):
+                            raise TypeError(
+                                'Iterable command_prefix or list returned from get_prefix must '
+                                f'contain only strings, not {value.__class__.__name__}'
+                            )
+                    raise
 
-        if self.strip_after_prefix:
-            view.skip_ws()
+            if self.strip_after_prefix:
+                view.skip_ws()
 
-        invoker = view.get_word()
-        ctx.invoked_with = invoker
-        ctx.prefix = invoked_prefix
-        ctx.command = self.all_commands.get(invoker)
-        return ctx
+            invoker = view.get_word()
+            ctx.invoked_with = invoker
+            ctx.prefix = invoked_prefix
+            ctx.command = self.all_commands.get(invoker)
+
+            # Ensure ctx.author is the real sender for validation checks
+            if real_author:
+                ctx.author = real_author
+
+            return ctx
+        finally:
+            message.author = original_author
 
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
