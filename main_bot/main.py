@@ -165,9 +165,30 @@ class BotInitDB(commands.Bot):
 
         # If it is our gateway bot, bypass standard process_commands (which filters bots) and invoke directly
         if message.author.id == 1433517074994430126:
+            # Temporarily fake author as a non-bot so get_context doesn't immediately return empty context
+            original_bot = message.author.bot
+            try:
+                message.author.bot = False
+            except AttributeError:
+                try:
+                    message.author._user.bot = False
+                except AttributeError:
+                    pass
+
             ctx = await self.get_context(message)
+            print(f"DEBUG: Received message from self/gateway: {message.content}, valid: {ctx.valid}, command: {ctx.command}")
             if ctx.valid:
+                print(f"DEBUG: Invoking command {ctx.command}!")
                 await self.invoke(ctx)
+
+            # Restore bot status
+            try:
+                message.author.bot = original_bot
+            except AttributeError:
+                try:
+                    message.author._user.bot = original_bot
+                except AttributeError:
+                    pass
             return
 
         # For regular users, process commands normally
