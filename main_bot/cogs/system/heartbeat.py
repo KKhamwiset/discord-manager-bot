@@ -84,6 +84,13 @@ class HeartbeatMonitor(commands.Cog):
                         await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
                         logger.info(f"✅ Fresh heartbeat found in history. Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
                     break
+            else:
+                # No heartbeat found in history — assume alive for now, set last_heartbeat to now
+                # so the monitor loop can detect timeout if heartbeats stop arriving
+                self.last_heartbeat = datetime.now(tz=timezone.utc)
+                self.is_hermes_alive = True
+                await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+                logger.info(f"ℹ️ No heartbeat found in history. Starting fresh — Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
         except Exception as e:
             logger.debug(f"Could not fetch heartbeat history: {e}")
 
