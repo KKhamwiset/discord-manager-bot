@@ -159,14 +159,19 @@ class BotInitDB(commands.Bot):
         await self.refactor_db()
 
     async def on_message(self, message):
-        # Allow our gateway bot (ID: 1433517074994430126) to bypass the default bot filter
+        # Ignore other bots
         if message.author.bot and message.author.id != 1433517074994430126:
             return
-        await self.process_commands(message)
 
-    async def process_commands(self, message):
-        ctx = await self.get_context(message)
-        await self.invoke(ctx)
+        # If it is our gateway bot, bypass standard process_commands (which filters bots) and invoke directly
+        if message.author.id == 1433517074994430126:
+            ctx = await self.get_context(message)
+            if ctx.valid:
+                await self.invoke(ctx)
+            return
+
+        # For regular users, process commands normally
+        await self.process_commands(message)
 
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
