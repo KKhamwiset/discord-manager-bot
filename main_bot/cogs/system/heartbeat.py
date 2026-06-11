@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands, tasks
 from discord import Game, Status
+import discord
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +23,16 @@ HEARTBEAT_EMOJI = os.getenv("HEARTBEAT_EMOJI", "💓")
 STATUS_ONLINE = Game(name="In Sakura Garden 🌸")
 STATUS_SLEEPING = Game(name="Mochi is sleeping~ 💤")
 
+# Match the initial status from main.py — read INSTANCE env at import time
+_INSTANCE = os.getenv("INSTANCE", "Dev")
+_INITIAL_STATUS = discord.Status.online if _INSTANCE == "Server" else discord.Status.idle
+
 
 class HeartbeatMonitor(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.last_heartbeat = None
-        self.is_hermes_alive = True
+        self.is_hermes_alive = False  # Start as False — let the first heartbeat or history fetch set it
         self.monitor.start()
 
     def cog_unload(self):
@@ -54,13 +59,13 @@ class HeartbeatMonitor(commands.Cog):
             await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
             logger.info(f"💤 Hermes heartbeat timeout ({elapsed:.0f}s). Status → Mochi is sleeping~ 💤")
         elif elapsed <= HEARTBEAT_TIMEOUT and not self.is_hermes_alive:
-            # Hermes came back
+            # Hermes came back — restore to the SAME status as startup (from main.py)
             self.is_hermes_alive = True
-            await self.bot.change_presence(activity=STATUS_ONLINE, status=Status.online)
-            logger.info("✅ Hermes heartbeat restored! Status → In Sakura Garden 🌸")
+            await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+            logger.info(f"✅ Hermes heartbeat restored! Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
 
     async def _fetch_latest_heartbeat(self):
-        """Fetch the latest heartbeat message from the channel."""
+        """Fetch the latest heartbeat message from the channel and restore status if fresh."""
         channel = self.bot.get_channel(HEARTBEAT_CHANNEL_ID)
         if not channel:
             return
@@ -70,6 +75,14 @@ class HeartbeatMonitor(commands.Cog):
             async for msg in channel.history(limit=20):
                 if msg.author == self.bot.user and HEARTBEAT_EMOJI in msg.content:
                     self.last_heartbeat = msg.created_at
+                    # Check if the heartbeat is still fresh
+                    now = datetime.now(tz=timezone.utc)
+                    elapsed = (now - self.last_heartbeat).total_seconds()
+                    if elapsed <= HEARTBEAT_TIMEOUT:
+                        # Heartbeat is fresh — restore online status
+                        self.is_hermes_alive = True
+                        await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+                        logger.info(f"✅ Fresh heartbeat found in history. Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
                     break
         except Exception as e:
             logger.debug(f"Could not fetch heartbeat history: {e}")
@@ -81,19 +94,23 @@ class HeartbeatMonitor(commands.Cog):
             return
         if message.channel.id != HEARTBEAT_CHANNEL_ID:
             return
-        if HEARTBEAT_EMOJI in message.content:
+        # Accept messages from the bot itself (heartbeat sender) or webhooks
+        # Check emoji content to confirm it's actually a heartbeat
+        if message.author.bot and HEARTBEAT_EMOJI in message.content:
             self.last_heartbeat = message.created_at
             logger.debug(f"💓 Heartbeat received at {self.last_heartbeat}")
 
             if not self.is_hermes_alive:
                 self.is_hermes_alive = True
-                await self.bot.change_presence(activity=STATUS_ONLINE, status=Status.online)
-                logger.info("✅ Hermes heartbeat received! Status → In Sakura Garden 🌸")
+                await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+                logger.info(f"✅ Hermes heartbeat received! Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
 
     @monitor.before_loop
     async def before_monitor(self):
         await self.bot.wait_until_ready()
         if HEARTBEAT_CHANNEL_ID:
+            # Try to restore status from history on startup
+            await self._fetch_latest_heartbeat()
             logger.info(f"💓 Heartbeat monitor started (channel: {HEARTBEAT_CHANNEL_ID}, timeout: {HEARTBEAT_TIMEOUT}s)")
         else:
             logger.warning("⚠️ HEARTBEAT_CHANNEL_ID not set, heartbeat monitor disabled")
