@@ -164,6 +164,10 @@ class BotInitDB(commands.Bot):
             return
         await self.process_commands(message)
 
+    async def process_commands(self, message):
+        ctx = await self.get_context(message)
+        await self.invoke(ctx)
+
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
         if guild:
