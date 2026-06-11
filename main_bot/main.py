@@ -158,6 +158,12 @@ class BotInitDB(commands.Bot):
             await self.tree.sync()
         await self.refactor_db()
 
+    async def on_message(self, message):
+        # Allow our gateway bot (ID: 1433517074994430126) to bypass the default bot filter
+        if message.author.bot and message.author.id != 1433517074994430126:
+            return
+        await self.process_commands(message)
+
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
         if guild:
