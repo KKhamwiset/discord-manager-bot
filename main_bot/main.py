@@ -159,8 +159,16 @@ class BotInitDB(commands.Bot):
         await self.refactor_db()
 
     async def on_message(self, message):
-        # Ignore other bots
-        if message.author.bot and message.author.id != 1433517074994430126:
+        # Ignore other bots — but allow heartbeat messages through to Cog listeners
+        HEARTBEAT_CHANNEL_ID = int(os.getenv("HEARTBEAT_CHANNEL_ID", "0"))
+        is_heartbeat = (HEARTBEAT_CHANNEL_ID and message.channel.id == HEARTBEAT_CHANNEL_ID
+                         and message.author.bot and "💓" in message.content)
+        if message.author.bot and message.author.id != 1433517074994430126 and not is_heartbeat:
+            return
+
+        # If it's a heartbeat message, dispatch the event so Cog listeners can handle it
+        if is_heartbeat:
+            self.dispatch("message", message)
             return
 
         # If it is our gateway bot, process the command directly
