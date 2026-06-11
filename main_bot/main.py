@@ -165,7 +165,7 @@ class BotInitDB(commands.Bot):
 
         # If it is our gateway bot, process the command directly
         if message.author.id == 1433517074994430126:
-            ctx = await self.get_context(message)
+            ctx = await self._get_context_for_self(message)
             print(f"DEBUG: gateway msg: {message.content!r}, valid: {ctx.valid}, command: {ctx.command}")
             if ctx.valid:
                 print(f"DEBUG: Invoking {ctx.command}!")
@@ -175,47 +175,47 @@ class BotInitDB(commands.Bot):
         # For regular users, process commands normally
         await self.process_commands(message)
 
-    async def get_context(self, message, *, cls=None):
-        """Override get_context to bypass self-message check for our own gateway bot."""
-        if cls is None:
-            cls = commands.Context
+    async def _get_context_for_self(self, message):
+        """Create a Context from our own bot message, bypassing discord.py's self-message check."""
+        from discord.ext.commands import Context
+        from discord.ext.commands.view import StringView
 
-        # For our gateway bot messages, temporarily swap author.id so discord.py
-        # doesn't short-circuit on `origin.author.id == self.user.id`
-        if message.author.id == 1433517074994430126 and message.guild:
-            bot_member = message.guild.get_member(message.author.id)
-            if bot_member:
-                # Create a proxy that copies the member but with a different id
-                # so discord.py's self-message check passes
-                class FakeAuthor:
-                    def __init__(self, member, fake_id):
-                        self.id = fake_id
-                        self.name = member.name
-                        self.display_name = member.display_name
-                        self.mention = member.mention
-                        self.avatar = member.avatar
-                        self.bot = False
-                        self.discriminator = member.discriminator
-                        self._public_flags = member._public_flags if hasattr(member, '_public_flags') else 0
+        view = StringView(message.content)
+        ctx = Context(prefix=None, view=view, bot=self, message=message)
 
-                # Use Conde's user ID (273760138135863296) as the fake author
-                # so permission checks still work correctly
-                original_author = message._author if hasattr(message, '_author') else message.author
-                fake = FakeAuthor(bot_member, 273760138135863296)
-                if hasattr(message, '_author'):
-                    message._author = fake
-                else:
-                    message.author = fake
-                try:
-                    ctx = await super(BotInitDB, self).get_context(message, cls=cls)
-                finally:
-                    if hasattr(message, '_author'):
-                        message._author = original_author
-                    else:
-                        message.author = original_author
+        prefix = await self.get_prefix(message)
+        invoked_prefix = prefix
+
+        if isinstance(prefix, str):
+            if not view.skip_string(prefix):
                 return ctx
+        else:
+            try:
+                if message.content.startswith(tuple(prefix)):
+                    invoked_prefix = discord.utils.find(view.skip_string, prefix)
+                else:
+                    return ctx
+            except TypeError:
+                if not isinstance(prefix, list):
+                    raise TypeError(
+                        f'get_prefix must return either a string or a list of string, not {prefix.__class__.__name__}'
+                    )
+                for value in prefix:
+                    if not isinstance(value, str):
+                        raise TypeError(
+                            'Iterable command_prefix or list returned from get_prefix must '
+                            f'contain only strings, not {value.__class__.__name__}'
+                        )
+                raise
 
-        return await super(BotInitDB, self).get_context(message, cls=cls)
+        if self.strip_after_prefix:
+            view.skip_ws()
+
+        invoker = view.get_word()
+        ctx.invoked_with = invoker
+        ctx.prefix = invoked_prefix
+        ctx.command = self.all_commands.get(invoker)
+        return ctx
 
     async def on_ready(self):
         guild = self.get_guild(GUILD_ID)
