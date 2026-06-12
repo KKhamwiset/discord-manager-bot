@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0f;
-  --foreground: #f4f4f5;
-  --card: #18181b;
-  --card-hover: #27272a;
-  --border: #27272a;
-  --primary: #8b5cf6;
-  --primary-hover: #7c3aed;
+  --background: #fff5f7;
+  --foreground: #4a1942;
+  --card: #ffffff;
+  --card-hover: #ffe0e8;
+  --border: #f5c6d8;
+  --primary: #e91e8c;
+  --primary-hover: #c4177a;
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
@@ -35,19 +35,19 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #f5c6d8;
 }
 
 /* Glass effect */
 .glass {
-  background: rgba(24, 24, 27, 0.8);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);
 }
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  background: linear-gradient(135deg, #e91e8c 0%, #f8a4c8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -60,7 +60,7 @@ body {
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 8px 30px rgba(233, 30, 140, 0.12);
 }
 
 /* Pulse animation */
