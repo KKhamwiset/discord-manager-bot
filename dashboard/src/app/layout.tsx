@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Discord Bot Dashboard",
-  description: "Manage your Discord bot with ease",
+  title: "Mochi Bot Dashboard 🌸",
+  description: "Cute Discord bot dashboard",
 };
 
 export default function RootLayout({
@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.variable} font-sans antialiased bg-[#fff5f7] text-[#4a1942] min-h-screen`}>
+    <html lang="en">
+      <body className={`${inter.variable} font-sans antialiased bg-[#fff0f5] text-[#2d1028] min-h-screen`}>
         <AuthProvider>
           {children}
         </AuthProvider>
