@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased bg-[#fff0f5] text-[#2d1028] min-h-screen`}>
+    <html lang="en" data-theme="cupcake">
+      <body className={`${inter.variable} font-sans antialiased min-h-screen`}>
         <AuthProvider>
           {children}
         </AuthProvider>

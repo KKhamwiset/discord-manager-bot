@@ -1,64 +1,27 @@
 @import "tailwindcss";
-
-:root {
-  --background: #fff0f5;
-  --foreground: #2d1028;
-  --card: #ffffff;
-  --card-hover: #ffe0ec;
-  --border: #e8b4c8;
-  --primary: #d6197e;
-  --primary-hover: #b8156e;
-  --success: #059669;
-  --warning: #d97706;
-  --error: #dc2626;
-  --discord: #5865f2;
+@plugin "daisyui" {
+  themes: cupcake --default, dark;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-}
-
+/* Custom scrollbar for cupcake theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--card);
+  background: oklch(0.97 0.01 320);
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #f0a0c0, #d6197e);
+  background: oklch(0.75 0.12 350);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d6197e;
+  background: oklch(0.6 0.18 350);
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, #d6197e 0%, #f06292 50%, #f8a4c8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.card-hover {
-  transition: all 0.2s ease;
-}
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(214, 25, 126, 0.12);
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
-}
-.pulse-glow {
-  animation: pulse-glow 2s infinite;
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
 }
