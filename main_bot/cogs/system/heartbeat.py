@@ -117,6 +117,16 @@ class HeartbeatMonitor(commands.Cog):
                 await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
                 logger.info(f"✅ Hermes heartbeat received! Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Re-apply presence on every gateway reconnect — discord.py restores status but drops activity."""
+        if self.is_hermes_alive:
+            await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+            logger.info("🔄 Reconnected — restored Sakura Garden 🌸")
+        else:
+            await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
+            logger.info("🔄 Reconnected — Hermes still offline, staying sleeping~ 💤")
+
     @monitor.before_loop
     async def before_monitor(self):
         await self.bot.wait_until_ready()
