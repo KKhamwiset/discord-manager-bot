@@ -6,11 +6,12 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Mochi Bot Dashboard 🌸",
-  description: "Cute Discord bot dashboard",
+  title: "Mochi Bot Dashboard",
+  description: "Discord bot management dashboard",
 };
 
 export default function RootLayout({
@@ -19,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="cupcake">
-      <body className={`${inter.variable} font-sans antialiased min-h-screen`}>
+    <html lang="en" data-theme="--sakura-linear">
+      <body className={`${inter.variable} font-sans antialiased bg-base-200 text-base-content min-h-screen`}>
         <AuthProvider>
           {children}
         </AuthProvider>

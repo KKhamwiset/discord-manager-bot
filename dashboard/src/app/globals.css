@@ -1,27 +1,77 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: cupcake --default, dark;
+  themes: --sakura-linear;
 }
 
-/* Custom scrollbar for cupcake theme */
+@theme {
+  /* Linear-inspired Sakura Pink palette */
+  --color-base-100: #ffffff;
+  --color-base-200: #f8f0f4;
+  --color-base-300: #ede0e8;
+  --color-base-content: #2a1220;
+
+  --color-primary: #c41a7a;
+  --color-primary-content: #ffffff;
+
+  --color-secondary: #e8569e;
+  --color-secondary-content: #ffffff;
+
+  --color-accent: #f0a0c0;
+  --color-accent-content: #2a1220;
+
+  --color-neutral: #9a6b8a;
+  --color-neutral-content: #ffffff;
+
+  --color-info: #60a5fa;
+  --color-info-content: #ffffff;
+
+  --color-success: #10b981;
+  --color-success-content: #ffffff;
+
+  --color-warning: #f59e0b;
+  --color-warning-content: #ffffff;
+
+  --color-error: #ef4444;
+  --color-error-content: #ffffff;
+
+  /* Linear-style borders and focus */
+  --radius-field: 8px;
+  --radius-box: 12px;
+  --radius-selector: 8px;
+
+  --border: 1px;
+
+  --depth: 1;
+
+  --noise: 0;
+}
+
+/* Custom scrollbar for sakura theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: oklch(0.97 0.01 320);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.75 0.12 350);
+  background: #d4a0b8;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.6 0.18 350);
+  background: #c41a7a;
 }
 
-/* Smooth transitions */
+/* Linear-style focus ring */
+*:focus-visible {
+  outline: 2px solid #c41a7a;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Smooth transitions — Linear style (fast) */
 * {
-  transition-property: background-color, border-color, color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
+  transition-property: background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 100ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
