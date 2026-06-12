@@ -68,7 +68,7 @@ export default function CommandsPage() {
     if (isLoading || !user) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-base-200">
-                <span className="loading loading-spinner loading-lg text-primary"></span>
+                <span className="loading loading-spinner loading-md text-primary"></span>
             </div>
         );
     }
@@ -79,72 +79,74 @@ export default function CommandsPage() {
     return (
         <div className="min-h-screen bg-base-200">
             <Header>
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <h2 className="text-2xl font-bold text-base-content">Command Management</h2>
-                        <p className="text-base-content/60">View and explore all available bot commands</p>
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-base-content">Commands</h1>
+                            <p className="text-sm text-base-content/50 mt-1">{commands.length} total commands</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setFilter(cat)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
+                                        filter === cat
+                                            ? 'bg-primary text-primary-content'
+                                            : 'text-base-content/60 hover:text-base-content hover:bg-base-200'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        {categories.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setFilter(cat)}
-                                className={`btn btn-sm ${filter === cat ? 'btn-primary' : 'btn-ghost'}`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-                </div>
 
-                {/* Command Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {loading ? (
-                        [...Array(6)].map((_, i) => (
-                            <div key={i} className="card bg-base-100 shadow-md border border-base-300 animate-pulse">
-                                <div className="card-body p-6 h-48">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-12 h-12 bg-base-300 rounded-xl"></div>
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-4 bg-base-300 rounded w-3/4"></div>
-                                            <div className="h-3 bg-base-300 rounded w-1/2"></div>
-                                        </div>
-                                    </div>
+                    {/* Table — Linear style */}
+                    <div className="bg-base-100 rounded-lg border border-base-300 overflow-hidden">
+                        {/* Table Header */}
+                        <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-base-300 text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                            <div className="col-span-4">Name</div>
+                            <div className="col-span-2">Category</div>
+                            <div className="col-span-4">Description</div>
+                            <div className="col-span-2 text-right">Status</div>
+                        </div>
+
+                        {/* Table Body */}
+                        {loading ? (
+                            [...Array(6)].map((_, i) => (
+                                <div key={i} className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-base-300/50 animate-pulse">
+                                    <div className="col-span-4"><div className="h-4 bg-base-200 rounded w-3/4"></div></div>
+                                    <div className="col-span-2"><div className="h-4 bg-base-200 rounded w-1/2"></div></div>
+                                    <div className="col-span-4"><div className="h-4 bg-base-200 rounded w-full"></div></div>
+                                    <div className="col-span-2"><div className="h-4 bg-base-200 rounded w-1/2 ml-auto"></div></div>
                                 </div>
-                            </div>
-                        ))
-                    ) : filteredCommands.length > 0 ? (
-                        filteredCommands.map(cmd => (
-                            <div key={cmd.name} className="card bg-base-100 shadow-md border border-base-300 hover:border-primary/50 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
-                                <div className="card-body p-5">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-base-content">{cmd.name}</h4>
-                                                <span className="badge badge-sm badge-outline">{cmd.cog}</span>
-                                            </div>
+                            ))
+                        ) : filteredCommands.length > 0 ? (
+                            filteredCommands.map(cmd => (
+                                <div key={cmd.name} className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-base-300/50 hover:bg-base-200/30 transition-colors group">
+                                    <div className="col-span-4 flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-primary/10 rounded-md flex items-center justify-center flex-shrink-0">
+                                            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
                                         </div>
-                                        {cmd.hidden && <span className="badge badge-error badge-sm">Hidden</span>}
+                                        <div>
+                                            <p className="text-sm font-medium text-base-content">{cmd.name}</p>
+                                            {cmd.aliases && cmd.aliases.length > 0 && (
+                                                <p className="text-xs text-base-content/30">{cmd.aliases.join(', ')}</p>
+                                            )}
+                                        </div>
                                     </div>
-
-                                    <p className="text-sm text-base-content/60 line-clamp-2 mb-4 min-h-[40px]">
-                                        {cmd.description || "No description available for this command."}
-                                    </p>
-
-                                    <div className="flex items-center justify-between mt-auto">
-                                        {cmd.aliases && cmd.aliases.length > 0 && (
-                                            <div className="flex flex-wrap gap-1">
-                                                {cmd.aliases.slice(0, 3).map(alias => (
-                                                    <span key={alias} className="text-[10px] bg-base-200 text-base-content/50 px-2 py-0.5 rounded">{alias}</span>
-                                                ))}
-                                            </div>
-                                        )}
+                                    <div className="col-span-2 flex items-center">
+                                        <span className="badge badge-sm badge-outline">{cmd.cog}</span>
+                                    </div>
+                                    <div className="col-span-4 flex items-center">
+                                        <p className="text-sm text-base-content/50 truncate">{cmd.description || 'No description'}</p>
+                                    </div>
+                                    <div className="col-span-2 flex items-center justify-end">
+                                        {cmd.hidden && <span className="badge badge-error badge-sm mr-2">Hidden</span>}
                                         {isAuthorizedUser ? (
                                             <label className="label cursor-pointer gap-2">
                                                 <input
@@ -154,26 +156,22 @@ export default function CommandsPage() {
                                                     onChange={() => handleToggle(cmd.name, cmd.enable)}
                                                     disabled={toggling === cmd.name}
                                                 />
-                                                <span className="label-text text-xs">{cmd.enable ? 'On' : 'Off'}</span>
+                                                <span className="label-text text-xs text-base-content/50">{cmd.enable ? 'On' : 'Off'}</span>
                                             </label>
                                         ) : (
-                                            <span className={`badge badge-sm ${cmd.enable ? 'badge-success' : 'badge-error'}`}>
+                                            <span className={`text-xs font-medium ${cmd.enable ? 'text-success' : 'text-base-content/30'}`}>
                                                 {cmd.enable ? 'Enabled' : 'Disabled'}
                                             </span>
                                         )}
                                     </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="py-16 text-center">
+                                <p className="text-base-content/40">No commands found</p>
                             </div>
-                        ))
-                    ) : (
-                        <div className="col-span-full">
-                            <div className="text-center py-20">
-                                <div className="text-6xl mb-4">🔍</div>
-                                <h3 className="text-xl font-medium text-base-content">No commands found</h3>
-                                <p className="text-base-content/50">Try adjusting your filters.</p>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </Header>
         </div>
