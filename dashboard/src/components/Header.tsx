@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import { authApi } from '@/lib/api';
-import { on, once } from 'events';
 
 export default function Header() {
     const { user, logout } = useAuth();
@@ -36,127 +35,49 @@ export default function Header() {
         : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
 
     return (
-        <header className="glass sticky top-0 z-50 border-b border-[#f5c6d8]">
+        <header className="glass sticky top-0 z-50 border-b border-[#e8b4c8]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    {/* Logo and Desktop Nav */}
                     <div className="flex items-center gap-8">
-                        <Link href="/dashboard" className="text-xl font-bold gradient-text">Bot Dashboard</Link>
+                        <Link href="/dashboard" className="text-xl font-bold gradient-text">🌸 Mochi Dashboard</Link>
                         <nav className="hidden md:flex gap-6">
-                            <Link
-                                href="/dashboard"
-                                className={`font-medium transition-colors ${isActive('/dashboard') ? 'text-[#4a1942]' : 'text-[#8b5a7a] hover:text-[#4a1942]'}`}
-                            >
-                                Overview
-                            </Link>
-                            <Link
-                                href="/commands"
-                                className={`font-medium transition-colors ${isActive('/commands') ? 'text-[#4a1942]' : 'text-[#8b5a7a] hover:text-[#4a1942]'}`}
-                            >
-                                Commands
-                            </Link>
+                            <Link href="/dashboard" className={`font-medium transition-colors ${isActive('/dashboard') ? 'text-[#d6197e]' : 'text-[#6b3a5a] hover:text-[#2d1028]'}`}>Overview</Link>
+                            <Link href="/commands" className={`font-medium transition-colors ${isActive('/commands') ? 'text-[#d6197e]' : 'text-[#6b3a5a] hover:text-[#2d1028]'}`}>Commands</Link>
                             {isAuthorizedUser && (
-                                <Link
-                                    href="/channels"
-                                    className={`font-medium transition-colors ${isActive('/channels') ? 'text-[#4a1942]' : 'text-[#8b5a7a] hover:text-[#4a1942]'}`}
-                                >
-                                    Channels
-                                </Link>
+                                <Link href="/channels" className={`font-medium transition-colors ${isActive('/channels') ? 'text-[#d6197e]' : 'text-[#6b3a5a] hover:text-[#2d1028]'}`}>Channels</Link>
                             )}
                         </nav>
                     </div>
-
-                    {/* Desktop User Profile */}
                     <div className="hidden md:flex items-center gap-4">
                         <div className="flex items-center gap-3">
-                            <img
-                                src={avatarUrl}
-                                alt={user.username}
-                                className="w-8 h-8 rounded-full ring-2 ring-pink-400/50"
-                            />
-                            <span className="text-sm font-medium">{user.username}</span>
+                            <img src={avatarUrl} alt={user.username} className="w-8 h-8 rounded-full ring-2 ring-pink-400/50" />
+                            <span className="text-sm font-medium text-[#2d1028]">{user.username}</span>
                         </div>
-                        <button
-                            onClick={logout}
-                            className="px-3 py-1.5 text-sm text-[#8b5a7a] hover:text-[#4a1942] hover:bg-[#ffe0e8] rounded-lg transition-colors"
-                        >
-                            Logout
-                        </button>
+                        <button onClick={logout} className="px-3 py-1.5 text-sm text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec] rounded-lg transition-colors">Logout</button>
                     </div>
-
-                    {/* Mobile Menu Button */}
                     <div className="md:hidden flex items-center gap-4">
-                        <img
-                            src={avatarUrl}
-                            alt={user.username}
-                            className="w-8 h-8 rounded-full ring-2 ring-pink-400/50"
-                        />
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 text-[#8b5a7a] hover:text-[#4a1942] rounded-lg hover:bg-[#ffe0e8] transition-colors"
-                        >
+                        <img src={avatarUrl} alt={user.username} className="w-8 h-8 rounded-full ring-2 ring-pink-400/50" />
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-[#6b3a5a] hover:text-[#2d1028] rounded-lg hover:bg-[#ffe0ec] transition-colors">
                             {isMenuOpen ? (
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             ) : (
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                             )}
                         </button>
                     </div>
                 </div>
             </div>
-
-            {/* Mobile Menu Dropdown */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-[#f5c6d8] bg-[#fff5f7]/95 backdrop-blur-xl">
+                <div className="md:hidden border-t border-[#e8b4c8] bg-[#fff0f5]/95 backdrop-blur-xl">
                     <div className="px-4 pt-2 pb-4 space-y-1">
-                        <Link
-                            href="/dashboard"
-                            className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/dashboard')
-                                ? 'bg-pink-100 text-pink-600'
-                                : 'text-gray-300 hover:text-[#4a1942] hover:bg-[#ffe0e8]'
-                                }`}
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Overview
-                        </Link>
-                        <Link
-                            href="/commands"
-                            className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/commands')
-                                ? 'bg-pink-100 text-pink-600'
-                                : 'text-gray-300 hover:text-[#4a1942] hover:bg-[#ffe0e8]'
-                                }`}
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Commands
-                        </Link>
-                        <Link
-                            href="/channels"
-                            className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/channels')
-                                ? 'bg-pink-100 text-pink-600'
-                                : 'text-gray-300 hover:text-[#4a1942] hover:bg-[#ffe0e8]'
-                                }`}
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Channels
-                        </Link>
-
-                        <div className="border-t border-[#f5c6d8] my-2 pt-2">
+                        <Link href="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/dashboard') ? 'bg-pink-100 text-pink-700' : 'text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec]'}`} onClick={() => setIsMenuOpen(false)}>Overview</Link>
+                        <Link href="/commands" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/commands') ? 'bg-pink-100 text-pink-700' : 'text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec]'}`} onClick={() => setIsMenuOpen(false)}>Commands</Link>
+                        <Link href="/channels" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/channels') ? 'bg-pink-100 text-pink-700' : 'text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec]'}`} onClick={() => setIsMenuOpen(false)}>Channels</Link>
+                        <div className="border-t border-[#e8b4c8] my-2 pt-2">
                             <div className="px-3 py-2 flex items-center gap-3">
-                                <span className="text-[#8b5a7a] text-sm">Logged in as <span className="text-[#4a1942] font-medium">{user.username}</span></span>
+                                <span className="text-[#6b3a5a] text-sm">Logged in as <span className="text-[#2d1028] font-medium">{user.username}</span></span>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    logout();
-                                }}
-                                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                            >
-                                Logout
-                            </button>
+                            <button onClick={() => { setIsMenuOpen(false); logout(); }} className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">Logout</button>
                         </div>
                     </div>
                 </div>

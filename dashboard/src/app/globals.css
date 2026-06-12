@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff5f7;
-  --foreground: #4a1942;
+  --background: #fff0f5;
+  --foreground: #2d1028;
   --card: #ffffff;
-  --card-hover: #ffe0e8;
-  --border: #f5c6d8;
-  --primary: #e91e8c;
-  --primary-hover: #c4177a;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
+  --card-hover: #ffe0ec;
+  --border: #e8b4c8;
+  --primary: #d6197e;
+  --primary-hover: #b8156e;
+  --success: #059669;
+  --warning: #d97706;
+  --error: #dc2626;
   --discord: #5865f2;
 }
 
@@ -19,56 +19,46 @@ body {
   color: var(--foreground);
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: var(--card);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: linear-gradient(180deg, #f0a0c0, #d6197e);
+  border-radius: 999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #f5c6d8;
+  background: #d6197e;
 }
 
-/* Glass effect */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);
 }
 
-/* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #e91e8c 0%, #f8a4c8 100%);
+  background: linear-gradient(135deg, #d6197e 0%, #f06292 50%, #f8a4c8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Card hover effect */
 .card-hover {
   transition: all 0.2s ease;
 }
-
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(233, 30, 140, 0.12);
+  box-shadow: 0 8px 30px rgba(214, 25, 126, 0.12);
 }
 
-/* Pulse animation */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
 }
-
 .pulse-glow {
   animation: pulse-glow 2s infinite;
 }
