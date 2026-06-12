@@ -9,8 +9,9 @@ import { authApi } from '@/lib/api';
 export default function Header() {
     const { user, logout } = useAuth();
     const pathname = usePathname();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
     async function getAuthData() {
         const token = localStorage.getItem('auth_token');
         if (token) {
@@ -23,65 +24,122 @@ export default function Header() {
         }
         return null;
     }
-    const isActive = (path: string) => pathname === path;
+
     useEffect(() => {
         getAuthData();
-    },[user, logout]);
-    
+    }, [user, logout]);
+
     if (!user) return null;
 
     const avatarUrl = user.avatar
         ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
         : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
 
+    const isActive = (path: string) => pathname === path;
+
+    const navItems = [
+        { path: '/dashboard', label: 'Overview', icon: '🏠' },
+        { path: '/commands', label: 'Commands', icon: '⚡' },
+        ...(isAuthorizedUser ? [{ path: '/channels', label: 'Channels', icon: '📋' }] : []),
+    ];
+
     return (
-        <header className="glass sticky top-0 z-50 border-b border-[#e8b4c8]">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center gap-8">
-                        <Link href="/dashboard" className="text-xl font-bold gradient-text">🌸 Mochi Dashboard</Link>
-                        <nav className="hidden md:flex gap-6">
-                            <Link href="/dashboard" className={`font-medium transition-colors ${isActive('/dashboard') ? 'text-[#d6197e]' : 'text-[#6b3a5a] hover:text-[#2d1028]'}`}>Overview</Link>
-                            <Link href="/commands" className={`font-medium transition-colors ${isActive('/commands') ? 'text-[#d6197e]' : 'text-[#6b3a5a] hover:text-[#2d1028]'}`}>Commands</Link>
-                            {isAuthorizedUser && (
-                                <Link href="/channels" className={`font-medium transition-colors ${isActive('/channels') ? 'text-[#d6197e]' : 'text-[#6b3a5a] hover:text-[#2d1028]'}`}>Channels</Link>
-                            )}
-                        </nav>
+        <div className="drawer lg:drawer-open">
+            <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" checked={drawerOpen} onChange={() => setDrawerOpen(!drawerOpen)} />
+
+            {/* Sidebar */}
+            <div className="drawer-side z-50">
+                <label htmlFor="sidebar-drawer" className="drawer-overlay"></label>
+                <div className="menu bg-base-200 text-base-content min-h-full w-72 p-4 gap-2">
+                    {/* Logo */}
+                    <div className="mb-6 px-2">
+                        <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
+                            🌸 Mochi Bot
+                        </h1>
+                        <p className="text-xs text-base-content/60 mt-1">Discord Dashboard</p>
                     </div>
-                    <div className="hidden md:flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <img src={avatarUrl} alt={user.username} className="w-8 h-8 rounded-full ring-2 ring-pink-400/50" />
-                            <span className="text-sm font-medium text-[#2d1028]">{user.username}</span>
+
+                    {/* Nav Items */}
+                    {navItems.map(item => (
+                        <li key={item.path}>
+                            <Link
+                                href={item.path}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                                    isActive(item.path)
+                                        ? 'bg-primary text-primary-content shadow-lg shadow-primary/20'
+                                        : 'hover:bg-base-300 text-base-content/80'
+                                }`}
+                            >
+                                <span className="text-lg">{item.icon}</span>
+                                {item.label}
+                            </Link>
+                        </li>
+                    ))}
+
+                    <div className="divider my-2"></div>
+
+                    {/* User Section */}
+                    <div className="mt-auto">
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-base-300">
+                            <div className="avatar">
+                                <div className="w-10 rounded-full ring-2 ring-primary/30">
+                                    <img src={avatarUrl} alt={user.username} />
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{user.username}</p>
+                                <p className="text-xs text-base-content/50">Logged in</p>
+                            </div>
                         </div>
-                        <button onClick={logout} className="px-3 py-1.5 text-sm text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec] rounded-lg transition-colors">Logout</button>
-                    </div>
-                    <div className="md:hidden flex items-center gap-4">
-                        <img src={avatarUrl} alt={user.username} className="w-8 h-8 rounded-full ring-2 ring-pink-400/50" />
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-[#6b3a5a] hover:text-[#2d1028] rounded-lg hover:bg-[#ffe0ec] transition-colors">
-                            {isMenuOpen ? (
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            ) : (
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                            )}
-                        </button>
+                        <li>
+                            <button
+                                onClick={logout}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-error hover:bg-error/10 w-full text-left"
+                            >
+                                <span className="text-lg">🚪</span>
+                                Logout
+                            </button>
+                        </li>
                     </div>
                 </div>
             </div>
-            {isMenuOpen && (
-                <div className="md:hidden border-t border-[#e8b4c8] bg-[#fff0f5]/95 backdrop-blur-xl">
-                    <div className="px-4 pt-2 pb-4 space-y-1">
-                        <Link href="/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/dashboard') ? 'bg-pink-100 text-pink-700' : 'text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec]'}`} onClick={() => setIsMenuOpen(false)}>Overview</Link>
-                        <Link href="/commands" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/commands') ? 'bg-pink-100 text-pink-700' : 'text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec]'}`} onClick={() => setIsMenuOpen(false)}>Commands</Link>
-                        <Link href="/channels" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/channels') ? 'bg-pink-100 text-pink-700' : 'text-[#6b3a5a] hover:text-[#2d1028] hover:bg-[#ffe0ec]'}`} onClick={() => setIsMenuOpen(false)}>Channels</Link>
-                        <div className="border-t border-[#e8b4c8] my-2 pt-2">
-                            <div className="px-3 py-2 flex items-center gap-3">
-                                <span className="text-[#6b3a5a] text-sm">Logged in as <span className="text-[#2d1028] font-medium">{user.username}</span></span>
+
+            {/* Main Content Wrapper */}
+            <div className="drawer-content flex flex-col min-h-screen">
+                {/* Top Navbar */}
+                <div className="navbar bg-base-100 border-b border-base-200 px-4 sticky top-0 z-40">
+                    <div className="flex-none lg:hidden">
+                        <label htmlFor="sidebar-drawer" className="btn btn-ghost btn-square">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </label>
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-lg font-bold text-base-content">
+                            {navItems.find(i => i.path === pathname)?.label || 'Dashboard'}
+                        </h2>
+                    </div>
+                    <div className="flex-none">
+                        <div className="dropdown dropdown-end">
+                            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                                <div className="w-10 rounded-full">
+                                    <img src={avatarUrl} alt={user.username} />
+                                </div>
                             </div>
-                            <button onClick={() => { setIsMenuOpen(false); logout(); }} className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">Logout</button>
+                            <ul tabIndex={0} className="dropdown-content menu bg-base-200 rounded-box z-50 w-52 p-2 shadow-xl border border-base-300 mt-3">
+                                <li className="menu-title"><span className="text-base-content/50">{user.username}</span></li>
+                                <li><button onClick={logout} className="text-error">🚪 Logout</button></li>
+                            </ul>
                         </div>
                     </div>
                 </div>
-            )}
-        </header>
+
+                {/* Page Content */}
+                <main className="flex-1 p-4 md:p-6 lg:p-8">
+                    <slot />
+                </main>
+            </div>
+        </div>
     );
 }

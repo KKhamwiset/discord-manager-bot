@@ -14,6 +14,7 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<StatsOverview | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+
     async function getAuthData() {
         const token = localStorage.getItem('auth_token');
         if (token) {
@@ -26,14 +27,11 @@ export default function DashboardPage() {
         }
         return null;
     }
-    useEffect(() => {
-        getAuthData();
-    },[user, logout]);
+
+    useEffect(() => { getAuthData(); }, [user, logout]);
 
     useEffect(() => {
-        if (!isLoading && !user) {
-            router.push('/');
-        }
+        if (!isLoading && !user) { router.push('/'); }
     }, [user, isLoading, router]);
 
     useEffect(() => {
@@ -52,8 +50,8 @@ export default function DashboardPage() {
 
     if (isLoading || !user) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+            <div className="min-h-screen flex items-center justify-center bg-base-200">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
         );
     }
@@ -63,88 +61,111 @@ export default function DashboardPage() {
         : null;
 
     return (
-        <div className="min-h-screen">
-            <Header />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-base-200">
+            <Header>
+                {/* Welcome */}
                 <div className="mb-8">
-                    <h2 className="text-3xl font-bold mb-2 text-[#2d1028]">Welcome back, {user.username}! 🌸</h2>
-                    <p className="text-[#6b3a5a] text-lg">Managing the bot for your community</p>
+                    <h2 className="text-3xl font-bold text-base-content">Welcome back, {user.username}! 🌸</h2>
+                    <p className="text-base-content/60 text-lg mt-1">Managing the bot for your community</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Guild Info Card */}
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Bot Status Card */}
+                    <div className="card bg-base-100 shadow-md border border-base-300">
+                        <div className="card-body p-5">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="card-title text-sm font-semibold text-base-content/60 uppercase tracking-wider">Bot Status</h3>
+                                <span className={`w-3 h-3 rounded-full ${stats?.bot_status === 'online' ? 'bg-success animate-pulse' : 'bg-base-content/20'}`}></span>
+                            </div>
+                            <p className={`text-2xl font-bold ${stats?.bot_status === 'online' ? 'text-success' : 'text-base-content/40'}`}>
+                                {stats?.bot_status === 'online' ? 'Online' : 'Offline'}
+                            </p>
+                            <p className="text-xs text-base-content/50 mt-1">System is {stats?.bot_status || 'checking...'}</p>
+                        </div>
+                    </div>
+
+                    {/* Members Card */}
+                    <div className="card bg-base-100 shadow-md border border-base-300">
+                        <div className="card-body p-5">
+                            <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wider mb-3">Members</h3>
+                            <p className="text-2xl font-bold text-primary">{stats?.guild?.members || 'N/A'}</p>
+                            <p className="text-xs text-base-content/50 mt-1">Total server members</p>
+                        </div>
+                    </div>
+
+                    {/* Server Card */}
+                    <div className="card bg-base-100 shadow-md border border-base-300">
+                        <div className="card-body p-5">
+                            <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wider mb-3">Server</h3>
+                            <p className="text-2xl font-bold text-base-content">{stats?.guild?.name || 'Unknown'}</p>
+                            {stats?.guild?.region && <p className="text-xs text-base-content/50 mt-1">Region: {stats.guild.region}</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Server Info Card */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-                        <div className="glass rounded-2xl overflow-hidden border border-[#e8b4c8]">
-                            <div className="h-32 bg-gradient-to-r from-pink-200 via-rose-200 to-pink-300 relative">
+                        <div className="card bg-base-100 shadow-md border border-base-300 overflow-hidden">
+                            {/* Banner */}
+                            <div className="h-32 bg-gradient-to-r from-pink-300 via-secondary to-purple-300 relative">
                                 {guildIconUrl && (
                                     <div className="absolute -bottom-10 left-8">
-                                        <img src={guildIconUrl} alt={stats?.guild?.name} className="w-24 h-24 rounded-2xl ring-4 ring-white bg-white shadow-2xl" />
+                                        <div className="avatar">
+                                            <div className="w-24 h-24 rounded-2xl ring-4 ring-base-100 bg-base-100 shadow-xl">
+                                                <img src={guildIconUrl} alt={stats?.guild?.name} className="rounded-2xl" />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                            <div className="p-8 pt-12">
-                                <div className="flex flex-col gap-6">
+                            <div className="card-body pt-14">
+                                <h3 className="card-title text-xl">{stats?.guild?.name || 'Unknown Guild'}</h3>
+                                <p className="text-base-content/50 text-sm tracking-widest uppercase">Discord Server Information</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
                                     <div>
-                                        <h3 className="text-2xl font-bold mb-1 text-[#2d1028]">{stats?.guild?.name || 'Unknown Guild'}</h3>
-                                        <p className="text-[#8b5a7a] text-sm tracking-widest uppercase">Discord Server Information</p>
+                                        <p className="text-xs text-base-content/40 uppercase font-semibold">Members</p>
+                                        <p className="text-lg font-medium">{stats?.guild?.members || 'N/A'}</p>
                                     </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-[#8b5a7a] uppercase font-semibold">Members</p>
-                                            <p className="text-xl font-medium text-[#2d1028]">{stats?.guild?.members || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-[#8b5a7a] uppercase font-semibold">Guild ID</p>
-                                            <p className="text-sm font-mono truncate text-[#6b3a5a]">{stats?.guild?.id || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-[#8b5a7a] uppercase font-semibold">Region</p>
-                                            <p className="text-xl font-medium text-[#2d1028]">{stats?.guild?.region || 'Classic'}</p>
-                                        </div>
+                                    <div>
+                                        <p className="text-xs text-base-content/40 uppercase font-semibold">Guild ID</p>
+                                        <p className="text-sm font-mono truncate text-base-content/60">{stats?.guild?.id || 'N/A'}</p>
                                     </div>
-                                    {isAuthorizedUser && (
-                                        <div className="flex gap-4">
-                                            <Link href="/commands" className="px-6 py-2.5 bg-[#d6197e] hover:bg-[#b8156e] text-white font-medium rounded-xl transition-all shadow-lg shadow-pink-500/20 active:scale-95">
-                                                Manage Commands
-                                            </Link>
-                                        </div>
-                                    )}
+                                    <div>
+                                        <p className="text-xs text-base-content/40 uppercase font-semibold">Region</p>
+                                        <p className="text-lg font-medium">{stats?.guild?.region || 'Classic'}</p>
+                                    </div>
                                 </div>
+                                {isAuthorizedUser && (
+                                    <div className="card-actions mt-4">
+                                        <Link href="/commands" className="btn btn-primary">
+                                            Manage Commands
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Bot Side Card */}
+                    {/* Quick Links */}
                     <div className="space-y-6">
-                        <div className="glass p-6 rounded-2xl border border-[#e8b4c8]">
-                            <h4 className="text-sm font-semibold text-[#8b5a7a] uppercase tracking-wider mb-4">Bot Health</h4>
-                            <div className="flex items-center justify-between p-4 bg-[#fff5f8] rounded-xl border border-[#e8b4c8]">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-3 h-3 rounded-full ${stats?.bot_status === 'online' ? 'bg-green-500 pulse-glow' : 'bg-gray-400'}`} />
-                                    <span className="font-medium text-[#2d1028]">System Status</span>
+                        <div className="card bg-base-100 shadow-md border border-base-300">
+                            <div className="card-body p-5">
+                                <h3 className="card-title text-sm font-semibold text-base-content/60 uppercase tracking-wider mb-3">Quick Links</h3>
+                                <div className="space-y-2">
+                                    <a href="https://discord.com" target="_blank" className="btn btn-ghost btn-block justify-start gap-3">
+                                        <span>💬</span> Discord Support
+                                    </a>
+                                    <a href="#" className="btn btn-ghost btn-block justify-start gap-3">
+                                        <span>📖</span> Documentation
+                                    </a>
                                 </div>
-                                <span className={`text-sm font-bold uppercase ${stats?.bot_status === 'online' ? 'text-green-600' : 'text-gray-500'}`}>
-                                    {stats?.bot_status || 'Offline'}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="glass p-6 rounded-2xl border border-[#e8b4c8]">
-                            <h4 className="text-sm font-semibold text-[#8b5a7a] uppercase tracking-wider mb-4">Quick Links</h4>
-                            <div className="space-y-3">
-                                <a href="https://discord.com" target="_blank" className="flex items-center justify-between p-3 hover:bg-[#ffe0ec] rounded-lg transition-colors group">
-                                    <span className="text-[#6b3a5a] group-hover:text-[#2d1028]">Discord Support</span>
-                                    <svg className="w-4 h-4 text-[#8b5a7a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
-                                </a>
-                                <a href="#" className="flex items-center justify-between p-3 hover:bg-[#ffe0ec] rounded-lg transition-colors group">
-                                    <span className="text-[#6b3a5a] group-hover:text-[#2d1028]">Documentation</span>
-                                    <svg className="w-4 h-4 text-[#8b5a7a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
-                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
+            </Header>
         </div>
     );
 }

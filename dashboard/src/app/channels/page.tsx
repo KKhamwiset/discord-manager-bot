@@ -19,7 +19,6 @@ export default function ChannelsPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [allCommands, setAllCommands] = useState<Command[]>([]);
     const [loadingCommands, setLoadingCommands] = useState(false);
     const [commandSearch, setCommandSearch] = useState('');
@@ -48,7 +47,6 @@ export default function ChannelsPage() {
 
     const handleChannelClick = async (channel: Channel) => {
         setSelectedChannel(channel);
-        setIsModalOpen(true);
         if (allCommands.length === 0 && channel.cmd_mode !== 'all') {
             setLoadingCommands(true);
             try {
@@ -104,7 +102,7 @@ export default function ChannelsPage() {
     const handleDiscard = () => {
         setPendingChanges([]);
         fetchChannels();
-        setIsModalOpen(false);
+        setSelectedChannel(null);
     };
 
     const filteredCommands = allCommands.filter(cmd =>
@@ -114,30 +112,31 @@ export default function ChannelsPage() {
 
     if (isLoading || !user) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+            <div className="min-h-screen flex items-center justify-center bg-base-200">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
-            <Header />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+        <div className="min-h-screen bg-base-200">
+            <Header>
                 <div className="mb-8">
-                    <h2 className="text-2xl font-bold mb-2 text-[#2d1028]">Allowed Channels</h2>
-                    <p className="text-[#6b3a5a]">Manage channels where the bot is allowed to operate. Click on a channel to manage allowed commands.</p>
+                    <h2 className="text-2xl font-bold text-base-content">Allowed Channels</h2>
+                    <p className="text-base-content/60">Manage channels where the bot is allowed to operate.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {loading ? (
                         [...Array(9)].map((_, i) => (
-                            <div key={i} className="glass rounded-xl p-6 h-32 animate-pulse border border-[#e8b4c8]">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-10 h-10 bg-[#ffe0ec] rounded-lg" />
-                                    <div className="flex-1 space-y-2">
-                                        <div className="h-4 bg-[#ffe0ec] rounded w-3/4" />
-                                        <div className="h-3 bg-[#ffe0ec] rounded w-1/2" />
+                            <div key={i} className="card bg-base-100 shadow-md border border-base-300 animate-pulse">
+                                <div className="card-body p-6 h-32">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-base-300 rounded-lg"></div>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-4 bg-base-300 rounded w-3/4"></div>
+                                            <div className="h-3 bg-base-300 rounded w-1/2"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -145,128 +144,121 @@ export default function ChannelsPage() {
                     ) : channels.length > 0 ? (
                         channels.map(channel => (
                             <div key={channel.id} onClick={() => handleChannelClick(channel)}
-                                className="glass rounded-xl p-6 border border-[#e8b4c8] hover:border-[#d6197e] transition-all duration-300 cursor-pointer group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-br from-pink-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="flex items-start justify-between relative z-10">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center text-[#d6197e] group-hover:scale-110 transition-transform">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                                            </svg>
+                                className="card bg-base-100 shadow-md border border-base-300 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer group hover:-translate-y-1">
+                                <div className="card-body p-5">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-base-content group-hover:text-primary transition-colors">{channel.name}</h4>
+                                                <p className="text-xs text-base-content/40 font-mono">ID: {channel.id}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg text-[#2d1028] group-hover:text-[#d6197e] transition-colors">{channel.name}</h4>
-                                            <p className="text-xs text-[#8b5a7a] font-mono mt-1">ID: {channel.id}</p>
-                                        </div>
+                                        <span className={`badge badge-sm ${channel.cmd_mode === 'all' ? 'badge-success' : 'badge-primary'}`}>
+                                            {channel.cmd_mode === 'all' ? 'ALL' : `${channel.allowed_commands.length} Cmds`}
+                                        </span>
                                     </div>
-                                    <div className="px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-bold uppercase flex items-center gap-1 border border-green-200">
-                                        {channel.cmd_mode === "all" ? (
-                                            <>
-                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                                <span>ALL</span>
-                                            </>
-                                        ) : (
-                                            `${channel.allowed_commands.length} Cmds`
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="mt-4 flex flex-wrap gap-1 relative z-10">
-                                    {channel.cmd_mode !== 'all' && (
-                                        <>
+                                    {channel.cmd_mode !== 'all' && channel.allowed_commands.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-1">
                                             {channel.allowed_commands.slice(0, 3).map(cmd => (
-                                                <span key={cmd} className="text-[10px] px-2 py-0.5 rounded-full bg-[#fff5f8] text-[#6b3a5a] border border-[#e8b4c8]">{cmd}</span>
+                                                <span key={cmd} className="text-[10px] bg-base-200 text-base-content/50 px-2 py-0.5 rounded">{cmd}</span>
                                             ))}
                                             {channel.allowed_commands.length > 3 && (
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#fff5f8] text-[#6b3a5a] border border-[#e8b4c8]">+{channel.allowed_commands.length - 3}</span>
+                                                <span className="text-[10px] bg-base-200 text-base-content/50 px-2 py-0.5 rounded">+{channel.allowed_commands.length - 3}</span>
                                             )}
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div className="col-span-full py-12 text-center glass rounded-xl border border-[#e8b4c8]">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 text-[#d6197e] mb-4">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        <div className="col-span-full">
+                            <div className="text-center py-12 card bg-base-100 shadow-md border border-base-300">
+                                <div className="card-body">
+                                    <div className="text-5xl mb-4">📭</div>
+                                    <h3 className="text-lg font-medium text-base-content">No Allowed Channels</h3>
+                                    <p className="text-base-content/50 mt-1">The bot is not restricted to specific channels yet.</p>
+                                </div>
                             </div>
-                            <h3 className="text-lg font-medium text-[#2d1028]">No Allowed Channels Configured</h3>
-                            <p className="text-[#6b3a5a] mt-1 max-w-md mx-auto">The bot is currently not restricted to specific channels, or no channels have been allowed yet.</p>
                         </div>
                     )}
                 </div>
-            </main>
+            </Header>
 
             <UnsavedChangesToast isOpen={pendingChanges.length > 0} onSave={handleSave} onDiscard={handleDiscard} loading={saving} />
 
-            {isModalOpen && selectedChannel && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
-                    <div className="bg-white border border-[#e8b4c8] rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-[#e8b4c8] flex items-center justify-between bg-[#fff5f8]">
-                            <div>
-                                <h3 className="text-xl font-bold text-[#2d1028] flex items-center gap-2">
-                                    <span className="text-[#d6197e]">#</span> {selectedChannel.name}
-                                </h3>
-                                <p className="text-sm text-[#6b3a5a] mt-1">
-                                    {selectedChannel.cmd_mode === 'all' ? "This channel allows ALL commands. Configuration is disabled." : "Manage allowed commands for this channel"}
-                                </p>
+            {/* Modal */}
+            {selectedChannel && (
+                <div className="modal modal-open">
+                    <div className="modal-box max-w-2xl bg-base-100 border border-base-300 shadow-2xl">
+                        <h3 className="font-bold text-lg text-base-content flex items-center gap-2">
+                            <span className="text-primary">#</span> {selectedChannel.name}
+                        </h3>
+                        <p className="text-sm text-base-content/60 mt-1">
+                            {selectedChannel.cmd_mode === 'all' ? "This channel allows ALL commands." : "Manage allowed commands for this channel"}
+                        </p>
+
+                        <div className="divider my-3"></div>
+
+                        {selectedChannel.cmd_mode === 'all' ? (
+                            <div className="text-center py-8">
+                                <div className="text-5xl mb-4">✅</div>
+                                <h4 className="text-lg font-medium text-base-content">Unrestricted Access</h4>
+                                <p className="text-base-content/50 mt-1">This channel allows all commands.</p>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-[#ffe0ec] rounded-lg transition-colors text-[#6b3a5a] hover:text-[#2d1028]">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                        <div className="p-6 overflow-y-auto flex-1">
-                            {selectedChannel.cmd_mode === 'all' ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-4 border border-green-200">
-                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                    </div>
-                                    <h4 className="text-lg font-medium text-[#2d1028] mb-2">Unrestricted Access</h4>
-                                    <p className="text-[#6b3a5a] max-w-sm">This channel is configured to allow all commands. To restrict commands, update the configuration in your bot setup or database.</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="mb-6">
-                                        <label className="block text-sm font-medium text-[#2d1028] mb-2">Allowed Commands</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedChannel.allowed_commands.length > 0 ? (
-                                                selectedChannel.allowed_commands.map(cmd => (
-                                                    <div key={cmd} className="group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-pink-50 border border-pink-200 text-[#d6197e] hover:bg-pink-100 transition-colors">
-                                                        <span className="font-mono text-sm">{cmd}</span>
-                                                        <button onClick={() => handleUpdateCommand(cmd, 'remove')} className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-pink-200 text-[#d6197e]/70 hover:text-[#d6197e] transition-colors">
-                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        </button>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-sm text-[#8b5a7a] italic py-2">No commands allowed yet. Add some below.</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#2d1028] mb-2">Add Command</label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg className="h-5 w-5 text-[#8b5a7a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                            </div>
-                                            <input type="text" className="w-full bg-[#fff5f8] border border-[#e8b4c8] rounded-xl pl-10 pr-4 py-2.5 text-[#2d1028] focus:outline-none focus:border-[#d6197e] focus:ring-1 focus:ring-[#d6197e] transition-all placeholder-[#8b5a7a]" placeholder="Search commands to add..." value={commandSearch} onChange={(e) => setCommandSearch(e.target.value)} />
-                                        </div>
-                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                            {loadingCommands ? (
-                                                [...Array(6)].map((_, i) => (<div key={i} className="h-10 bg-[#fff5f8] rounded-lg animate-pulse border border-[#e8b4c8]" />))
-                                            ) : filteredCommands.length > 0 ? (
-                                                filteredCommands.slice(0, 12).map(cmd => (
-                                                    <button key={cmd.name} onClick={() => handleUpdateCommand(cmd.name, 'add')} className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#fff5f8] border border-[#e8b4c8] hover:border-[#d6197e] hover:bg-[#ffe0ec] text-left transition-all group">
-                                                        <span className="font-mono text-sm text-[#6b3a5a] group-hover:text-[#2d1028] truncate">{cmd.name}</span>
-                                                        <svg className="w-4 h-4 text-[#8b5a7a] group-hover:text-green-600 opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        ) : (
+                            <>
+                                <div className="mb-4">
+                                    <label className="label">
+                                        <span className="label-text font-medium text-base-content">Allowed Commands</span>
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedChannel.allowed_commands.length > 0 ? (
+                                            selectedChannel.allowed_commands.map(cmd => (
+                                                <div key={cmd} className="badge badge-primary badge-outline gap-1 px-3 py-2">
+                                                    <span className="font-mono text-sm">{cmd}</span>
+                                                    <button onClick={() => handleUpdateCommand(cmd, 'remove')} className="hover:text-error">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                                     </button>
-                                                ))
-                                            ) : (
-                                                <div className="col-span-full text-center py-4 text-[#8b5a7a]">No matching commands found.</div>
-                                            )}
-                                        </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-base-content/40 italic">No commands allowed yet.</p>
+                                        )}
                                     </div>
-                                </>
-                            )}
+                                </div>
+
+                                <div>
+                                    <label className="label">
+                                        <span className="label-text font-medium text-base-content">Add Command</span>
+                                    </label>
+                                    <input type="text" className="input input-bordered w-full bg-base-200" placeholder="Search commands to add..." value={commandSearch} onChange={(e) => setCommandSearch(e.target.value)} />
+
+                                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                                        {loadingCommands ? (
+                                            [...Array(6)].map((_, i) => (<div key={i} className="h-10 bg-base-200 rounded-lg animate-pulse"></div>))
+                                        ) : filteredCommands.length > 0 ? (
+                                            filteredCommands.slice(0, 12).map(cmd => (
+                                                <button key={cmd.name} onClick={() => handleUpdateCommand(cmd.name, 'add')}
+                                                    className="btn btn-sm btn-ghost justify-start gap-2 border border-base-300 hover:border-primary hover:bg-primary/5 text-left">
+                                                    <span className="font-mono text-xs truncate">{cmd.name}</span>
+                                                    <span className="text-success">+</span>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-full text-center py-4 text-base-content/40 text-sm">No matching commands.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        <div className="modal-action mt-6">
+                            <button className="btn" onClick={() => setSelectedChannel(null)}>Close</button>
                         </div>
                     </div>
                 </div>
