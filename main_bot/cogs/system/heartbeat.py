@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Config via env vars
 HEARTBEAT_CHANNEL_ID = int(os.getenv("HEARTBEAT_CHANNEL_ID", "0"))
 HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", "300"))  # 5 min default
-HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT", "60"))     # 1 min default
+HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT", "120"))    # 2 min default
 HEARTBEAT_EMOJI = os.getenv("HEARTBEAT_EMOJI", "💓")
 
 # Status messages
@@ -38,7 +38,7 @@ class HeartbeatMonitor(commands.Cog):
     def cog_unload(self):
         self.monitor.cancel()
 
-    @tasks.loop(seconds=60)  # check every minute
+    @tasks.loop(seconds=60)  # check interval matches timeout
     async def monitor(self):
         """Check if heartbeat is still fresh."""
         if not HEARTBEAT_CHANNEL_ID:
