@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { authApi } from '@/lib/api';
 
-export default function Header() {
+export default function Header({ children }: { children?: ReactNode }) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
@@ -137,7 +137,7 @@ export default function Header() {
 
                 {/* Page Content */}
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
-                    <slot />
+                    {children}
                 </main>
             </div>
         </div>
