@@ -71,9 +71,9 @@ class HeartbeatMonitor(commands.Cog):
             return
 
         try:
-            # Look for recent heartbeat messages (from the bot itself or a webhook)
+            # Look for recent heartbeat messages (check emoji only — sender may be webhook)
             async for msg in channel.history(limit=20):
-                if msg.author == self.bot.user and HEARTBEAT_EMOJI in msg.content:
+                if HEARTBEAT_EMOJI in msg.content:
                     self.last_heartbeat = msg.created_at
                     # Check if the heartbeat is still fresh
                     now = datetime.now(tz=timezone.utc)
@@ -85,12 +85,11 @@ class HeartbeatMonitor(commands.Cog):
                         logger.info(f"✅ Fresh heartbeat found in history. Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
                     break
             else:
-                # No heartbeat found in history — assume alive for now, set last_heartbeat to now
-                # so the monitor loop can detect timeout if heartbeats stop arriving
+                # No heartbeat found in history — Hermes is likely offline
                 self.last_heartbeat = datetime.now(tz=timezone.utc)
-                self.is_hermes_alive = True
-                await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
-                logger.info(f"ℹ️ No heartbeat found in history. Starting fresh — Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
+                self.is_hermes_alive = False
+                await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
+                logger.info(f"⚠️ No heartbeat found in history. Hermes may be offline — Status → Mochi is sleeping~ 💤")
         except Exception as e:
             logger.debug(f"Could not fetch heartbeat history: {e}")
 
