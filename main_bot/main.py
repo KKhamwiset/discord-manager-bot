@@ -265,6 +265,12 @@ class BotInitDB(commands.Bot):
         print(f"{self.user} has connected to Discord!")
 
     async def close(self):
+        # Set bot to sleeping before disconnecting so Discord UI updates immediately
+        try:
+            await self.change_presence(activity=discord.Game(name="Mochi is sleeping~ 💤"), status=discord.Status.idle)
+            logger.info("💤 Bot status set to sleeping before shutdown")
+        except Exception:
+            pass
         await self.mongo.close()
         await super().close()
 
