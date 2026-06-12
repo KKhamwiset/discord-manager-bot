@@ -36,7 +36,7 @@ export default function Header() {
         : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
 
     return (
-        <header className="glass sticky top-0 z-50 border-b border-gray-800">
+        <header className="glass sticky top-0 z-50 border-b border-[#f5c6d8]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo and Desktop Nav */}
@@ -45,20 +45,20 @@ export default function Header() {
                         <nav className="hidden md:flex gap-6">
                             <Link
                                 href="/dashboard"
-                                className={`font-medium transition-colors ${isActive('/dashboard') ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                                className={`font-medium transition-colors ${isActive('/dashboard') ? 'text-[#4a1942]' : 'text-[#8b5a7a] hover:text-[#4a1942]'}`}
                             >
                                 Overview
                             </Link>
                             <Link
                                 href="/commands"
-                                className={`font-medium transition-colors ${isActive('/commands') ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                                className={`font-medium transition-colors ${isActive('/commands') ? 'text-[#4a1942]' : 'text-[#8b5a7a] hover:text-[#4a1942]'}`}
                             >
                                 Commands
                             </Link>
                             {isAuthorizedUser && (
                                 <Link
                                     href="/channels"
-                                    className={`font-medium transition-colors ${isActive('/channels') ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                                    className={`font-medium transition-colors ${isActive('/channels') ? 'text-[#4a1942]' : 'text-[#8b5a7a] hover:text-[#4a1942]'}`}
                                 >
                                     Channels
                                 </Link>
@@ -72,13 +72,13 @@ export default function Header() {
                             <img
                                 src={avatarUrl}
                                 alt={user.username}
-                                className="w-8 h-8 rounded-full ring-2 ring-purple-500/50"
+                                className="w-8 h-8 rounded-full ring-2 ring-pink-400/50"
                             />
                             <span className="text-sm font-medium">{user.username}</span>
                         </div>
                         <button
                             onClick={logout}
-                            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-sm text-[#8b5a7a] hover:text-[#4a1942] hover:bg-[#ffe0e8] rounded-lg transition-colors"
                         >
                             Logout
                         </button>
@@ -89,11 +89,11 @@ export default function Header() {
                         <img
                             src={avatarUrl}
                             alt={user.username}
-                            className="w-8 h-8 rounded-full ring-2 ring-purple-500/50"
+                            className="w-8 h-8 rounded-full ring-2 ring-pink-400/50"
                         />
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+                            className="p-2 text-[#8b5a7a] hover:text-[#4a1942] rounded-lg hover:bg-[#ffe0e8] transition-colors"
                         >
                             {isMenuOpen ? (
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,13 +111,13 @@ export default function Header() {
 
             {/* Mobile Menu Dropdown */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-gray-800 bg-[#0a0a0f]/95 backdrop-blur-xl">
+                <div className="md:hidden border-t border-[#f5c6d8] bg-[#fff5f7]/95 backdrop-blur-xl">
                     <div className="px-4 pt-2 pb-4 space-y-1">
                         <Link
                             href="/dashboard"
                             className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/dashboard')
-                                ? 'bg-purple-600/10 text-purple-400'
-                                : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                ? 'bg-pink-100 text-pink-600'
+                                : 'text-gray-300 hover:text-[#4a1942] hover:bg-[#ffe0e8]'
                                 }`}
                             onClick={() => setIsMenuOpen(false)}
                         >
@@ -126,8 +126,8 @@ export default function Header() {
                         <Link
                             href="/commands"
                             className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/commands')
-                                ? 'bg-purple-600/10 text-purple-400'
-                                : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                ? 'bg-pink-100 text-pink-600'
+                                : 'text-gray-300 hover:text-[#4a1942] hover:bg-[#ffe0e8]'
                                 }`}
                             onClick={() => setIsMenuOpen(false)}
                         >
@@ -136,17 +136,17 @@ export default function Header() {
                         <Link
                             href="/channels"
                             className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/channels')
-                                ? 'bg-purple-600/10 text-purple-400'
-                                : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                ? 'bg-pink-100 text-pink-600'
+                                : 'text-gray-300 hover:text-[#4a1942] hover:bg-[#ffe0e8]'
                                 }`}
                             onClick={() => setIsMenuOpen(false)}
                         >
                             Channels
                         </Link>
 
-                        <div className="border-t border-gray-800 my-2 pt-2">
+                        <div className="border-t border-[#f5c6d8] my-2 pt-2">
                             <div className="px-3 py-2 flex items-center gap-3">
-                                <span className="text-gray-400 text-sm">Logged in as <span className="text-white font-medium">{user.username}</span></span>
+                                <span className="text-[#8b5a7a] text-sm">Logged in as <span className="text-[#4a1942] font-medium">{user.username}</span></span>
                             </div>
                             <button
                                 onClick={() => {
