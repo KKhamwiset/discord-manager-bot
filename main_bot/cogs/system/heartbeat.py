@@ -56,13 +56,19 @@ class HeartbeatMonitor(commands.Cog):
         if elapsed > HEARTBEAT_TIMEOUT and self.is_hermes_alive:
             # Hermes went offline
             self.is_hermes_alive = False
-            await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
-            logger.info(f"💤 Hermes heartbeat timeout ({elapsed:.0f}s). Status → Mochi is sleeping~ 💤")
+            try:
+                await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
+                logger.info(f"💤 Hermes offline ({elapsed:.0f}s). sleeping~ 💤")
+            except Exception as e:
+                logger.debug(f"change_presence failed: {e}")
         elif elapsed <= HEARTBEAT_TIMEOUT and not self.is_hermes_alive:
-            # Hermes came back — restore to the SAME status as startup (from main.py)
+            # Hermes came back
             self.is_hermes_alive = True
-            await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
-            logger.info(f"✅ Hermes heartbeat restored! Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
+            try:
+                await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+                logger.info(f"✅ Hermes restored! Sakura Garden ({_INITIAL_STATUS})")
+            except Exception as e:
+                logger.debug(f"change_presence failed: {e}")
 
     async def _fetch_latest_heartbeat(self):
         """Fetch the latest heartbeat message from the channel and restore status if fresh."""

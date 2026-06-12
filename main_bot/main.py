@@ -267,7 +267,10 @@ class BotInitDB(commands.Bot):
     async def close(self):
         # Set bot to sleeping before disconnecting so Discord UI updates immediately
         try:
-            await self.change_presence(activity=discord.Game(name="Mochi is sleeping~ 💤"), status=discord.Status.idle)
+            await self.change_presence(
+                activity=Game(name="Mochi is sleeping~ 💤"),
+                status=discord.Status.idle
+            )
             logger.info("💤 Bot status set to sleeping before shutdown")
         except Exception:
             pass
