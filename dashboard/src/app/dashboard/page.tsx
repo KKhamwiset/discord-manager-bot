@@ -122,7 +122,7 @@ export default function DashboardPage() {
                                             <div className="w-16 h-16 rounded-xl ring-4 ring-base-100 bg-base-100 shadow-lg">
                                                 <img src={guildIconUrl} alt={stats?.guild?.name} className="rounded-xl" />
                                             </div>
-                                        }
+                                        </div>
                                     </div>
                                 )}
                             </div>
