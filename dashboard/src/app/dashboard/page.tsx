@@ -61,6 +61,10 @@ export default function DashboardPage() {
         ? `https://cdn.discordapp.com/icons/${stats.guild.id}/${stats.guild.icon}.png`
         : null;
 
+    // Compute status classes
+    const statusDotClass = `w-2 h-2 rounded-full ${stats?.bot_status === 'online' ? 'bg-success' : 'bg-base-content/20'}`;
+    const statusTextClass = `text-xl font-semibold ${stats?.bot_status === 'online' ? 'text-success' : 'text-base-content/40'}`;
+
     return (
         <div className="min-h-screen bg-base-200">
             <Header>
@@ -79,9 +83,9 @@ export default function DashboardPage() {
                                 <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
                                     <RobotIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Status
                                 </span>
-                                <span className={`w-2 h-2 rounded-full ${stats?.bot_status === 'online' ? 'bg-success' : 'bg-base-content/20'`}></span>
+                                <span className={statusDotClass}></span>
                             </div>
-                            <p className={`text-xl font-semibold ${stats?.bot_status === 'online' ? 'text-success' : 'text-base-content/40'`}>
+                            <p className={statusTextClass}>
                                 {stats?.bot_status === 'online' ? 'Online' : 'Offline'}
                             </p>
                         </div>
@@ -118,7 +122,7 @@ export default function DashboardPage() {
                                             <div className="w-16 h-16 rounded-xl ring-4 ring-base-100 bg-base-100 shadow-lg">
                                                 <img src={guildIconUrl} alt={stats?.guild?.name} className="rounded-xl" />
                                             </div>
-                                        </div>
+                                        }
                                     </div>
                                 )}
                             </div>
