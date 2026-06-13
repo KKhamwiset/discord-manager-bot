@@ -53,15 +53,21 @@ class HeartbeatMonitor(commands.Cog):
 
         elapsed = (now - self.last_heartbeat).total_seconds()
 
-        if elapsed > HEARTBEAT_TIMEOUT and self.is_hermes_alive:
-            # Hermes went offline
+        if elapsed > HEARTBEAT_TIMEOUT:
+            # Hermes is offline/stale. Always enforce sleeping presence, even if
+            # our in-memory flag already says offline — the Discord presence may
+            # have been reset by reconnect/startup or another cog.
+            was_alive = self.is_hermes_alive
             self.is_hermes_alive = False
             try:
                 await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
-                logger.info(f"💤 Hermes offline ({elapsed:.0f}s). sleeping~ 💤")
+                if was_alive:
+                    logger.info(f"💤 Hermes offline ({elapsed:.0f}s). sleeping~ 💤")
+                else:
+                    logger.debug(f"💤 Hermes still offline ({elapsed:.0f}s). Re-applied sleeping presence.")
             except Exception as e:
                 logger.debug(f"change_presence failed: {e}")
-        elif elapsed <= HEARTBEAT_TIMEOUT and not self.is_hermes_alive:
+        elif not self.is_hermes_alive:
             # Hermes came back
             self.is_hermes_alive = True
             try:
@@ -89,6 +95,14 @@ class HeartbeatMonitor(commands.Cog):
                         self.is_hermes_alive = True
                         await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
                         logger.info(f"✅ Fresh heartbeat found in history. Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
+                    else:
+                        # Latest heartbeat exists but is stale — Hermes is offline.
+                        # Enforce sleeping immediately instead of waiting for the
+                        # next monitor tick; otherwise startup can leave the bot
+                        # showing the default online presence forever.
+                        self.is_hermes_alive = False
+                        await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
+                        logger.info(f"💤 Latest heartbeat is stale ({elapsed:.0f}s). Status → Mochi is sleeping~ 💤")
                     break
             else:
                 # No heartbeat found in history — Hermes is likely offline
