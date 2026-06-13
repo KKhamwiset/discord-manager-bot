@@ -217,7 +217,7 @@ export default function ChannelsPage() {
                         <div className="p-6">
                             {selectedChannel.cmd_mode === 'all' ? (
                                 <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">✅</div>
+                                    <div className="text-4xl mb-3 text-success"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
                                     <p className="text-base-content font-medium">Unrestricted Access</p>
                                     <p className="text-sm text-base-content/40 mt-1">All commands are allowed in this channel.</p>
                                 </div>

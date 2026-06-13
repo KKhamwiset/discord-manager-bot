@@ -49,7 +49,7 @@ export default function Home() {
 
         {/* Logo */}
         <div className="mb-6">
-          <span className="text-5xl">🌸</span>
+          <svg class="w-12 h-12 text-primary mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </div>
 
         {/* Title */}
@@ -83,12 +83,12 @@ export default function Home() {
         {/* Features */}
         <div className="mt-12 grid grid-cols-2 gap-3">
           <div className="p-4 bg-base-100 border border-base-300 rounded-lg text-center">
-            <span className="text-xl">⚡</span>
+            <span className="text-xl"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></span>
             <p className="text-xs font-medium text-base-content mt-2">Commands</p>
             <p className="text-xs text-base-content/40">Toggle on/off</p>
           </div>
           <div className="p-4 bg-base-100 border border-base-300 rounded-lg text-center">
-            <span className="text-xl">📋</span>
+            <span className="text-xl"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>
             <p className="text-xs font-medium text-base-content mt-2">Channels</p>
             <p className="text-xs text-base-content/40">Manage access</p>
           </div>
