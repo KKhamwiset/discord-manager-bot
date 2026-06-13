@@ -7,7 +7,7 @@ import { statsApi, StatsOverview } from '@/lib/api';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { authApi } from '@/lib/api';
-import { RobotIcon, UsersIcon, ServerIcon, ExternalLinkIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { ComputerDesktopIcon, UsersIcon, ServerIcon, ShareIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 export default function DashboardPage() {
     const { user, token, isLoading, logout } = useAuth();
@@ -81,7 +81,7 @@ export default function DashboardPage() {
                         <div className="bg-base-100 rounded-lg border border-base-300 p-4">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-                                    <RobotIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Status
+                                    <ComputerDesktopIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Status
                                 </span>
                                 <span className={statusDotClass}></span>
                             </div>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
                         <div className="bg-base-100 rounded-lg border border-base-300 p-4">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
-                                    <ExternalLinkIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Quick Links
+                                    <ShareIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Quick Links
                                 </span>
                             </div>
                             <div className="mt-3 space-y-1">
