@@ -50,7 +50,7 @@ export default function Header({ children }: { children?: ReactNode }) {
                         {/* Left: Logo + Nav */}
                         <div className="flex items-center gap-6">
                             <Link href="/dashboard" className="flex items-center gap-2">
-                                <span className="text-lg">🌸</span>
+                                <span className="text-lg"></span>
                                 <span className="font-semibold text-sm text-base-content">Mochi</span>
                             </Link>
                             <div className="hidden sm:flex items-center gap-1">
