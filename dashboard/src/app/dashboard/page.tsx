@@ -116,15 +116,15 @@ export default function DashboardPage() {
                         {/* Server Card */}
                         <div className="lg:col-span-2 bg-base-100 rounded-lg border border-base-300 overflow-hidden">
                             <div className="h-24 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 relative">
-                                {guildIconUrl && (
-                                    <div className="absolute -bottom-8 left-6">
-                                        <div className="avatar">
-                                            <div className="w-16 h-16 rounded-xl ring-4 ring-base-100 bg-base-100 shadow-lg">
-                                                <img src={guildIconUrl} alt={stats?.guild?.name} className="rounded-xl" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+	{guildIconUrl ? (
+		<div className="absolute -bottom-8 left-6">
+			<div className="avatar">
+				<div className="w-16 h-16 rounded-xl ring-4 ring-base-100 bg-base-100 shadow-lg">
+					<img src={guildIconUrl} alt={stats?.guild?.name} className="rounded-xl" />
+				</div>
+			</div>
+		</div>
+	) : null}
                             </div>
                             <div className="p-6 pt-12">
                                 <h2 className="text-lg font-semibold text-base-content">{stats?.guild?.name || 'Unknown Guild'}</h2>
