@@ -54,7 +54,6 @@ class Core(commands.Cog):
     @commands.hybrid_command(help="Check bot latency")
     async def ping(self, ctx: commands.Context):
         await ctx.send(f"Pong! {round(self.bot.latency * 1000)}ms")
-        await ctx.send(self.test_workflow)
 
     @commands.command(help="Say hello to the bot")
     async def hello(self, ctx: commands.Context):

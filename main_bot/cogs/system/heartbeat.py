@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 # Config via env vars
 HEARTBEAT_CHANNEL_ID = int(os.getenv("HEARTBEAT_CHANNEL_ID", "0"))
-HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", "300"))  # 5 min default
-HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT", "360"))    # 6 min (5min interval + 1min buffer)
+HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", "120"))  # 2 min default (cron sends every 2 min)
+HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT", "180"))    # 3 min timeout (2min interval + 1min buffer)
 HEARTBEAT_EMOJI = os.getenv("HEARTBEAT_EMOJI", "💓")
 
 # Status messages
@@ -38,7 +38,7 @@ class HeartbeatMonitor(commands.Cog):
     def cog_unload(self):
         self.monitor.cancel()
 
-    @tasks.loop(seconds=60)  # check interval matches timeout
+    @tasks.loop(seconds=120)  # check every 2 minutes to match cron interval
     async def monitor(self):
         """Check if heartbeat is still fresh."""
         if not HEARTBEAT_CHANNEL_ID:
@@ -92,7 +92,7 @@ class HeartbeatMonitor(commands.Cog):
                     break
             else:
                 # No heartbeat found in history — Hermes is likely offline
-                self.last_heartbeat = datetime.now(tz=timezone.utc)
+                # Keep last_heartbeat as None so the monitor loop will retry on next iteration
                 self.is_hermes_alive = False
                 await self.bot.change_presence(activity=STATUS_SLEEPING, status=Status.idle)
                 logger.info(f"⚠️ No heartbeat found in history. Hermes may be offline — Status → Mochi is sleeping~ 💤")
