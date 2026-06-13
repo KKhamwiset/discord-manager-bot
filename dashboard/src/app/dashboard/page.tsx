@@ -7,6 +7,7 @@ import { statsApi, StatsOverview } from '@/lib/api';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { authApi } from '@/lib/api';
+import { RobotIcon, UsersIcon, ServerIcon, ExternalLinkIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 export default function DashboardPage() {
     const { user, token, isLoading, logout } = useAuth();
@@ -70,28 +71,38 @@ export default function DashboardPage() {
                         <p className="text-sm text-base-content/50 mt-1">Manage your Discord bot</p>
                     </div>
 
-                    {/* Stats Row — Linear style */}
+                    {/* Stats Row — Icon style */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                         {/* Bot Status */}
                         <div className="bg-base-100 rounded-lg border border-base-300 p-4">
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">Status</span>
-                                <span className={`w-2 h-2 rounded-full ${stats?.bot_status === 'online' ? 'bg-success' : 'bg-base-content/20'}`}></span>
+                                <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                                    <RobotIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Status
+                                </span>
+                                <span className={`w-2 h-2 rounded-full ${stats?.bot_status === 'online' ? 'bg-success' : 'bg-base-content/20'`}></span>
                             </div>
-                            <p className={`text-xl font-semibold ${stats?.bot_status === 'online' ? 'text-success' : 'text-base-content/40'}`}>
+                            <p className={`text-xl font-semibold ${stats?.bot_status === 'online' ? 'text-success' : 'text-base-content/40'`}>
                                 {stats?.bot_status === 'online' ? 'Online' : 'Offline'}
                             </p>
                         </div>
 
                         {/* Members */}
                         <div className="bg-base-100 rounded-lg border border-base-300 p-4">
-                            <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">Members</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                                    <UsersIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Members
+                                </span>
+                            </div>
                             <p className="text-xl font-semibold text-base-content mt-3">{stats?.guild?.members || '—'}</p>
                         </div>
 
                         {/* Server */}
                         <div className="bg-base-100 rounded-lg border border-base-300 p-4">
-                            <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">Server</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                                    <ServerIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Server
+                                </span>
+                            </div>
                             <p className="text-xl font-semibold text-base-content mt-3 truncate">{stats?.guild?.name || '—'}</p>
                         </div>
                     </div>
@@ -126,7 +137,11 @@ export default function DashboardPage() {
 
                         {/* Quick Links */}
                         <div className="bg-base-100 rounded-lg border border-base-300 p-4">
-                            <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">Quick Links</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                                    <ExternalLinkIcon className="w-4 h-4 mr-2" aria-hidden="true" /> Quick Links
+                                </span>
+                            </div>
                             <div className="mt-3 space-y-1">
                                 <a href="https://discord.com" target="_blank" className="flex items-center justify-between px-3 py-2 text-sm text-base-content/70 hover:bg-base-200 rounded-md transition-colors">
                                     <span>Discord Support</span>
