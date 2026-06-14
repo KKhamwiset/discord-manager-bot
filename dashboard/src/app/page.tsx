@@ -74,10 +74,10 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,#fff_0%,#fff4fa_42%,#ffe7f2_100%)] text-base-content">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pink-400 via-primary to-rose-400" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-base-300 via-primary to-base-300" />
       <div className="pointer-events-none absolute -left-28 top-16 h-96 w-96 rounded-full bg-pink-300/35 blur-[96px]" />
       <div className="pointer-events-none absolute left-1/2 top-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-white/80 blur-[72px]" />
-      <div className="pointer-events-none absolute -right-24 bottom-10 h-[28rem] w-[28rem] rounded-full bg-rose-300/45 blur-[110px]" />
+      <div className="pointer-events-none absolute -right-24 bottom-10 h-[28rem] w-[28rem] rounded-full bg-slate-200/45 blur-[110px]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.92),transparent_24%),radial-gradient(circle_at_78%_28%,rgba(244,114,182,0.18),transparent_24%),radial-gradient(circle_at_45%_82%,rgba(251,207,232,0.36),transparent_28%)]" />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
@@ -92,17 +92,23 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full border border-pink-200 bg-white/90 px-3 py-1.5 text-xs font-extrabold text-pink-900 shadow-sm sm:flex">
-            <span className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]' : 'bg-amber-400 shadow-[0_0_0_4px_rgba(251,191,36,0.14)]'}`} />
+          <div className="hidden items-center gap-2 rounded-full border border-base-200 bg-white/92 px-3 py-1.5 text-xs font-extrabold text-base-content shadow-sm sm:flex">
+            <span
+              className={
+                isOnline
+                  ? 'h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'
+                  : 'h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_0_4px_rgba(251,191,36,0.14)]'
+              }
+            />
             Bot {statusLabel}
           </div>
         </header>
 
         <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
           <div className="max-w-3xl">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-pink-200 bg-white/88 px-4 py-2 text-sm font-extrabold text-pink-900 shadow-[0_12px_36px_rgba(196,26,122,0.12)] backdrop-blur-xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-base-200 bg-white/92 px-4 py-2 text-sm font-extrabold text-base-content shadow-[0_12px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl">
               <SparklesIcon className="h-4 w-4" aria-hidden="true" />
-              Pink/white dashboard for Mochi Bot
+              High-contrast dashboard for Mochi Bot
             </div>
 
             <h1 className="text-5xl font-black leading-[0.95] tracking-[-0.06em] text-[#2a1220] sm:text-6xl lg:text-7xl">
