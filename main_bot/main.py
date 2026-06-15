@@ -290,8 +290,33 @@ class BotInitDB(commands.Bot):
 # ------------ run -----------
 from internal_api import keep_alive, set_bot
 
+
+def _env_truthy(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on", "debug"}
+
+
+# Default to INFO in production so discord.py does not spam every gateway event
+# (e.g. "DEBUG:discord.client:Dispatching event message"). Set DEV=true or
+# LOG_LEVEL=DEBUG when intentionally debugging locally.
+log_level_name = os.getenv("LOG_LEVEL") or ("DEBUG" if _env_truthy("DEV") else "INFO")
+log_level_shift = getattr(logging, log_level_name.strip().upper(), logging.INFO)
+
+# Keep discord.py internals quiet unless LOG_LEVEL=DEBUG is explicitly requested.
+if log_level_shift > logging.DEBUG:
+    for logger_name in (
+        "discord",
+        "discord.client",
+        "discord.gateway",
+        "discord.http",
+        "discord.state",
+        "discord.voice_client",
+    ):
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
+
 Bot = BotInitDB()
 set_bot(Bot)
 keep_alive()
-log_level_shift = logging.ERROR if bool(os.getenv("DEV")) == True else logging.DEBUG
 Bot.run(TOKEN, log_handler=handler, log_level=log_level_shift)
