@@ -50,11 +50,11 @@ discord-manager-bot/
 ## 💓 Hermes Heartbeat & Liveness System
 Mochi Bot is equipped with a health-check monitor (`main_bot/cogs/system/heartbeat.py`) that observes liveness pings from Hermes Agent:
 1. **Liveness Channel**: Designated thread ID `1514163672857972757` (stored as `HEARTBEAT_CHANNEL_ID` in `.env`).
-2. **Cron Job Ping**: Hermes cron job `78c777e8e6e9` sends a heartbeat ping (emoji `💓`) to the thread every 5 minutes.
+2. **Cron Job Ping**: Hermes cron job `d735f0aa313e` sends a heartbeat ping (emoji `💓`) to the thread every 2 minutes.
    - *Note*: Hermes pings require the header `"User-Agent: DiscordBot/1.0"` to bypass Discord API 403 blocks.
 3. **Liveness State Engine**:
-   - The monitor runs every 60 seconds.
-   - If no heartbeat ping is received in 10 minutes (`HEARTBEAT_TIMEOUT`), Mochi Bot switches status to **Idle** with presence: `"Mochi is sleeping~ 💤"`.
+   - The monitor runs every 2 minutes.
+   - If no heartbeat ping is received within the timeout window (`HEARTBEAT_TIMEOUT`, default 360 seconds), Mochi Bot switches status to **Idle** with presence: `"Mochi is sleeping~ 💤"`.
    - Once a heartbeat ping is received again, status automatically restores to **Online** with presence: `"In Sakura Garden 🌸"`.
 
 ---
