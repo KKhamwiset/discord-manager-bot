@@ -98,7 +98,7 @@ class BotInitDB(commands.Bot):
             intents=intents,
             help_command=None,
             activity=Game(name="In Sakura Garden 🌸"),
-            status=discord.Status.online if os.getenv("INSTANCE") == "Server" else discord.Status.idle
+            status=discord.Status.idle if os.getenv("INSTANCE", "Dev").strip().lower() in {"dev", "devs", "development", "local"} else discord.Status.online
         )
         if not TOKEN or not MONGO_URI:
             raise RuntimeError("Missing TOKEN or MONGO_URI")
@@ -106,7 +106,8 @@ class BotInitDB(commands.Bot):
         self.is_paused = False
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
-        self.instance = ("Server" if os.getenv("INSTANCE") == "Server" else "Dev").lower()
+        instance_name = os.getenv("INSTANCE", "Dev").strip().lower()
+        self.instance = "dev" if instance_name in {"dev", "devs", "development", "local"} else "server"
         self.add_check(self.check_maintenance_mode)
         self.add_check(validation.channel)
 
@@ -158,16 +159,23 @@ class BotInitDB(commands.Bot):
         await self.refactor_db()
 
     async def on_message(self, message):
-        # Ignore other bots — but allow heartbeat messages through to Cog listeners
-        HEARTBEAT_CHANNEL_ID = int(os.getenv("HEARTBEAT_CHANNEL_ID", "0"))
+        # Ignore other bots — but allow heartbeat messages through to the
+        # heartbeat Cog. Default to the live thread so a missing Railway env var
+        # does not silently block the status sync.
+        HEARTBEAT_CHANNEL_ID = int(os.getenv("HEARTBEAT_CHANNEL_ID", "1514163672857972757"))
         is_heartbeat = (HEARTBEAT_CHANNEL_ID and message.channel.id == HEARTBEAT_CHANNEL_ID
                          and message.author.bot and "💓" in message.content)
         if message.author.bot and message.author.id != 1433517074994430126 and not is_heartbeat:
             return
 
-        # If it's a heartbeat message, dispatch the event so Cog listeners can handle it
+        # If it's a heartbeat message, call the heartbeat Cog directly. Do not
+        # use self.dispatch("message", message) here: dispatch also schedules
+        # this Bot.on_message handler again and can recurse on heartbeat pings.
         if is_heartbeat:
-            self.dispatch("message", message)
+            heartbeat_cog = self.get_cog("HeartbeatMonitor")
+            handler = getattr(heartbeat_cog, "handle_heartbeat_message", None)
+            if handler:
+                await handler(message)
             return
 
         # If it is our gateway bot, process the command directly

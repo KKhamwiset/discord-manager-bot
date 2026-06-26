@@ -13,19 +13,44 @@ import discord
 
 logger = logging.getLogger(__name__)
 
-# Config via env vars
-HEARTBEAT_CHANNEL_ID = int(os.getenv("HEARTBEAT_CHANNEL_ID", "0"))
-HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", "120"))  # 2 min default (cron sends every 2 min)
-HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT", "180"))    # 3 min timeout (2min interval + 1min buffer)
+# Config via env vars. Keep the live heartbeat thread as a safe default so a
+# missing Railway env var does not silently disable the monitor.
+DEFAULT_HEARTBEAT_CHANNEL_ID = 1514163672857972757
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        logger.warning("Invalid %s=%r; using %s", name, os.getenv(name), default)
+        return default
+
+
+HEARTBEAT_CHANNEL_ID = _env_int("HEARTBEAT_CHANNEL_ID", DEFAULT_HEARTBEAT_CHANNEL_ID)
+HEARTBEAT_INTERVAL = _env_int("HEARTBEAT_INTERVAL", 120)  # cron sends every 2 min
+# Give cron/Discord/API jitter room. The old 180s threshold was too close to
+# the observed ~3 minute LLM-driven cron cadence and caused flaky presence.
+HEARTBEAT_TIMEOUT = _env_int("HEARTBEAT_TIMEOUT", 360)
 HEARTBEAT_EMOJI = os.getenv("HEARTBEAT_EMOJI", "💓")
 
 # Status messages
 STATUS_ONLINE = Game(name="In Sakura Garden 🌸")
 STATUS_SLEEPING = Game(name="Mochi is sleeping~ 💤")
 
-# Match the initial status from main.py — read INSTANCE env at import time
-_INSTANCE = os.getenv("INSTANCE", "Dev")
-_INITIAL_STATUS = discord.Status.online if _INSTANCE == "Server" else discord.Status.idle
+# Match the initial status from main.py — read INSTANCE env at import time.
+# Treat common production spellings as online; keep local/dev idle.
+_INSTANCE = os.getenv("INSTANCE", "Dev").strip().lower()
+_INITIAL_STATUS = discord.Status.idle if _INSTANCE in {"dev", "devs", "development", "local"} else discord.Status.online
+
+
+def _is_heartbeat_message(message) -> bool:
+    """Return True for Hermes heartbeat pings in the configured channel."""
+    if not HEARTBEAT_CHANNEL_ID or message.channel.id != HEARTBEAT_CHANNEL_ID:
+        return False
+    content = message.content or ""
+    if HEARTBEAT_EMOJI not in content:
+        return False
+    return bool(message.author.bot or getattr(message, "webhook_id", None) or "Hermes heartbeat" in content)
 
 
 class HeartbeatMonitor(commands.Cog):
@@ -113,23 +138,24 @@ class HeartbeatMonitor(commands.Cog):
         except Exception as e:
             logger.debug(f"Could not fetch heartbeat history: {e}")
 
+    async def handle_heartbeat_message(self, message) -> bool:
+        """Handle a heartbeat ping. Returns True when the message was consumed."""
+        if not _is_heartbeat_message(message):
+            return False
+
+        self.last_heartbeat = message.created_at
+        logger.debug(f"💓 Heartbeat received at {self.last_heartbeat}")
+
+        if not self.is_hermes_alive:
+            self.is_hermes_alive = True
+            await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
+            logger.info(f"✅ Hermes heartbeat received! Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
+        return True
+
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listen for heartbeat messages in the designated channel."""
-        if not HEARTBEAT_CHANNEL_ID:
-            return
-        if message.channel.id != HEARTBEAT_CHANNEL_ID:
-            return
-        # Accept messages from the bot itself (heartbeat sender) or webhooks
-        # Check emoji content to confirm it's actually a heartbeat
-        if message.author.bot and HEARTBEAT_EMOJI in message.content:
-            self.last_heartbeat = message.created_at
-            logger.debug(f"💓 Heartbeat received at {self.last_heartbeat}")
-
-            if not self.is_hermes_alive:
-                self.is_hermes_alive = True
-                await self.bot.change_presence(activity=STATUS_ONLINE, status=_INITIAL_STATUS)
-                logger.info(f"✅ Hermes heartbeat received! Status → In Sakura Garden 🌸 ({_INITIAL_STATUS})")
+        await self.handle_heartbeat_message(message)
 
     @commands.Cog.listener()
     async def on_ready(self):
