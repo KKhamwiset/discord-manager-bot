@@ -36,7 +36,7 @@ export interface StatsOverview {
         icon?: string;
         members?: number;
         region?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
     bot_status: string;
 }
@@ -64,7 +64,7 @@ export interface Channel {
     allowed_commands: string[];
 }
 export const channelAPI = {
-    getChannel: (token: string) => apiFetch<{ channels: Channel[] }>('/api/channels/', { token }),
+    getChannel: (token: string) => apiFetch<{ channels: Channel[] } | Channel[]>('/api/channels/', { token }),
 
     updateChannelCommand: (token: string, channelId: string, command: string, action: 'add' | 'remove') =>
         apiFetch<{ success: boolean; action: string; command: string }>(`/api/channels/${channelId}`, {

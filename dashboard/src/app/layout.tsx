@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="--sakura-linear">
-      <body className={`${inter.variable} font-sans antialiased bg-base-200 text-base-content min-h-screen`}>
+      <body className={`${inter.variable} font-mono antialiased bg-base-200 text-base-content min-h-screen`}>
         <AuthProvider>
           {children}
         </AuthProvider>
