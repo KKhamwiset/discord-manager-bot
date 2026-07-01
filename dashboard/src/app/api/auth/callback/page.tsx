@@ -3,7 +3,6 @@
 import { useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { authApi } from '@/lib/api';
 
 function CallbackHandler() {
     const searchParams = useSearchParams();
@@ -56,12 +55,12 @@ function CallbackHandler() {
     }, [searchParams, router, setAuth]);
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mb-6"></div>
-            <h2 className="text-xl font-semibold text-gray-300">
+        <div className="flex min-h-screen flex-col items-center justify-center pixel-page px-4 text-center">
+            <div className="mb-6 h-16 w-16 animate-spin border-4 border-pink-950 border-t-pink-500 bg-white shadow-[6px_6px_0_#8a174d]"></div>
+            <h2 className="text-xl font-black uppercase text-pink-950">
                 Authenticating with Discord...
             </h2>
-            <p className="text-gray-500 mt-2">
+            <p className="mt-2 text-sm font-bold text-pink-800">
                 Please wait while we verify your account
             </p>
         </div>
@@ -72,8 +71,8 @@ export default function CallbackPage() {
     return (
         <Suspense
             fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+                <div className="flex min-h-screen items-center justify-center pixel-page">
+                    <div className="h-16 w-16 animate-spin border-4 border-pink-950 border-t-pink-500 bg-white shadow-[6px_6px_0_#8a174d]"></div>
                 </div>
             }
         >

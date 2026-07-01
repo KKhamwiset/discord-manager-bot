@@ -4,74 +4,153 @@
 }
 
 @theme {
-  /* Linear-inspired Sakura Pink palette */
-  --color-base-100: #ffffff;
-  --color-base-200: #f8f0f4;
-  --color-base-300: #ede0e8;
-  --color-base-content: #2a1220;
+  --color-base-100: #fff7fb;
+  --color-base-200: #ffe6f2;
+  --color-base-300: #f7b5d5;
+  --color-base-content: #351426;
 
-  --color-primary: #c41a7a;
+  --color-primary: #db2777;
   --color-primary-content: #ffffff;
 
-  --color-secondary: #e8569e;
-  --color-secondary-content: #ffffff;
+  --color-secondary: #f472b6;
+  --color-secondary-content: #351426;
 
-  --color-accent: #f0a0c0;
-  --color-accent-content: #2a1220;
+  --color-accent: #f9a8d4;
+  --color-accent-content: #351426;
 
-  --color-neutral: #9a6b8a;
-  --color-neutral-content: #ffffff;
+  --color-neutral: #351426;
+  --color-neutral-content: #fff7fb;
 
-  --color-info: #60a5fa;
-  --color-info-content: #ffffff;
+  --color-info: #38bdf8;
+  --color-info-content: #082f49;
 
   --color-success: #10b981;
-  --color-success-content: #ffffff;
+  --color-success-content: #052e1b;
 
   --color-warning: #f59e0b;
-  --color-warning-content: #ffffff;
+  --color-warning-content: #3b2300;
 
   --color-error: #ef4444;
-  --color-error-content: #ffffff;
+  --color-error-content: #450a0a;
 
-  /* Linear-style borders and focus */
-  --radius-field: 8px;
-  --radius-box: 12px;
-  --radius-selector: 8px;
+  --radius-field: 0;
+  --radius-box: 0;
+  --radius-selector: 0;
 
-  --border: 1px;
-
-  --depth: 1;
-
+  --border: 2px;
+  --depth: 0;
   --noise: 0;
 }
 
-/* Custom scrollbar for sakura theme */
+@layer components {
+  .pixel-page {
+    background-color: #fff7fb;
+    background-image:
+      linear-gradient(#f9a8d4 1px, transparent 1px),
+      linear-gradient(90deg, #f9a8d4 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .pixel-panel {
+    border: 4px solid #351426;
+    background: #fff7fb;
+    box-shadow: 8px 8px 0 #8a174d;
+  }
+
+  .pixel-panel-soft {
+    border: 3px solid #351426;
+    background: #ffe6f2;
+    box-shadow: 5px 5px 0 #8a174d;
+  }
+
+  .pixel-button {
+    border: 3px solid #351426;
+    background: #db2777;
+    color: #ffffff;
+    box-shadow: 4px 4px 0 #8a174d;
+    font-weight: 900;
+    text-transform: uppercase;
+    transition: transform 80ms linear, box-shadow 80ms linear, background-color 80ms linear;
+  }
+
+  .pixel-button:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #8a174d;
+    background: #be185d;
+  }
+
+  .pixel-button-light {
+    border: 3px solid #351426;
+    background: #ffffff;
+    color: #351426;
+    box-shadow: 4px 4px 0 #8a174d;
+    font-weight: 900;
+    text-transform: uppercase;
+    transition: transform 80ms linear, box-shadow 80ms linear, background-color 80ms linear;
+  }
+
+  .pixel-button-light:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #8a174d;
+    background: #ffe6f2;
+  }
+
+  .pixel-chip {
+    border: 2px solid #351426;
+    background: #ffffff;
+    color: #351426;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .pixel-table-head {
+    border-bottom: 3px solid #351426;
+    background: #fbcfe8;
+    color: #351426;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .pixel-row {
+    border-bottom: 2px solid #f7b5d5;
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .pixel-row:hover {
+    background: #ffe6f2;
+  }
+
+  .pixel-input {
+    border: 3px solid #351426;
+    background: #ffffff;
+    color: #351426;
+    box-shadow: 4px 4px 0 #8a174d;
+  }
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #ffe6f2;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #d4a0b8;
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c41a7a;
+  background: #db2777;
+  border: 2px solid #351426;
 }
 
-/* Linear-style focus ring */
 *:focus-visible {
-  outline: 2px solid #c41a7a;
+  outline: 3px solid #db2777;
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
-/* Smooth transitions — Linear style (fast) */
 * {
-  transition-property: background-color, border-color, color, box-shadow, opacity;
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
   transition-duration: 100ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-timing-function: steps(2, end);
 }
