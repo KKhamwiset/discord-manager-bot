@@ -92,7 +92,7 @@ class ChannelManagement(commands.Cog):
         return unique_names, aliases, invalid
 
 
-    @validation.role()
+    @validation.manage_threads()
     @commands.hybrid_command(
         name="add-user-to-thread",
         help="Add a user to the thread.",
@@ -136,7 +136,7 @@ class ChannelManagement(commands.Cog):
         except Exception as e:
             await ctx.send(f"❌ Error adding user to thread: {e!r}")
 
-    @validation.role()
+    @validation.manage_threads()
     @commands.hybrid_command(
         name="thread-nuke",
         help="This command is nothing",
@@ -170,7 +170,7 @@ class ChannelManagement(commands.Cog):
 
 
     # --- disablebotchannel command ---
-    @validation.role()
+    @validation.manage_guild()
     @commands.hybrid_command(
         name="channel-remove",
         description="Remove this channel from the bot's allowed channels list.",
@@ -249,7 +249,7 @@ class ChannelManagement(commands.Cog):
         description="Allow a specific command to work in all channels.",
         help="Allow a command in all channels."
     )
-    @validation.role()
+    @validation.manage_guild()
     async def all_channel_allowed(self, ctx: commands.Context, name: Optional[str] = None):
         guild = await self._check_guild_context(ctx)
         if guild is None:
@@ -299,7 +299,7 @@ class ChannelManagement(commands.Cog):
         description="Add a specific command to work in current channel.",
         help="Add a command in current channel."
     )
-    @validation.role()
+    @validation.manage_guild()
     async def command_add(self, ctx: commands.Context, name: Optional[str] = None):
         guild = await self._check_guild_context(ctx)
         if guild is None:
@@ -361,7 +361,7 @@ class ChannelManagement(commands.Cog):
 
         
     
-    @validation.role()
+    @validation.manage_guild()
     @commands.hybrid_command(
         name="channel-configure",
         description="Configure which commands are allowed in this channel.",
@@ -462,7 +462,7 @@ class ChannelManagement(commands.Cog):
 
     # --- listbotchannels command ---
 
-    @validation.role()
+    @validation.manage_guild()
     @commands.hybrid_command(
         name="channel-list",
         description="List all channels where bot commands are configured.",

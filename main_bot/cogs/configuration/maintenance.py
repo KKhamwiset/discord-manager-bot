@@ -10,7 +10,7 @@ class Maintenance(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.hybrid_command(name="pause", help="Pauses the bot (Maintenance Mode).")
-    @validation.role()
+    @validation.manage_guild()
     async def pause_bot(self, ctx, instance: str = None):
         if instance is not None and instance not in ["server","dev"]:
             await ctx.send("⚠️ Invalid instance.")
@@ -27,7 +27,7 @@ class Maintenance(commands.Cog):
             logging.info(f"Bot paused by {ctx.author}")
 
     @commands.hybrid_command(name="resume", help="Resumes the bot from Maintenance Mode.")
-    @validation.role()
+    @validation.manage_guild()
     async def resume_bot(self, ctx, instance: str = None):
         if instance is not None and instance not in ["server","dev"]:
             await ctx.send("⚠️ Invalid instance.")
@@ -46,7 +46,7 @@ class Maintenance(commands.Cog):
 
 
     @commands.hybrid_command(name="restart", help="Restart the Hermes gateway (Windows external restart)")
-    @validation.role()
+    @validation.owner_only()
     async def restart_gateway(self, ctx, instance: str = None):
         """Restart Hermes gateway by calling CLI externally.
         

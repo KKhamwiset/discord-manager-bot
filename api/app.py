@@ -11,9 +11,12 @@ def create_app():
     app = Flask(__name__)
     
     # Configuration
-    app.config['SECRET_KEY'] = os.getenv('JWT_SECRET', 'dev-secret-key')
+    jwt_secret = os.getenv('JWT_SECRET')
+    if not jwt_secret or not jwt_secret.strip():
+        raise RuntimeError('JWT_SECRET is required')
+    app.config['SECRET_KEY'] = jwt_secret
     app.config['MONGO_URI'] = os.getenv('MONGO_URI')
-    app.config['MONGO_DB'] = os.getenv('MONGO_DB', 'discord_bot_db')
+    app.config['MONGO_DB'] = os.getenv('MONGO_DB') or os.getenv('MAIN_DB') or 'discord_bot_db'
     
     # Discord OAuth2 config
     app.config['DISCORD_CLIENT_ID'] = os.getenv('DISCORD_CLIENT_ID')

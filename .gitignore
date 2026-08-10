@@ -209,3 +209,10 @@ __marimo__/
 bot-env
 env*
 .env.*
+!.env.example
+
+# Mochi encrypted-backup recovery artifacts (keep operator keys outside repo)
+/backup.key
+/backup.pub
+/backup.zip
+*.mbak

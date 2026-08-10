@@ -2,7 +2,7 @@ import os
 
 import requests
 from flask import Blueprint, jsonify, request, current_app
-from routes.auth import token_required
+from routes.auth import permission_required, token_required
 
 commands_bp = Blueprint('commands', __name__)
 
@@ -44,6 +44,7 @@ def list_commands():
 
 @commands_bp.route('/<command_name>', methods=['PATCH'])
 @token_required
+@permission_required('manage_guild')
 def update_command(command_name):
     """Enable/disable a command"""
     data = request.get_json()

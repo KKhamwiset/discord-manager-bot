@@ -1,6 +1,9 @@
 from discord.activity import Game
 import os, glob, logging, discord , random
-import validation
+try:
+    import validation
+except ModuleNotFoundError:  # Allow importing main_bot.main from repository tests.
+    from main_bot import validation
 from discord.ext import commands
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,10 +11,8 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
-MONGO_DB = os.getenv("MONGO_DB", "discord_bot_db")
+MONGO_DB = os.getenv("MONGO_DB") or os.getenv("MAIN_DB") or "discord_bot_db"
 GUILD_ID = int(os.getenv("GUILD_ID", "0"))
-
-handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -45,7 +46,7 @@ class Core(commands.Cog):
         self.bot = bot
         
     @commands.hybrid_command(name="id",alias=["idc"],help="Get the ID of the current channel")
-    @validation.role()
+    @validation.manage_guild()
     async def get_channel_id(self,ctx :commands.Context):
         dm = await ctx.author.create_dm()
         await ctx.send(f"{ctx.author.mention} channel\\thread's ID sent to your dm")
@@ -296,7 +297,10 @@ class BotInitDB(commands.Bot):
 
 
 # ------------ run -----------
-from internal_api import keep_alive, set_bot
+try:
+    from internal_api import keep_alive, set_bot
+except ModuleNotFoundError:  # Allow importing main_bot.main from repository tests.
+    from main_bot.internal_api import keep_alive, set_bot
 
 
 def _env_truthy(name: str, default: bool = False) -> bool:
@@ -324,7 +328,17 @@ if log_level_shift > logging.DEBUG:
     ):
         logging.getLogger(logger_name).setLevel(logging.WARNING)
 
-Bot = BotInitDB()
-set_bot(Bot)
-keep_alive()
-Bot.run(TOKEN, log_handler=handler, log_level=log_level_shift)
+Bot = None
+
+
+def run_bot():
+    global Bot
+    handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+    Bot = BotInitDB()
+    set_bot(Bot)
+    keep_alive()
+    Bot.run(TOKEN, log_handler=handler, log_level=log_level_shift)
+
+
+if __name__ == "__main__":
+    run_bot()

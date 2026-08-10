@@ -8,9 +8,25 @@ class RoleManagement(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+    async def _validate_role_mutation(self, ctx, role, members=()):
+        bot_member = ctx.guild.me
+        if bot_member is None and self.bot.user is not None:
+            bot_member = ctx.guild.get_member(self.bot.user.id)
+        error = validation.role_mutation_error(
+            ctx.guild,
+            ctx.author,
+            bot_member,
+            role,
+            members,
+        )
+        if error:
+            await ctx.send(f"❌ {error}")
+            return False
+        return True
     
     @commands.command(name="createrole", aliases=["cr", "makerole"], help="Create a role")
-    @validation.role()
+    @validation.manage_roles()
     async def createRole(self, ctx, role_name: str, color: str = None):
         guild = ctx.guild
         existing_role = discord.utils.get(guild.roles, name=role_name)
@@ -35,7 +51,7 @@ class RoleManagement(commands.Cog):
 
     
     @commands.command(name="deleterole",aliases=["dr","delrole"], help="Delete a role")
-    @validation.role()
+    @validation.manage_roles()
     async def removeRole(self,ctx, role_name: discord.Role | str):
         guild = ctx.guild
         if isinstance(role_name, discord.Role):
@@ -50,10 +66,13 @@ class RoleManagement(commands.Cog):
         if not existing_role:
             await ctx.send(f"⚠️ Role `{role_name}` does not exist.")
             return
+        if not await self._validate_role_mutation(ctx, existing_role):
+            return
         await existing_role.delete()
         await ctx.send(f"✅ Deleted role `{role_name}`")
 
     @commands.command(name="listrole",aliases=["lr","roles"], help="List all roles in the server / List user roles")
+    @validation.guild_only()
     async def listRoles(self,ctx, params : discord.Member | discord.guild.Role | str = None):
         guild = ctx.guild
         user = None
@@ -123,7 +142,7 @@ class RoleManagement(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="removerole",aliases=["removerolefromuser","rr"], help="Remove a role from users")
-    @validation.role()
+    @validation.manage_roles()
     async def removeRoleFromUser(self,ctx, role_name: discord.Role | str ,*user: discord.Member | str):
         mentioned_members = await resolve_members(ctx, user)
         guild = ctx.guild
@@ -140,6 +159,8 @@ class RoleManagement(commands.Cog):
         if not mentioned_members:
             await ctx.send("❌ You need to mention at least one user.")
             return
+        if not await self._validate_role_mutation(ctx, role, mentioned_members):
+            return
         for member in mentioned_members:
             if member.roles and role in member.roles:
                 await member.remove_roles(role)
@@ -151,6 +172,7 @@ class RoleManagement(commands.Cog):
         await ctx.send(f"🎉 Done! Role `{role.name}` removed from all mentioned users.")
 
     @commands.command(name="addrole", aliases=["arole", "ar"], help="Add a role to users")
+    @validation.manage_roles()
     async def addRole(self,ctx, role_name: discord.Role | str,*user: discord.Member | str):
         guild = ctx.guild
         if isinstance(role_name, discord.Role):
@@ -168,6 +190,9 @@ class RoleManagement(commands.Cog):
         mentioned_members = await resolve_members(ctx, user)
         if not mentioned_members:
             await ctx.send("❌ You need to mention at least one user.")
+            return
+
+        if not await self._validate_role_mutation(ctx, role, mentioned_members):
             return
 
         for member in mentioned_members:

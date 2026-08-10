@@ -3,9 +3,16 @@ from threading import Thread
 from waitress import serve
 import os
 import asyncio
+import concurrent.futures
+
+import discord
 
 app = Flask('Bot')
 bot_instance = None 
+
+
+class PermissionSubjectNotFound(Exception):
+    pass
 
 def set_bot(bot):
     """Set the bot instance so Flask can check its status"""
@@ -20,6 +27,47 @@ def run():
 def keep_alive():
     t = Thread(target=run)
     t.start()
+
+
+async def _resolve_permission_payload(guild_id: int, user_id: int):
+    guild = bot_instance.get_guild(guild_id)
+    if guild is None:
+        try:
+            guild = await bot_instance.fetch_guild(guild_id)
+        except discord.NotFound as exc:
+            raise PermissionSubjectNotFound from exc
+        if guild is None:
+            raise PermissionSubjectNotFound
+
+    # Application ownership is an explicit override for the configured guild.
+    # Resolve it before guild membership so the bot owner is not accidentally
+    # denied merely because they are not cached as a member of that guild.
+    is_owner = bool(await bot_instance.is_owner(discord.Object(id=user_id)))
+    member = guild.get_member(user_id)
+    if member is None:
+        if is_owner:
+            return {
+                "is_owner": True,
+                "administrator": False,
+                "manage_guild": False,
+                "manage_roles": False,
+                "manage_threads": False,
+            }
+        try:
+            member = await guild.fetch_member(user_id)
+        except discord.NotFound as exc:
+            raise PermissionSubjectNotFound from exc
+        if member is None:
+            raise PermissionSubjectNotFound
+
+    permissions = member.guild_permissions
+    return {
+        "is_owner": is_owner,
+        "administrator": bool(permissions.administrator),
+        "manage_guild": bool(permissions.manage_guild),
+        "manage_roles": bool(permissions.manage_roles),
+        "manage_threads": bool(permissions.manage_threads),
+    }
 
 
 @app.route('/',methods=['GET'])
@@ -48,6 +96,44 @@ def get_commands():
 def is_ready():
     ready = bot_instance.is_ready() if bot_instance else False
     return jsonify({"is_ready": ready}), 200
+
+
+@app.route('/permissions', methods=['GET'])
+def get_permissions():
+    raw_user_id = request.args.get('user_id', '')
+    try:
+        user_id = int(raw_user_id)
+        if user_id <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid user_id parameter"}), 400
+
+    raw_guild_id = os.getenv("GUILD_ID")
+    try:
+        guild_id = int(raw_guild_id)
+        if guild_id <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Permission authority unavailable"}), 503
+
+    try:
+        if not bot_instance or not bot_instance.is_ready():
+            return jsonify({"error": "Permission authority unavailable"}), 503
+        loop = bot_instance.loop
+        if loop.is_closed() or not loop.is_running():
+            return jsonify({"error": "Permission authority unavailable"}), 503
+        future = asyncio.run_coroutine_threadsafe(
+            _resolve_permission_payload(guild_id, user_id),
+            loop,
+        )
+        return jsonify(future.result(timeout=5)), 200
+    except PermissionSubjectNotFound:
+        return jsonify({"error": "Guild member not found"}), 404
+    except (concurrent.futures.TimeoutError, discord.HTTPException, RuntimeError):
+        return jsonify({"error": "Permission authority unavailable"}), 503
+    except Exception:
+        app.logger.exception("Internal permission lookup failed")
+        return jsonify({"error": "Permission authority unavailable"}), 503
 
 @app.route('/guilds', methods=['GET'])
 def get_guilds():

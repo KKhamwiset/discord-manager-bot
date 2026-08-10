@@ -1,0 +1,57 @@
+# Environment and runtime secrets
+.env*
+*.pem
+*.key
+*.pub
+*.crt
+*.cer
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Dependencies, build output, logs, and caches
+node_modules/
+.next/
+out/
+coverage/
+*.log
+logs/
+.cache/
+.eslintcache
+.turbo/
+
+# Backup, export, and archive artifacts. Keep required build manifests below.
+*.mbak
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+*.jsonl
+*.bson
+*.archive
+*.dump
+*.csv
+*.tsv
+*.zip
+*.tar
+*.tgz
+*.gz
+backup/
+backups/
+export/
+exports/
+dump/
+dumps/
+db_backup_*
+
+# VCS and editor metadata
+.git/
+.gitignore
+.gitattributes
+.github/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

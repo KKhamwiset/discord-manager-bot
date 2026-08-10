@@ -1,0 +1,57 @@
+# Environment and runtime secrets
+.env*
+*.pem
+*.key
+*.pub
+*.crt
+*.cer
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Logs, caches, and local environments
+*.log
+logs/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+.cache/
+.venv/
+venv/
+env/
+
+# Backup, export, and archive artifacts
+*.mbak
+*.json
+*.jsonl
+*.bson
+*.archive
+*.dump
+*.csv
+*.tsv
+*.zip
+*.tar
+*.tgz
+*.gz
+backup/
+backups/
+export/
+exports/
+dump/
+dumps/
+db_backup_*
+
+# VCS and editor metadata
+.git/
+.gitignore
+.gitattributes
+.github/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
