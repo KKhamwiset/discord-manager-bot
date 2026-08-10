@@ -1,6 +1,7 @@
 # cogs/academic/schedule.py
 
 import discord
+import validation
 from discord.ext import commands
 from components.pagination_view import PaginationView, ExamEmbedStrategy, ClassEmbedStrategy
 from components.schedule_components import * 
@@ -104,6 +105,7 @@ class Schedule(commands.Cog):
         )
 
     @commands.command(name="examschedule", aliases=["ex", "exam"])
+    @validation.guild_only()
     async def exam_schedule(self, ctx: commands.Context, user_handler: discord.Member | str = None):
         if self.examdb is None: return await ctx.send("❌ DB Error")
         
@@ -173,6 +175,7 @@ class Schedule(commands.Cog):
     @commands.command(name="addclass", 
                       aliases=["asch", "ac"],
                       help="Add subject data to user's database")
+    @validation.guild_only()
     async def add_class_interactive(self, ctx: commands.Context):
         if self.db is None: return await ctx.send("❌ DB Error")
         
@@ -183,6 +186,7 @@ class Schedule(commands.Cog):
     @commands.command(name="editclass",
                       aliases=["ec","esch"],
                       help="Edit the subject information")
+    @validation.guild_only()
     async def edit_class_info(self,ctx :commands.Context):
         if self.db is None:
             return await ctx.send("❌ DB Error")
@@ -196,6 +200,7 @@ class Schedule(commands.Cog):
             aliases=["msch", "mc"],
             help="Show the subjects list of provided user if none show self"
             )
+    @validation.guild_only()
     async def my_schedule(self, ctx: commands.Context, user_handler: discord.Member | str = None, *params: str):
 
         if self.db is None: return await ctx.send("❌ DB Error")
@@ -234,6 +239,7 @@ class Schedule(commands.Cog):
                       aliases=["delsch", "dc"],
                       help="Delete subject from user's database" 
                       )
+    @validation.guild_only()
     async def delete_class(self, ctx: commands.Context):
         if self.db is None: return await ctx.send("❌ DB Error")
         doc = await get_user_schedule(self.db,ctx.guild.id, ctx.author.id)

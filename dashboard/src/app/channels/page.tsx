@@ -14,6 +14,8 @@ interface PendingChange {
     action: 'add' | 'remove';
 }
 
+type AccessState = 'denied' | 'unavailable' | null;
+
 export default function ChannelsPage() {
     const { user, token, isLoading } = useAuth();
     const router = useRouter();
@@ -25,6 +27,7 @@ export default function ChannelsPage() {
     const [commandSearch, setCommandSearch] = useState('');
     const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
     const [saving, setSaving] = useState(false);
+    const [accessState, setAccessState] = useState<AccessState>(null);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -38,8 +41,12 @@ export default function ChannelsPage() {
         try {
             const data = await channelAPI.getChannel(token);
             setChannels(Array.isArray(data) ? data : data.channels);
+            setAccessState(null);
         } catch (error) {
             console.error('Failed to fetch channels:', error);
+            const message = error instanceof Error ? error.message : '';
+            setAccessState(message === 'Permission denied' ? 'denied' : 'unavailable');
+            setSelectedChannel(null);
         } finally {
             setLoading(false);
         }
@@ -103,6 +110,11 @@ export default function ChannelsPage() {
             setPendingChanges([]);
         } catch (error) {
             console.error('Failed to save changes:', error);
+            const message = error instanceof Error ? error.message : '';
+            if (message === 'Permission denied' || message === 'Permission authority unavailable') {
+                setAccessState(message === 'Permission denied' ? 'denied' : 'unavailable');
+                setSelectedChannel(null);
+            }
             await fetchChannels();
         } finally {
             setSaving(false);
@@ -143,6 +155,18 @@ export default function ChannelsPage() {
                         </p>
                     </div>
 
+                    {accessState ? (
+                        <div className="pixel-panel bg-white px-6 py-14 text-center">
+                            <p className="text-lg font-black uppercase text-pink-950">
+                                {accessState === 'denied' ? 'Access denied' : 'Permission check unavailable'}
+                            </p>
+                            <p className="mx-auto mt-2 max-w-lg text-sm font-bold text-pink-800">
+                                {accessState === 'denied'
+                                    ? 'You need Manage Server permission to view or change channel configuration.'
+                                    : 'Mochi could not verify your current Discord permissions. Please try again when the bot is available.'}
+                            </p>
+                        </div>
+                    ) : (
                     <div className="pixel-panel overflow-hidden bg-white">
                         <div className="pixel-table-head grid grid-cols-12 gap-4 px-4 py-3">
                             <div className="col-span-5">Channel</div>
@@ -206,6 +230,7 @@ export default function ChannelsPage() {
                             </div>
                         )}
                     </div>
+                    )}
                 </div>
             </Header>
 

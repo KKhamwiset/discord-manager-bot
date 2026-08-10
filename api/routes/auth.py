@@ -10,6 +10,7 @@ auth_bp = Blueprint('auth', __name__)
 
 DISCORD_API_URL = 'https://discord.com/api/v10'
 DISCORD_OAUTH_URL = 'https://discord.com/api/oauth2'
+BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')
 
 
 def create_token(user_data: dict) -> str:
@@ -51,6 +52,69 @@ def token_required(f):
         
         return f(*args, **kwargs)
     return decorated
+
+
+def get_live_permissions(user_id: str):
+    """Resolve current Discord permissions from the running bot."""
+    try:
+        response = requests.get(
+            f'{BOT_INTERNAL_URL}/permissions',
+            params={'user_id': str(user_id)},
+            timeout=5,
+        )
+    except requests.RequestException:
+        return None, 'unavailable'
+
+    if response.status_code in (400, 404):
+        return None, 'not_found'
+    if response.status_code != 200:
+        return None, 'unavailable'
+
+    try:
+        payload = response.json()
+    except (TypeError, ValueError):
+        return None, 'unavailable'
+
+    required_fields = {
+        'is_owner',
+        'administrator',
+        'manage_guild',
+        'manage_roles',
+        'manage_threads',
+    }
+    if not isinstance(payload, dict) or not required_fields.issubset(payload):
+        return None, 'unavailable'
+    if any(not isinstance(payload[field], bool) for field in required_fields):
+        return None, 'unavailable'
+    return payload, None
+
+
+def permission_required(permission_name: str):
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            user = getattr(request, 'user', None)
+            if not user or not user.get('user_id'):
+                return jsonify({'error': 'Token is missing'}), 401
+
+            permissions, error = get_live_permissions(user['user_id'])
+            if error == 'unavailable':
+                return jsonify({'error': 'Permission authority unavailable'}), 503
+            if error == 'not_found' or permissions is None:
+                return jsonify({'error': 'Permission denied'}), 403
+
+            allowed = (
+                permissions['is_owner']
+                or permissions['administrator']
+                or permissions.get(permission_name) is True
+            )
+            if not allowed:
+                return jsonify({'error': 'Permission denied'}), 403
+            return f(*args, **kwargs)
+
+        return decorated
+
+    return decorator
 
 
 @auth_bp.route('/login')
@@ -96,8 +160,6 @@ def callback():
         headers={'Content-Type': 'application/x-www-form-urlencoded'}
     )
     
-    print(f"token_response: {token_response.text}")
-
     if token_response.status_code != 200:
         return jsonify({'error': 'Failed to get access token'}), 400
     
@@ -147,13 +209,15 @@ def logout():
 @auth_bp.route('/authorized-user', methods=['GET'])
 @token_required
 def authorized_user():
-    user_id = request.user['user_id']
-    collection = current_app.db['authorize_user']
-    user = collection.find_one(
-        {
-            'guild_id': os.getenv('GUILD_ID'),
-            'user_id': str(user_id)
-        }
+    permissions, error = get_live_permissions(request.user['user_id'])
+    if error == 'unavailable':
+        return jsonify({'authorized': False}), 503
+    if error == 'not_found' or permissions is None:
+        return jsonify({'authorized': False}), 200
+
+    authorized = (
+        permissions['is_owner']
+        or permissions['administrator']
+        or permissions['manage_guild']
     )
-    result = user is not None
-    return jsonify({'authorized': result})
+    return jsonify({'authorized': bool(authorized)})

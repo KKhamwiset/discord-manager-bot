@@ -57,7 +57,7 @@ class Randomizer(commands.Cog):
         aliases=["asr", "asrand", "assr"],
         help="Add a restaurant to the randomizer list. \n **arand** for standard or **asrand** for special.",
     )
-    @validation.role()
+    @validation.manage_guild()
     async def add_rand(self, ctx: commands.Context, *args):
         """Add a restaurant to the randomizer list (standard or special)."""
         name = " ".join(args).strip()
@@ -109,6 +109,7 @@ class Randomizer(commands.Cog):
         )
 
     @commands.command(name="nrand", aliases=["sr","ssr"], help="Pick a random restaurant.")
+    @validation.guild_only()
     async def rand(self, ctx: commands.Context, *exclude: str):
         """Pick a random restaurant from list."""
         guild_id = str(ctx.guild.id)
@@ -171,6 +172,7 @@ class Randomizer(commands.Cog):
 
 
     @commands.command(name="lrand", aliases=["ls"], help="List all restaurants by type.")
+    @validation.guild_only()
     async def list_rand(self, ctx: commands.Context):
         """List all restaurants by type."""
         guild_id = str(ctx.guild.id)
@@ -237,7 +239,7 @@ class Randomizer(commands.Cog):
 
     
     @commands.command(name="drand", aliases=["dres"], help="Delete a randomizer entry by name.")
-    @validation.role()
+    @validation.manage_guild()
     async def del_rand(self, ctx: commands.Context, *, name: str | None = None):
         """Delete a restaurant by exact name."""
         if not name:

@@ -1,7 +1,7 @@
 import os
 import requests
 from flask import Blueprint, jsonify, request, current_app
-from routes.auth import token_required
+from routes.auth import permission_required, token_required
 
 channel_bp = Blueprint('channel', __name__)
 
@@ -9,6 +9,7 @@ BOT_INTERNAL_URL = os.getenv('BOT_INTERNAL_URL', 'http://bot:8080')
 
 @channel_bp.route('/', methods=['GET'])
 @token_required
+@permission_required('manage_guild')
 def list_channels():
     "Get channel that are available for configuration"
     db = current_app.db
@@ -42,6 +43,7 @@ def list_channels():
 
 @channel_bp.route('/<channel_id>', methods=['PATCH'])
 @token_required
+@permission_required('manage_guild')
 def update_channel_commands(channel_id):
     """Add or remove a command from a channel's allowed list"""
     data = request.get_json()
