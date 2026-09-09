@@ -14,7 +14,8 @@ class Info(commands.Cog):
             "Maintenance": "🔧",
             "RoleManagement": "🛡️",
             "Info": "ℹ️",
-            "Randomizer": "🎲"
+            "Randomizer": "🎲",
+            "WashingMachine": "🧺"
         }
 
     @commands.command(help="Show bot/server info")
