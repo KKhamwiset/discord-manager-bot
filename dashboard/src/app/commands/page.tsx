@@ -15,6 +15,7 @@ export default function CommandsPage() {
     const [filter, setFilter] = useState<string>('all');
     const [toggling, setToggling] = useState<string | null>(null);
     const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         let ignore = false;
@@ -66,14 +67,17 @@ export default function CommandsPage() {
     const handleToggle = async (commandName: string, currentStatus: boolean) => {
         if (!token || toggling) return;
 
+        setErrorMessage(null);
         setToggling(commandName);
         try {
             await commandsApi.toggle(token, commandName, !currentStatus);
             setCommands((prev) => prev.map((cmd) => (
                 cmd.name === commandName ? { ...cmd, enable: !currentStatus } : cmd
             )));
-        } catch (error) {
-            console.error('Failed to toggle command:', error);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error('Failed to toggle command:', err);
+            setErrorMessage(err.message || 'Failed to toggle command');
         } finally {
             setToggling(null);
         }
@@ -126,6 +130,18 @@ export default function CommandsPage() {
                     </div>
                 </div>
 
+                {errorMessage && (
+                    <div className="mb-4 flex items-center justify-between border-2 border-red-950 bg-red-100 p-3 text-xs font-black uppercase text-red-900 shadow-[3px_3px_0_#8a174d]">
+                        <span>❌ {errorMessage}</span>
+                        <button
+                            onClick={() => setErrorMessage(null)}
+                            className="ml-2 font-bold underline hover:text-red-700"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                )}
+
                 <div className="pixel-panel overflow-hidden bg-white">
                     <div className="pixel-table-head grid grid-cols-12 gap-4 px-4 py-3">
                         <div className="col-span-4">Name</div>
@@ -165,7 +181,14 @@ export default function CommandsPage() {
                                 </div>
                                 <div className="col-span-2 flex items-center justify-end gap-2">
                                     {cmd.hidden && <span className="pixel-chip bg-red-100 px-2 py-1">Hidden</span>}
-                                    {isAuthorizedUser ? (
+                                    {cmd.protected ? (
+                                        <span
+                                            className="pixel-chip border border-amber-600 bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900"
+                                            title="System command cannot be disabled"
+                                        >
+                                            Protected
+                                        </span>
+                                    ) : isAuthorizedUser ? (
                                         <button
                                             onClick={() => handleToggle(cmd.name, cmd.enable)}
                                             disabled={toggling === cmd.name}

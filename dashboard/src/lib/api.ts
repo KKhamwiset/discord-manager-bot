@@ -48,6 +48,7 @@ export interface Command {
     aliases: string[];
     hidden: boolean;
     enable: boolean;
+    protected?: boolean;
 }
 
 export interface User {

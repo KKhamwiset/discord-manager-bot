@@ -74,12 +74,13 @@ async def _resolve_permission_payload(guild_id: int, user_id: int):
 def home():
     return jsonify({"message": "Bot is running", "instance": os.getenv("INSTANCE")}), 200
 
-@app.route('/commands',methods=['GET'])
+@app.route('/commands', methods=['GET'])
 def get_commands():
     if not bot_instance:
         return jsonify({"error": "Bot instance not ready"}), 503
         
     commands_list = []
+    disabled = getattr(bot_instance, "disabled_commands", set())
     for command in bot_instance.commands:
         commands_list.append({
             "name": command.name,
@@ -87,9 +88,69 @@ def get_commands():
             "aliases": command.aliases,
             "hidden": command.hidden,
             "cog": command.cog_name,
-            "enabled": command.enabled
+            "enabled": command.name not in disabled
         })
+
+    # Also include pure application commands from command tree
+    existing_names = {c["name"] for c in commands_list}
+    try:
+        for app_cmd in bot_instance.tree.get_commands():
+            if app_cmd.name not in existing_names:
+                commands_list.append({
+                    "name": app_cmd.name,
+                    "description": app_cmd.description or "No description",
+                    "aliases": [],
+                    "hidden": False,
+                    "cog": "Slash",
+                    "enabled": app_cmd.name not in disabled
+                })
+    except Exception:
+        pass
+
     return jsonify({"commands": commands_list}), 200
+
+
+@app.route('/commands/toggle', methods=['POST'])
+def toggle_command():
+    if not bot_instance:
+        return jsonify({"error": "Bot instance not ready"}), 503
+    data = request.get_json(silent=True) or {}
+    command_name = data.get("command_name")
+    enabled = data.get("enabled")
+    if not command_name or enabled is None:
+        return jsonify({"error": "Missing command_name or enabled parameter"}), 400
+
+    if not hasattr(bot_instance, "disabled_commands"):
+        bot_instance.disabled_commands = set()
+
+    if enabled:
+        bot_instance.disabled_commands.discard(command_name)
+    else:
+        bot_instance.disabled_commands.add(command_name)
+
+    return jsonify({
+        "command_name": command_name,
+        "enabled": bool(enabled),
+        "disabled_commands": list(bot_instance.disabled_commands)
+    }), 200
+
+
+@app.route('/commands/reload', methods=['POST'])
+def reload_commands():
+    if not bot_instance or not bot_instance.loop:
+        return jsonify({"error": "Bot instance not ready"}), 503
+    try:
+        future = asyncio.run_coroutine_threadsafe(
+            bot_instance.load_disabled_commands(),
+            bot_instance.loop
+        )
+        future.result(timeout=5)
+        return jsonify({
+            "message": "Commands reloaded successfully",
+            "disabled_commands": list(getattr(bot_instance, "disabled_commands", set()))
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to reload commands: {e}"}), 500
 
 
 @app.route('/is_ready', methods=['GET'])

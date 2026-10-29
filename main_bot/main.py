@@ -29,6 +29,16 @@ async def get_case_insensitive_prefix(bot, message: discord.Message):
 
     return prefixes
 
+PROTECTED_COMMANDS = {
+    "help",
+    "pause",
+    "resume",
+    "restart",
+    "ping",
+    "info",
+}
+
+
 class Mongo:
     def __init__(self, uri: str, db_name: str):
         self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000, maxPoolSize=20)
@@ -45,7 +55,7 @@ class Core(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         
-    @commands.hybrid_command(name="id",alias=["idc"],help="Get the ID of the current channel")
+    @commands.hybrid_command(name="id", aliases=["idc"], help="Get the ID of the current channel")
     @validation.manage_guild()
     async def get_channel_id(self,ctx :commands.Context):
         dm = await ctx.author.create_dm()
@@ -68,8 +78,8 @@ class Core(commands.Cog):
             "Xd",
             "😂",
             "🤣",
-            "nga",
-            "nigha",    
+
+    
             "<:xdx:1438479283147243572>",
             "<:unxdd:1468624889073373285>",
             "<:xdd:1438479267716534353>",
@@ -107,12 +117,56 @@ class BotInitDB(commands.Bot):
         self.is_paused = False
         self.mongo = Mongo(MONGO_URI, MONGO_DB)
         self.db = self.mongo.db
+        self.disabled_commands: set[str] = set()
         instance_name = os.getenv("INSTANCE", "Dev").strip().lower()
         self.instance = "dev" if instance_name in {"dev", "devs", "development", "local"} else "server"
         self.add_check(self.check_maintenance_mode)
+        self.add_check(self.check_command_enabled)
         self.add_check(validation.channel)
+        self.tree.interaction_check = self.check_slash_enabled
 
         print("✅ Mongo connected" if self.db is not None else "❌ Mongo failed")
+
+    async def check_command_enabled(self, ctx: commands.Context) -> bool:
+        if not ctx.command:
+            return True
+        cmd_name = ctx.command.qualified_name
+        base_name = ctx.command.name
+        if cmd_name in PROTECTED_COMMANDS or base_name in PROTECTED_COMMANDS:
+            return True
+        if cmd_name in self.disabled_commands or base_name in self.disabled_commands:
+            await ctx.send(f"⚠️ คำสั่ง `{cmd_name}` ถูกปิดการใช้งานชั่วคราวโดยผู้ดูแลระบบ")
+            return False
+        return True
+
+    async def check_slash_enabled(self, interaction: discord.Interaction) -> bool:
+        if interaction.type != discord.InteractionType.application_command:
+            return True
+        if not interaction.command:
+            return True
+        cmd_name = interaction.command.name
+        if cmd_name in PROTECTED_COMMANDS:
+            return True
+        if cmd_name in self.disabled_commands:
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    f"⚠️ คำสั่ง `{cmd_name}` ถูกปิดการใช้งานชั่วคราวโดยผู้ดูแลระบบ",
+                    ephemeral=True
+                )
+            return False
+        return True
+
+    async def load_disabled_commands(self):
+        try:
+            self.disabled_commands.clear()
+            cursor = self.db["command_config"].find({"enabled": False})
+            async for doc in cursor:
+                name = doc.get("command_name")
+                if name and name not in PROTECTED_COMMANDS:
+                    self.disabled_commands.add(name)
+            print(f"🔒 Loaded {len(self.disabled_commands)} disabled commands from DB: {self.disabled_commands}")
+        except Exception as e:
+            print(f"⚠️ Failed to load disabled commands from DB: {e}")
     
     async def check_maintenance_mode(self, ctx):
         if not self.is_paused:
@@ -146,6 +200,7 @@ class BotInitDB(commands.Bot):
     async def setup_hook(self):
         print("Starting Setup Hook...")
         await self.mongo.pingdb()
+        await self.load_disabled_commands()
         await self.add_cog(Core(self))
         await self._load_all_extensions() 
 
