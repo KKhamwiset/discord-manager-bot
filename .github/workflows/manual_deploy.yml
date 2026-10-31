@@ -26,6 +26,7 @@ jobs:
         run: docker push kkhw/discordbot-bot:latest
 
       - name: Trigger Render deploy - Bot
+        continue-on-error: true
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
@@ -33,7 +34,9 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{}'
+
       - name: Trigger Railway deploy - Bot
+        continue-on-error: true
         env:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
           SERVICE_ID: ${{ secrets.BOT_SERVICE_ID_RAILWAY }}
@@ -66,6 +69,7 @@ jobs:
         run: docker push kkhw/discordbot-api:latest
 
       - name: Trigger Render deploy - API
+        continue-on-error: true
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
@@ -73,7 +77,9 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{}'
+
       - name: Trigger Railway deploy - API
+        continue-on-error: true
         env:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
           SERVICE_ID: ${{ secrets.API_SERVICE_ID_RAILWAY }}
@@ -106,6 +112,7 @@ jobs:
         run: docker push kkhw/discordbot-dashboard:latest
 
       - name: Trigger Render deploy - Dashboard
+        continue-on-error: true
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
@@ -113,7 +120,9 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{}'
+
       - name: Trigger Railway deploy - Dashboard
+        continue-on-error: true
         env:
           RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
           SERVICE_ID: ${{ secrets.WEB_SERVICE_ID_RAILWAY }}
@@ -138,7 +147,12 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{\"query\":\"mutation deploymentRedeploy(\$id: String!) { deploymentRedeploy(id: \$id) { id status } }\",\"variables\":{\"id\":\"$DEPLOYMENT_ID\"}}"
 
-      # ============ HERMES AGENT ============
+  deploy-hermes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
