@@ -54,6 +54,8 @@ chmod +x /data/hermes/scripts/*.py 2>/dev/null || true
 cat <<EOF > /data/hermes/.env
 DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${HERMES_DASHBOARD_BASIC_AUTH_USERNAME:-}
+HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${HERMES_DASHBOARD_BASIC_AUTH_PASSWORD:-}
 EOF
 chmod 600 /data/hermes/.env
 
@@ -142,14 +144,31 @@ else
     echo "WARNING: Could not connect to PC via SSH yet (might still be negotiating Tailscale route or PC is unreachable)."
 fi
 
-# 7. Finally start the Hermes messaging gateway or keep tunnel alive
+# 7. Start the Hermes Web Dashboard in background
+DASHBOARD_PORT="${PORT:-9119}"
+echo "=========================================================="
+echo "Starting Hermes Web Dashboard on port ${DASHBOARD_PORT}..."
+echo "=========================================================="
+hermes dashboard --host 0.0.0.0 --port "${DASHBOARD_PORT}" --skip-build --no-open &
+DASHBOARD_PID=$!
+
+# Brief pause to verify dashboard started
+sleep 2
+if kill -0 "$DASHBOARD_PID" 2>/dev/null; then
+    echo "Hermes Web Dashboard is running in background (PID ${DASHBOARD_PID})"
+else
+    echo "WARNING: Hermes Web Dashboard failed to start or exited early"
+fi
+
+# 8. Start the Hermes messaging gateway or keep tunnel alive
 if [ -n "${DISCORD_BOT_TOKEN:-}" ] || [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
     echo "Executing Hermes gateway..."
     exec hermes gateway
 else
     echo "=========================================================="
     echo "Tailscale SSH tunnel is UP and RUNNING!"
+    echo "Hermes Web Dashboard is running on port ${DASHBOARD_PORT}"
     echo "To activate Discord/Telegram chat, configure DISCORD_BOT_TOKEN or TELEGRAM_BOT_TOKEN in Railway variables."
     echo "=========================================================="
-    exec tail -f /dev/null
+    wait "$DASHBOARD_PID"
 fi
