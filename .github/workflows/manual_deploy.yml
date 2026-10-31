@@ -157,11 +157,19 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy Hermes to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
         run: |
+          RAW_TOKEN="${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}"
+          CLEAN_TOKEN=$(echo "$RAW_TOKEN" | tr -d '\r\n ' | sed 's/^Bearer //')
+          export RAILWAY_TOKEN="$CLEAN_TOKEN"
+          export RAILWAY_API_TOKEN="$CLEAN_TOKEN"
+          export RAILWAY_API_KEY="$CLEAN_TOKEN"
           SERVICE_ID="${{ secrets.HERMES_SERVICE_ID_RAILWAY }}"
           [ -z "$SERVICE_ID" ] && SERVICE_ID="cbe69302-5755-4013-88d7-8eb112ba698f"
+
+          echo "Checking Railway auth..."
+          railway whoami || echo "whoami check failed, trying deployment directly..."
+
           echo "Deploying Hermes to service: $SERVICE_ID"
-          railway up ./hermes --path-as-root --service "$SERVICE_ID" --detach
+          railway up ./hermes --path-as-root --service "$SERVICE_ID" --project c2182535-efe0-4a19-957f-4397089bacde --environment production --detach || \
+          railway up ./hermes --path-as-root --service "$SERVICE_ID" --detach || \
+          railway up ./hermes --path-as-root --detach
