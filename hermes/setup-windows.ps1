@@ -34,10 +34,17 @@ if (Test-Path $gitBashPath) {
     Write-Host "[WARN] Git Bash not found at $gitBashPath" -ForegroundColor Yellow
 }
 
-# 3. Setup administrators_authorized_keys
-Write-Host "`n[3/5] Setting up SSH authorized keys for Administrator..." -ForegroundColor Yellow
-$pubKeyFile = "$HOME\.ssh\id_ed25519.pub"
+# 3. Setup administrators_authorized_keys using dedicated passphrase-less key
+Write-Host "`n[3/5] Setting up SSH authorized keys for Hermes..." -ForegroundColor Yellow
+$hermesKey = "$HOME\.ssh\hermes_ed25519"
+$pubKeyFile = "$HOME\.ssh\hermes_ed25519.pub"
 $adminAuthKeys = "C:\ProgramData\ssh\administrators_authorized_keys"
+
+# Create hermes_ed25519 if not present
+if (-not (Test-Path $pubKeyFile)) {
+    Write-Host "Generating dedicated passphrase-less key for Hermes..." -ForegroundColor Gray
+    & ssh-keygen -t ed25519 -N '""' -f "$hermesKey" -C "hermes-agent"
+}
 
 if (Test-Path $pubKeyFile) {
     $pubKeyContent = (Get-Content $pubKeyFile -Raw).Trim()
@@ -45,7 +52,7 @@ if (Test-Path $pubKeyFile) {
     
     # Configure strict ACL permissions required by OpenSSH
     icacls $adminAuthKeys /inheritance:r /grant "SYSTEM:(F)" /grant "Administrators:(F)" | Out-Null
-    Write-Host "[OK] Public key configured with strict ACL permissions" -ForegroundColor Green
+    Write-Host "[OK] Configured $adminAuthKeys with hermes_ed25519.pub" -ForegroundColor Green
 } else {
     Write-Host "[WARN] Public key not found at $pubKeyFile" -ForegroundColor Red
 }
@@ -59,6 +66,7 @@ if (-not (Test-Path $tailscaleExe)) {
     Write-Host "[OK] Tailscale installed. Please launch Tailscale and log in" -ForegroundColor Green
 } else {
     Write-Host "[OK] Tailscale is already installed" -ForegroundColor Green
+    & "$tailscaleExe" ip -4
 }
 
 # 5. Restart sshd and test local SSH connection
@@ -66,7 +74,7 @@ Write-Host "`n[5/5] Restarting sshd and testing connection..." -ForegroundColor 
 Restart-Service sshd
 
 try {
-    $testResult = & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$($env:USERNAME)@localhost" "echo SSH_SUCCESS" 2>&1
+    $testResult = & ssh -i "$hermesKey" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$($env:USERNAME)@localhost" "echo SSH_SUCCESS" 2>&1
     if ($testResult -match "SSH_SUCCESS") {
         Write-Host "[OK] Local SSH test successful! Your PC is ready for Hermes." -ForegroundColor Green
     } else {
