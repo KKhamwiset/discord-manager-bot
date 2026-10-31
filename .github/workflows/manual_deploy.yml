@@ -157,19 +157,39 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy Hermes to Railway
+        env:
+          TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
         run: |
-          RAW_TOKEN="${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}"
-          CLEAN_TOKEN=$(echo "$RAW_TOKEN" | tr -d '\r\n ' | sed 's/^Bearer //')
-          export RAILWAY_TOKEN="$CLEAN_TOKEN"
-          export RAILWAY_API_TOKEN="$CLEAN_TOKEN"
-          export RAILWAY_API_KEY="$CLEAN_TOKEN"
           SERVICE_ID="${{ secrets.HERMES_SERVICE_ID_RAILWAY }}"
           [ -z "$SERVICE_ID" ] && SERVICE_ID="cbe69302-5755-4013-88d7-8eb112ba698f"
 
-          echo "Checking Railway auth..."
-          railway whoami || echo "whoami check failed, trying deployment directly..."
+          echo "Attempting Hermes deploy via Railway CLI with RAILWAY_API_TOKEN..."
+          if RAILWAY_API_TOKEN="$TOKEN" railway up ./hermes --path-as-root --service "$SERVICE_ID" --project c2182535-efe0-4a19-957f-4397089bacde --environment production --detach; then
+            echo "Successfully deployed Hermes via RAILWAY_API_TOKEN!"
+            exit 0
+          fi
 
-          echo "Deploying Hermes to service: $SERVICE_ID"
-          railway up ./hermes --path-as-root --service "$SERVICE_ID" --project c2182535-efe0-4a19-957f-4397089bacde --environment production --detach || \
-          railway up ./hermes --path-as-root --service "$SERVICE_ID" --detach || \
-          railway up ./hermes --path-as-root --detach
+          echo "Attempting Hermes deploy via Railway CLI with RAILWAY_TOKEN (project-scoped)..."
+          if RAILWAY_TOKEN="$TOKEN" railway up ./hermes --path-as-root --service "$SERVICE_ID" --detach; then
+            echo "Successfully deployed Hermes via RAILWAY_TOKEN!"
+            exit 0
+          fi
+
+          echo "Railway CLI upload failed; triggering deployment redeploy via GraphQL API..."
+          DEPLOYMENT_ID=$(curl -s -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"query { service(id: \\\"$SERVICE_ID\\\") { deployments(first: 1) { edges { node { id } } } } }\"}" \
+            | jq -r '.data.service.deployments.edges[0].node.id')
+
+          echo "Latest Deployment ID: $DEPLOYMENT_ID"
+          if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
+            curl -s -X POST https://backboard.railway.com/graphql/v2 \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"mutation deploymentRedeploy(\$id: String!) { deploymentRedeploy(id: \$id) { id status } }\",\"variables\":{\"id\":\"$DEPLOYMENT_ID\"}}"
+            echo "Hermes redeploy triggered successfully via GraphQL!"
+          else
+            echo "Could not fetch deployment ID for Hermes service."
+            exit 1
+          fi
