@@ -1,6 +1,6 @@
 Conde's GitHub: github.com/KKhamwiset; Discord bot on Railway; Hermes custom patches; CyberCase at F:\Cybercase Framework.
 §
-Tailscale SSH connection: Host alias 'mypc' connects to Conde's Windows PC (100.103.213.32) using SSH key. All commands targeting Conde's repository or machine run via `ssh mypc "..."`.
+Tailscale SSH connection: Host alias 'mypc' connects to Conde's Windows PC (100.103.213.32) using SSH key. Connection is already active and permanent. Never ask Conde for IP address or SSH key. All commands targeting Conde's repository or machine run via `ssh mypc "..."`.
 §
 Mochi Bot on Railway: runs in discordbot project. Heartbeat monitor expects ping every 2 minutes on thread 1514163672857972757.
 §

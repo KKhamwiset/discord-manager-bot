@@ -22,4 +22,4 @@ Conde's Discord user ID is 273760138135863296 (username: komiya.__). Full admin 
 §
 Thai spelling rules from Conde: (1) ค่า → ค่ะ (polite particle), (2) ไม่ใช้ → ไม่ใช่ (negation), (3) ไช้ → ใช้ (verb "to use"). Always double-check Thai tone marks.
 §
-Conde's workspace and repository discord-manager-bot is located at F:/discord-manager-bot on Conde's PC, accessible via SSH host alias 'mypc'. Terminal and project commands must be executed via ssh mypc.
+Conde's workspace and repository discord-manager-bot is located at F:/discord-manager-bot on Conde's PC, accessible via SSH host alias 'mypc' (Tailscale IP: 100.103.213.32). The connection is ALREADY established and permanently active. Never ask Conde for an IP address or SSH key. When Conde asks to connect or run tasks, confirm it is already connected and run commands directly via `ssh mypc`.
