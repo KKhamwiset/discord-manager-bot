@@ -34,11 +34,13 @@ if (Test-Path $gitBashPath) {
     Write-Host "[WARN] Git Bash not found at $gitBashPath" -ForegroundColor Yellow
 }
 
-# 3. Setup administrators_authorized_keys using dedicated passphrase-less key
+# 3. Setup SSH authorized keys for Hermes (both user authorized_keys and administrators_authorized_keys)
 Write-Host "`n[3/5] Setting up SSH authorized keys for Hermes..." -ForegroundColor Yellow
 $hermesKey = "$HOME\.ssh\hermes_ed25519"
 $pubKeyFile = "$HOME\.ssh\hermes_ed25519.pub"
 $adminAuthKeys = "C:\ProgramData\ssh\administrators_authorized_keys"
+$userAuthKeys = "$HOME\.ssh\authorized_keys"
+$sshdConfig = "C:\ProgramData\ssh\sshd_config"
 
 # Create hermes_ed25519 if not present
 if (-not (Test-Path $pubKeyFile)) {
@@ -48,11 +50,36 @@ if (-not (Test-Path $pubKeyFile)) {
 
 if (Test-Path $pubKeyFile) {
     $pubKeyContent = (Get-Content $pubKeyFile -Raw).Trim()
+
+    # 3.1 Setup C:\ProgramData\ssh\administrators_authorized_keys with correct SYSTEM ownership
     Set-Content -Path $adminAuthKeys -Value $pubKeyContent -Encoding ascii -Force
-    
-    # Configure strict ACL permissions required by OpenSSH
-    icacls $adminAuthKeys /inheritance:r /grant "SYSTEM:(F)" /grant "Administrators:(F)" | Out-Null
-    Write-Host "[OK] Configured $adminAuthKeys with hermes_ed25519.pub" -ForegroundColor Green
+    icacls $adminAuthKeys /setowner "NT AUTHORITY\SYSTEM" | Out-Null
+    icacls $adminAuthKeys /inheritance:r /grant "SYSTEM:(F)" /grant "BUILTIN\Administrators:(F)" | Out-Null
+    Write-Host "[OK] Configured $adminAuthKeys with strict permissions and SYSTEM owner" -ForegroundColor Green
+
+    # 3.2 Setup user's ~/.ssh/authorized_keys
+    if (Test-Path $userAuthKeys) {
+        icacls $userAuthKeys /grant "$($env:USERNAME):(F)" | Out-Null
+        $existingKeys = Get-Content $userAuthKeys
+    } else {
+        $existingKeys = @()
+    }
+    if ($existingKeys -notcontains $pubKeyContent) {
+        Add-Content -Path $userAuthKeys -Value "`n$pubKeyContent" -Encoding ascii
+    }
+    icacls $userAuthKeys /inheritance:r /grant "SYSTEM:(F)" /grant "$($env:USERNAME):(R,W)" | Out-Null
+    Write-Host "[OK] Configured $userAuthKeys" -ForegroundColor Green
+
+    # 3.3 Configure sshd_config: comment out Match Group administrators so ~/.ssh/authorized_keys is always honored
+    if (Test-Path $sshdConfig) {
+        $cfgContent = Get-Content $sshdConfig -Raw
+        $newCfg = $cfgContent -replace '(?m)^(\s*Match Group administrators)', '# $1'
+        $newCfg = $newCfg -replace '(?m)^(\s*AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys)', '# $1'
+        if ($newCfg -ne $cfgContent) {
+            Set-Content -Path $sshdConfig -Value $newCfg -Encoding ascii -Force
+            Write-Host "[OK] Updated $sshdConfig (enabled ~/.ssh/authorized_keys for all users)" -ForegroundColor Green
+        }
+    }
 } else {
     Write-Host "[WARN] Public key not found at $pubKeyFile" -ForegroundColor Red
 }
