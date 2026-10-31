@@ -137,3 +137,17 @@ jobs:
           -H "Authorization: Bearer $RAILWAY_API_KEY" \
           -H "Content-Type: application/json" \
           -d "{\"query\":\"mutation deploymentRedeploy(\$id: String!) { deploymentRedeploy(id: \$id) { id status } }\",\"variables\":{\"id\":\"$DEPLOYMENT_ID\"}}"
+
+      # ============ HERMES AGENT ============
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy Hermes to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+        run: |
+          SERVICE_ID="${{ secrets.HERMES_SERVICE_ID_RAILWAY }}"
+          [ -z "$SERVICE_ID" ] && SERVICE_ID="cbe69302-5755-4013-88d7-8eb112ba698f"
+          echo "Deploying Hermes to service: $SERVICE_ID"
+          railway up ./hermes --path-as-root --project c2182535-efe0-4a19-957f-4397089bacde --environment production --service "$SERVICE_ID" --detach
