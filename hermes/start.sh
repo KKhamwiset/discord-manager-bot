@@ -57,12 +57,18 @@ tailscaled --tun=userspace-networking --state=/data/tailscale/tailscaled.state -
 mkdir -p /var/run/tailscale
 ln -sf /tmp/tailscaled.sock /var/run/tailscale/tailscaled.sock 2>/dev/null || true
 
-# Wait until tailscaled is ready (polling tailscale status, no blind sleep)
+# Wait until tailscaled is ready
 echo "Waiting for tailscaled socket to become responsive..."
-until tailscale --socket=/tmp/tailscaled.sock status >/dev/null 2>&1; do
+for i in $(seq 1 30); do
+    if [ -S /tmp/tailscaled.sock ]; then
+        out=$(tailscale --socket=/tmp/tailscaled.sock status 2>&1 || true)
+        if ! echo "$out" | grep -q "connection refused"; then
+            echo "tailscaled socket is ready."
+            break
+        fi
+    fi
     sleep 0.5
 done
-echo "tailscaled socket is ready."
 
 # Authenticate with Tailscale network
 echo "Connecting to Tailscale network as '${TS_HOSTNAME}'..."
@@ -97,6 +103,24 @@ echo "SSH configuration complete. Host alias 'mypc' configured."
 # Ensure hermes binary path is exported
 export PATH="/root/.local/bin:/opt/hermes-agent/.hermes/bin:$PATH"
 
-# 6. Finally exec the Hermes gateway (for Discord/Telegram messaging)
-echo "Executing Hermes gateway..."
-exec hermes gateway
+# 6. Test SSH connectivity to target Windows PC
+echo "Testing Tailscale SSH connection to target PC (${PC_TAILSCALE_HOST})..."
+if ssh -o BatchMode=yes -o ConnectTimeout=10 mypc "echo SSH_TUNNEL_SUCCESS" 2>&1 | grep -q "SSH_TUNNEL_SUCCESS"; then
+    echo "=========================================================="
+    echo "SUCCESS: Hermes container successfully connected to PC!"
+    echo "=========================================================="
+else
+    echo "WARNING: Could not connect to PC via SSH yet (might still be negotiating Tailscale route or PC is unreachable)."
+fi
+
+# 7. Finally start the Hermes messaging gateway or keep tunnel alive
+if [ -n "${DISCORD_BOT_TOKEN:-}" ] || [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+    echo "Executing Hermes gateway..."
+    exec hermes gateway
+else
+    echo "=========================================================="
+    echo "Tailscale SSH tunnel is UP and RUNNING!"
+    echo "To activate Discord/Telegram chat, configure DISCORD_BOT_TOKEN or TELEGRAM_BOT_TOKEN in Railway variables."
+    echo "=========================================================="
+    exec tail -f /dev/null
+fi
