@@ -38,7 +38,7 @@ jobs:
       - name: Trigger Railway deploy - Bot
         continue-on-error: true
         env:
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
           SERVICE_ID: ${{ secrets.BOT_SERVICE_ID_RAILWAY }}
         run: |
           # 1. Fetch the latest deployment ID for the service
@@ -81,7 +81,7 @@ jobs:
       - name: Trigger Railway deploy - API
         continue-on-error: true
         env:
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
           SERVICE_ID: ${{ secrets.API_SERVICE_ID_RAILWAY }}
         run: |
           # 1. Fetch the latest deployment ID for the service
@@ -124,7 +124,7 @@ jobs:
       - name: Trigger Railway deploy - Dashboard
         continue-on-error: true
         env:
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
           SERVICE_ID: ${{ secrets.WEB_SERVICE_ID_RAILWAY }}
         run: |
           # 1. Fetch the latest deployment ID for the service
@@ -158,8 +158,8 @@ jobs:
 
       - name: Deploy Hermes to Railway
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_KEY }}
         run: |
           SERVICE_ID="${{ secrets.HERMES_SERVICE_ID_RAILWAY }}"
           [ -z "$SERVICE_ID" ] && SERVICE_ID="cbe69302-5755-4013-88d7-8eb112ba698f"
