@@ -90,3 +90,8 @@ discord:
     - MOCHI
     - "もち"
     - "โมจิ"
+
+dashboard:
+  basic_auth:
+    username: conde
+
