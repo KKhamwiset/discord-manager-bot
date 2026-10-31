@@ -216,3 +216,6 @@ env*
 /backup.pub
 /backup.zip
 *.mbak
+
+# Hermes Agent local env
+hermes/.env
