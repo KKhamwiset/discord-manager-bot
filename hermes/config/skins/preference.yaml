@@ -1,0 +1,82 @@
+# ~/.hermes/skins/preference.yaml
+# Black background + Yellow/Gold accent theme
+name: preference
+description: Dark background with warm yellow/gold accents
+
+colors:
+  # Banner
+  banner_border: "#FFD700"
+  banner_title: "#FFDF00"
+  banner_accent: "#FFBF00"
+  banner_dim: "#B8860B"
+  banner_text: "#FFFACD"
+
+  # UI
+  ui_accent: "#FFD700"
+  ui_label: "#FFDF00"
+  ui_ok: "#7CFC00"
+  ui_error: "#FF4444"
+  ui_warn: "#FFA500"
+  prompt: "#FFD700"
+  input_rule: "#FFBF00"
+  response_border: "#FFD700"
+
+  # Status bar
+  status_bar_bg: "#0a0a0a"
+  status_bar_text: "#D4A017"
+  status_bar_strong: "#FFD700"
+  status_bar_dim: "#555555"
+  status_bar_good: "#7CFC00"
+  status_bar_warn: "#FFD700"
+  status_bar_bad: "#FFA500"
+  status_bar_critical: "#FF4444"
+
+  # Session
+  session_label: "#FFD700"
+  session_border: "#444444"
+
+  # Completion (Tab menu)
+  completion_menu_bg: "#1a1500"
+  completion_menu_current_bg: "#3d2e00"
+  completion_menu_meta_bg: "#1a1500"
+  completion_menu_meta_current_bg: "#3d2e00"
+
+  # TUI
+  voice_status_bg: "#0a0a0a"
+  selection_bg: "#1a1a00"
+
+spinner:
+  waiting_faces:
+    - "(⚡)"
+    - "(★)"
+    - "(✦)"
+  thinking_faces:
+    - "(◈)"
+    - "(◇)"
+    - "(⟐)"
+  thinking_verbs:
+    - "computing"
+    - "processing"
+    - "analyzing"
+    - "synthesizing"
+  wings:
+    - ["«⚡", "⚡»"]
+    - ["«★", "★»"]
+    - ["«◆", "◆»"]
+
+branding:
+  agent_name: "Mochi"
+  welcome: "Mochi พร้อมช่วยงานแล้วค่ะ~ ✨ พิมพ์คุยกับเธอได้เลยนะคะ!"
+  goodbye: "ไว้เจอกันใหม่นะคะ~ ✿"
+  response_label: " 🌸 Mochi "
+  prompt_symbol: "❯"
+  help_header: "(🌸)? Available Commands"
+
+tool_prefix: "│"
+
+tool_emojis:
+  terminal: "⚡"
+  web_search: "🔍"
+  read_file: "📄"
+  write_file: "✏️"
+  search_files: "🔎"

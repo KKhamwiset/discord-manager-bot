@@ -1,0 +1,38 @@
+{
+  "jobs": [
+    {
+      "id": "d735f0aa313e",
+      "name": "Mochi Heartbeat",
+      "prompt": "Script-only Discord heartbeat ping. The script sends the heartbeat message itself; keep output local only.",
+      "skills": [],
+      "skill": null,
+      "model": "deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "base_url": null,
+      "script": "heartbeat.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 2,
+        "display": "every 2m"
+      },
+      "schedule_display": "every 2m",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1444000155660455956",
+        "chat_name": "komiya.__",
+        "thread_id": null
+      }
+    }
+  ]
+}
