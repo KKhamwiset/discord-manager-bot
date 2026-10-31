@@ -39,14 +39,33 @@ PC_SSH_PORT="${PC_SSH_PORT:-22}"
 
 # 3. Persistent directories on Railway Volume (/data)
 echo "Ensuring persistent directories exist on /data..."
-mkdir -p /data/hermes /data/tailscale /data/ssh
+mkdir -p /data/hermes /data/tailscale /data/ssh /data/hermes/scripts /data/hermes/cron /data/hermes/skins /data/hermes/memories
+
+# Sync bundled Hermes configuration (SOUL.md, config.yaml, memories, skins, cron, scripts) to /data/hermes
+if [ -d "/app/config" ]; then
+    echo "Syncing bundled Hermes configuration to /data/hermes..."
+    cp -rf /app/config/* /data/hermes/
+fi
+
+# Ensure scripts are executable
+chmod +x /data/hermes/scripts/*.py 2>/dev/null || true
+
+# Write environment variables into /data/hermes/.env for scripts and tools
+cat <<EOF > /data/hermes/.env
+DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+EOF
+chmod 600 /data/hermes/.env
+
+# Optional auth.json if passed via AUTH_JSON environment variable
+if [ -n "${AUTH_JSON:-}" ]; then
+    echo "Writing AUTH_JSON into /data/hermes/auth.json..."
+    printf '%s\n' "$AUTH_JSON" > /data/hermes/auth.json
+    chmod 600 /data/hermes/auth.json
+fi
 
 # Symlink ~/.hermes -> /data/hermes so config, memories, and skills persist across redeploys
-if [ -d "$HOME/.hermes" ] && [ ! -L "$HOME/.hermes" ]; then
-    echo "Migrating template files from $HOME/.hermes to /data/hermes..."
-    cp -rn "$HOME/.hermes/." /data/hermes/ 2>/dev/null || true
-    rm -rf "$HOME/.hermes"
-fi
+rm -rf "$HOME/.hermes"
 ln -sfn /data/hermes "$HOME/.hermes"
 
 # 4. Start Tailscale in userspace networking mode
@@ -105,7 +124,17 @@ export PATH="/root/.local/bin:/opt/hermes-agent/.hermes/bin:$PATH"
 
 # 6. Test SSH connectivity to target Windows PC
 echo "Testing Tailscale SSH connection to target PC (${PC_TAILSCALE_HOST})..."
-if ssh -o BatchMode=yes -o ConnectTimeout=10 mypc "echo SSH_TUNNEL_SUCCESS" 2>&1 | grep -q "SSH_TUNNEL_SUCCESS"; then
+ssh_ok=false
+for attempt in $(seq 1 5); do
+    if ssh -o BatchMode=yes -o ConnectTimeout=8 mypc "echo SSH_TUNNEL_SUCCESS" 2>&1 | grep -q "SSH_TUNNEL_SUCCESS"; then
+        ssh_ok=true
+        break
+    fi
+    echo "SSH attempt $attempt failed or still handshaking, retrying in 2 seconds..."
+    sleep 2
+done
+
+if [ "$ssh_ok" = true ]; then
     echo "=========================================================="
     echo "SUCCESS: Hermes container successfully connected to PC!"
     echo "=========================================================="

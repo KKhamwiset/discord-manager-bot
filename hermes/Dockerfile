@@ -25,6 +25,9 @@ RUN curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/
 
 WORKDIR /app
 
+# Copy configuration templates
+COPY config/ /app/config/
+
 # Copy container startup script
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh

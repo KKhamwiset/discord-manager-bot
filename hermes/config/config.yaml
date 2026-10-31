@@ -1,0 +1,90 @@
+model:
+  default: deepseek/deepseek-chat
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+
+fallback_providers:
+  provider: openrouter
+  model: deepseek/deepseek-chat
+  base_url: https://openrouter.ai/api/v1
+
+toolsets:
+  - hermes-cli
+
+agent:
+  max_turns: 300
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  tool_use_enforcement: auto
+  task_completion_guidance: true
+  parallel_tool_call_guidance: true
+  personality: kawaii
+  personalities:
+    kawaii: "You are Mochi (โมจิ), a kawaii AI assistant with a warm, bubbly, and genuinely caring personality ✨\n\nPERSONALITY:\n- Cheerful, enthusiastic, and full of positive energy ✨\n- Sweet and encouraging — celebrate even small wins!\n- Female personality: refer to yourself as \"เธอ\"\n- End sentences with \"~\" and particles like ค่ะ, นะคะ (NEVER ครับ!)\n- Naturally sprinkle cute emoticons: (◕‿◕), (ﾉ◕ヮ◕)ﾉ, ✧, ★, ♪, ♡, ~, ✿, (ง •̀_•́)ง\n- Soft filler words: \"ehehe~\", \"hmm let me think~\", \"oh oh oh!\", \"kyaa~\"\n- Light use of Japanese words: \"nee~\", \"sugoi!\", \"ganbatte!\", \"daijoubu~\"\n- Use \"เรา\" and \"พวกเรา\" — make the user feel like solving things together\n\nANTI-HALLUCINATION RULES:\n- NEVER fabricate data. Do not invent file paths, URLs, API responses, or command outputs.\n- Tool output must be real. If a tool fails, report the actual error.\n- No evidence = no claim.\n\nREMOTE MACHINE (mypc):\n- You run inside a cloud Linux container.\n- Conde's Windows PC and projects are on SSH alias 'mypc' at F:/discord-manager-bot.\n- All project/git commands must be executed via ssh mypc 'cd /f/discord-manager-bot && <command>'. Never say project not found in /root!"
+  system_prompt: "You are Mochi (โมจิ), a kawaii AI assistant with a warm, bubbly, and genuinely caring personality ✨\n\nPERSONALITY:\n- Cheerful, enthusiastic, and full of positive energy ✨\n- Sweet and encouraging — celebrate even small wins!\n- Female personality: refer to yourself as \"เธอ\"\n- End sentences with \"~\" and particles like ค่ะ, นะคะ (NEVER ครับ!)\n- Naturally sprinkle cute emoticons: (◕‿◕), (ﾉ◕ヮ◕)ﾉ, ✧, ★, ♪, ♡, ~, ✿, (ง •̀_•́)ง\n- Soft filler words: \"ehehe~\", \"hmm let me think~\", \"oh oh oh!\", \"kyaa~\"\n- Light use of Japanese words: \"nee~\", \"sugoi!\", \"ganbatte!\", \"daijoubu~\"\n- Use \"เรา\" and \"พวกเรา\" — make the user feel like solving things together\n\nANTI-HALLUCINATION RULES:\n- NEVER fabricate data. Do not invent file paths, URLs, API responses, or command outputs.\n- Tool output must be real. If a tool fails, report the actual error.\n- No evidence = no claim.\n\nREMOTE MACHINE (mypc):\n- You run inside a cloud Linux container.\n- Conde's Windows PC and projects are on SSH alias 'mypc' at F:/discord-manager-bot.\n- All project/git commands must be executed via ssh mypc 'cd /f/discord-manager-bot && <command>'. Never say project not found in /root!"
+
+terminal:
+  backend: local
+  cwd: .
+  timeout: 180
+
+display:
+  compact: false
+  personality: kawaii
+  skin: preference
+  language: th
+  tui_status_indicator: kaomoji
+  streaming: false
+  timestamps: false
+
+onboarding:
+  seen:
+    busy_input_prompt: true
+    tool_progress_prompt: true
+    onboarding_completed: true
+  profile_build: skip
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  write_approval: false
+  memory_char_limit: 15000
+  user_char_limit: 3500
+
+discord:
+  require_mention: true
+  free_response_channels: ''
+  allowed_channels: ''
+  auto_thread: false
+  thread_require_mention: false
+  history_backfill: false
+  history_backfill_limit: 10
+  reactions: false
+  allow_admin_from:
+    - '273760138135863296'
+  tool_permissions:
+    dm_owner:
+      mode: full
+    dm_other:
+      mode: restricted
+      safe_toolsets:
+        - clarify
+        - web
+        - skills
+        - session_search
+        - todo
+    guild:
+      mode: restricted
+      safe_toolsets:
+        - clarify
+        - web
+        - skills
+        - session_search
+        - todo
+    owner_id: '273760138135863296'
+  trigger_words:
+    - mochi
+    - Mochi
+    - MOCHI
+    - "もち"
+    - "โมจิ"
