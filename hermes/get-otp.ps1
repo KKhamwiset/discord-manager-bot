@@ -10,11 +10,15 @@ param(
     [switch]$ShowUri
 )
 
-$secret = "REDACTED_TOTP_SECRET_PURGED"
+$secret = ""
 $secretFile = Join-Path $PSScriptRoot ".totp_secret"
 if (Test-Path $secretFile) {
     $fileSecret = (Get-Content $secretFile -Raw).Trim()
     if ($fileSecret) { $secret = $fileSecret }
+}
+if (-not $secret) {
+    Write-Host "No TOTP secret found. Put it in .totp_secret next to this script." -ForegroundColor Red
+    exit 1
 }
 
 function Get-TotpCode {

@@ -16,7 +16,6 @@ from pathlib import Path
 
 SESSION_FILE = Path(os.environ.get("HOST_OTP_SESSION_FILE", "/tmp/host_otp_session.json"))
 SESSION_TTL_SECONDS = int(os.environ.get("HOST_OTP_TTL", 1800))  # 30 minutes default
-DEFAULT_SECRET = "REDACTED_TOTP_SECRET_PURGED"
 
 def get_secret() -> str:
     secret = os.environ.get("HOST_TOTP_SECRET", "").strip()
@@ -32,7 +31,7 @@ def get_secret() -> str:
                     return s
             except Exception:
                 pass
-    return DEFAULT_SECRET
+    return None
 
 def compute_totp(secret: str, counter: int, digits: int = 6) -> str:
     key = base64.b32decode(secret.upper(), casefold=True)
@@ -43,6 +42,8 @@ def compute_totp(secret: str, counter: int, digits: int = 6) -> str:
     return f"{code:0{digits}d}"
 
 def verify_code(secret: str, input_code: str, window: int = 1) -> bool:
+    if not secret:
+        return False  # fail closed: no host secret configured
     input_code = str(input_code).strip()
     if len(input_code) != 6 or not input_code.isdigit():
         return False
@@ -120,12 +121,18 @@ def main():
 
     elif arg == "--current":
         # Internal test / debug
+        if not secret:
+            print(json.dumps({"error": "HOST_TOTP_SECRET is not configured on this host"}))
+            sys.exit(1)
         now_code = compute_totp(secret, int(time.time() // 30))
         print(json.dumps({"current_code": now_code}))
         sys.exit(0)
 
     else:
         # Treat argument as OTP code
+        if not secret:
+            print(json.dumps({"status": "error", "unlocked": False, "message": "HOST_TOTP_SECRET is not configured on this host."}, indent=2))
+            sys.exit(2)
         if verify_code(secret, arg):
             res = unlock_session()
             print(json.dumps(res, indent=2))

@@ -51,7 +51,12 @@ fi
 chmod +x /data/hermes/scripts/*.py 2>/dev/null || true
 
 # Write environment variables into /data/hermes/.env for scripts and tools
-export HOST_TOTP_SECRET="${HOST_TOTP_SECRET:-REDACTED_TOTP_SECRET_PURGED}"
+export HOST_TOTP_SECRET="${HOST_TOTP_SECRET:-}"
+if [ -z "$HOST_TOTP_SECRET" ]; then
+    echo "WARNING: HOST_TOTP_SECRET is not set; host OTP unlock will reject every code." >&2
+fi
+# The rotated-out TOTP secret must not stay on the volume; the env var is the only source now
+rm -f /data/hermes/.totp_secret
 cat <<EOF > /data/hermes/.env
 DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
