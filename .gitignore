@@ -219,3 +219,5 @@ env*
 
 # Hermes Agent local env
 hermes/.env
+# Hermes host OTP secret (never commit; rotate if exposed)
+hermes/.totp_secret
