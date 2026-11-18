@@ -208,3 +208,27 @@ icacls "$sshDir\authorized_keys" /inheritance:r /grant "hermes:R" /grant "SYSTEM
 - [x] **Tailscale ACL แคบที่สุด**: อนุญาตเฉพาะ `tag:hermes` เข้า `dst: Windows_PC:22` เท่านั้น ไม่เปิดสิทธิ์เข้าเครื่องอื่นๆ ใน Tailnet
 - [x] **พอร์ต 22 ไม่เปิดสู่ Public Internet**: พอร์ต 22 ตอบสนองเฉพาะภายในวงเครือข่ายเสมือนของ Tailscale
 - [x] **กรณี PC ปิดเครื่องอยู่ (Offline)**: การเชื่อมต่อจะ Timeout อย่างปลอดภัย Hermes จะแจ้งเตือนในแชทว่าไม่สามารถติดต่อ PC ได้ และ Container จะไม่ Crash
+
+---
+
+## 🔁 7. Config เดียวกันทั้ง Local และ Railway
+
+`hermes/config/` คือต้นฉบับเดียวของ config (`config.yaml`, `SOUL.md`, `skins/`)
+
+- **Railway:** `start.sh` copy `hermes/config/*` ไปที่ `/data/hermes` ทุกครั้งที่ container เริ่ม (ค่าที่แก้ผ่าน dashboard บน Railway จะถูกทับ)
+- **เครื่อง Conde:** หลังแก้ config ใน repo ให้รัน
+  ```bash
+  python hermes/sync-local.py --dry-run   # ดูว่าจะเปลี่ยนอะไร
+  python hermes/sync-local.py             # เขียนจริง (backup ไว้ที่ $HERMES_HOME/backups/repo-sync-*)
+  ```
+  แล้ว restart Hermes gateway
+- ค่าที่ต่างกันเพราะรันคนละที่ อยู่ใน `hermes/local/`:
+  - `overrides.yaml` — ค่า config เฉพาะเครื่อง (ทับบน repo config)
+  - `SOUL.env.md` — ใช้แทนบล็อก `ENVIRONMENT:BEGIN/END` ใน `SOUL.md` (บน PC ไม่ต้อง SSH/OTP)
+  - `prompt.env.txt` — ใช้แทนส่วน `REMOTE MACHINE (mypc)` ใน `agent.system_prompt`
+- `memories/`, `cron/`, `auth.json`, `.env` ไม่ถูก sync (เป็นข้อมูล runtime ของแต่ละเครื่อง)
+
+### Hermes เวอร์ชันและ patch
+- Dockerfile ล็อก Hermes ไว้ที่ `HERMES_COMMIT` (upstream เดียวกับเครื่อง Conde) แล้ว `git am` patch ใน `hermes/patches/`
+- patch เหล่านี้เพิ่ม `discord.trigger_words` และ `discord.tool_permissions` ซึ่ง **upstream ไม่มี** — ถ้าติดตั้ง Hermes โดยไม่มี patch ค่าจำกัดสิทธิ์ใน guild จะถูกเพิกเฉย
+- อัปเกรด Hermes: rebase patch ในเครื่องก่อน แล้ว `git format-patch <upstream-commit>..HEAD -o hermes/patches/` และแก้ `HERMES_COMMIT` ให้ตรง

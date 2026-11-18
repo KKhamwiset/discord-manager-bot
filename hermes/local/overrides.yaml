@@ -1,0 +1,9 @@
+# Local-only overrides for Hermes on Conde's PC.
+# hermes/sync-local.py applies these on top of hermes/config/config.yaml.
+# Railway never reads this file: the container only copies hermes/config/.
+# Keep it to settings that differ because of where Hermes runs.
+
+dashboard:
+  basic_auth:
+    # The Railway dashboard is public and needs basic auth; the local one is localhost-only.
+    username: ""
