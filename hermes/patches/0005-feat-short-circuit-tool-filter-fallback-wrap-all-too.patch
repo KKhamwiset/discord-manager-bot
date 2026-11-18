@@ -1,0 +1,177 @@
+From 037141dcff43eb71b957e5e3a1b26018d88aa325 Mon Sep 17 00:00:00 2001
+From: KKhamwiset <kritsakorn224@gmail.com>
+Date: Tue, 9 Jun 2026 06:09:19 +0800
+Subject: [PATCH 5/6] feat: short-circuit tool filter fallback + wrap all tool
+ previews in code blocks
+
+- Add short-circuit in _run_agent and _run_background_task: when
+  channel/group restrictions strip all tools, return a friendly
+  fallback message instead of calling the model with empty tools
+- Wrap ALL tool progress previews in code blocks (not just
+  terminal/execute_code) for readability on Discord/Telegram
+- Bump default tool preview cap from 40 to 200 chars since
+  code blocks visually separate content and need more room
+---
+ gateway/run.py | 89 ++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 65 insertions(+), 24 deletions(-)
+
+diff --git a/gateway/run.py b/gateway/run.py
+index 4853c0b91..7ccb63d65 100644
+--- a/gateway/run.py
++++ b/gateway/run.py
+@@ -11178,6 +11178,29 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+             except Exception as _filter_err:
+                 logger.warning("Channel tool filter error (passing through): %s", _filter_err)
+ 
++            # Short-circuit: if tools were completely stripped by channel/group
++            # restrictions, skip calling the model entirely and send a friendly
++            # message instead of letting leaky serialization reach the user.
++            if not enabled_toolsets:
++                try:
++                    _dc_cfg = user_config.get("discord") or {}
++                    if _dc_cfg.get("tool_permissions"):
++                        _ct = getattr(source, 'chat_type', '')
++                        if _ct in ("group", "channel", "thread"):
++                            logger.info(
++                                "Tool filter short-circuit (bg task) for chat_type=%s",
++                                _ct,
++                            )
++                            await adapter.send(
++                                source.chat_id,
++                                "🌸 I can't run commands or access files in this channel~ "
++                                "If you need my help with something specific, DM me instead! 🍡",
++                                metadata=_thread_metadata,
++                            )
++                            return
++                except Exception:
++                    pass  # fall through to normal agent path on any error
++
+             agent_cfg = user_config.get("agent") or {}
+             disabled_toolsets = agent_cfg.get("disabled_toolsets") or None
+ 
+@@ -14460,6 +14483,31 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+         except Exception as _filter_err:
+             logger.warning("Channel tool filter error (passing through): %s", _filter_err)
+ 
++        # Short-circuit: if tools were completely stripped by channel/group
++        # restrictions, skip calling the model entirely and return a friendly
++        # message instead of letting leaky serialization reach the user.
++        if not enabled_toolsets:
++            try:
++                _dc_cfg = user_config.get("discord") or {}
++                if _dc_cfg.get("tool_permissions"):
++                    _ct = getattr(source, 'chat_type', '')
++                    if _ct in ("group", "channel", "thread"):
++                        logger.info(
++                            "Tool filter short-circuit for chat_type=%s — returning fallback",
++                            _ct,
++                        )
++                        return {
++                            "final_response": (
++                                "🌸 I can't run commands or access files in this channel~ "
++                                "If you need my help with something specific, DM me instead! 🍡"
++                            ),
++                            "messages": [],
++                            "api_calls": 0,
++                            "completed": True,
++                        }
++            except Exception:
++                pass  # fall through to normal agent path on any error
++
+         agent_cfg_local = user_config.get("agent") or {}
+         disabled_toolsets = agent_cfg_local.get("disabled_toolsets") or None
+ 
+@@ -14693,19 +14741,18 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+             from agent.display import get_tool_emoji
+             emoji = get_tool_emoji(tool_name, default="⚙️")
+ 
+-            # Markdown-capable platforms render terminal commands as fenced
+-            # code blocks instead of compact `terminal: "cmd…"` previews.
+-            # Gated on the adapter's ``supports_code_blocks`` capability so
+-            # plain-text platforms keep the short line.
++            # Markdown-capable platforms render previews as fenced code blocks.
++            # Terminal commands get special handling so consecutive commands can
++            # collapse under one header and non-verbose modes stay compact.
+             _code_block_full = None
+             _code_block_short = None
+-            _code_block_tools = {"execute_code"}
+             try:
+                 _progress_adapter = self.adapters.get(source.platform)
+             except Exception:
+                 _progress_adapter = None
++            _supports_code_blocks = getattr(_progress_adapter, "supports_code_blocks", False)
+             if (
+-                getattr(_progress_adapter, "supports_code_blocks", False)
++                _supports_code_blocks
+                 and tool_name == "terminal"
+                 and isinstance(args, dict)
+                 and isinstance(args.get("command"), str)
+@@ -14713,14 +14760,10 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+             ):
+                 from agent.display import get_tool_preview_max_len
+                 _cmd_full = args["command"].rstrip()
+-                # Consecutive terminal calls: drop the repeated
+-                # "💻 terminal" header so back-to-back commands render as
+-                # adjacent code blocks under a single header.
+                 _block_header = (
+                     "" if last_was_terminal_block[0] else f"{emoji} {tool_name}\n"
+                 )
+                 _code_block_full = f"{_block_header}```\n{_cmd_full}\n```"
+-                # Single-line, capped preview for non-verbose modes.
+                 _pl = get_tool_preview_max_len()
+                 _cap = _pl if _pl > 0 else 40
+                 _lines = _cmd_full.splitlines()
+@@ -14743,38 +14786,36 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+                     from agent.display import get_tool_preview_max_len
+                     _pl = get_tool_preview_max_len()
+                     args_str = json.dumps(args, ensure_ascii=False, default=str)
+-                    # When tool_preview_length is 0 (default), don't truncate
+-                    # in verbose mode — the user explicitly asked for full
+-                    # detail.  Platform message-length limits handle the rest.
+                     if _pl > 0 and len(args_str) > _pl:
+                         args_str = args_str[:_pl - 3] + "..."
+-                    if tool_name in _code_block_tools:
+-                        cmd = args.get("command", args_str)
+-                        msg = f"{emoji} {tool_name}\n```\n{cmd}\n```"
++                    if _supports_code_blocks:
++                        msg = f"{emoji} {tool_name}\n```\n{args_str}\n```"
+                     else:
+                         msg = f"{emoji} {tool_name}({list(args.keys())})\n{args_str}"
+                 elif preview:
+-                    msg = f"{emoji} {tool_name}: \"{preview}\""
++                    if _supports_code_blocks:
++                        msg = f"{emoji} {tool_name}\n```\n{preview}\n```"
++                    else:
++                        msg = f"{emoji} {tool_name}: \"{preview}\""
+                 else:
+                     msg = f"{emoji} {tool_name}..."
+                 progress_queue.put(msg)
+                 return
+ 
+-            # "all" / "new" modes: short preview, respects tool_preview_length
+-            # config (defaults to 40 chars when unset to keep gateway messages
+-            # compact — unlike CLI spinners, these persist as permanent messages).
+-            # Terminal commands on markdown platforms get a single-line capped
+-            # fenced block (built above) instead of the truncated preview.
++            # "all" / "new" modes: short preview, respects tool_preview_length.
+             if _code_block_short is not None:
+                 msg = _code_block_short
+                 last_was_terminal_block[0] = True
+             elif preview:
+                 from agent.display import get_tool_preview_max_len
+                 _pl = get_tool_preview_max_len()
+-                _cap = _pl if _pl > 0 else 40
++                _cap = _pl if _pl > 0 else (200 if _supports_code_blocks else 40)
+                 if len(preview) > _cap:
+                     preview = preview[:_cap - 3] + "..."
+-                msg = f"{emoji} {tool_name}: \"{preview}\""
++                if _supports_code_blocks:
++                    msg = f"{emoji} {tool_name}\n```\n{preview}\n```"
++                else:
++                    msg = f"{emoji} {tool_name}: \"{preview}\""
+                 last_was_terminal_block[0] = False
+             else:
+                 msg = f"{emoji} {tool_name}..."
+-- 
+2.49.0.windows.1
+

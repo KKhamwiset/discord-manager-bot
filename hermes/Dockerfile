@@ -17,11 +17,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://tailscale.com/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Hermes Agent using the official installer from NousResearch/hermes-agent repository
-# Run in non-interactive headless mode without heavy desktop/browser packages
-RUN curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | \
-    bash -s -- --dir /opt/hermes-agent --non-interactive --skip-browser --skip-computer-use \
+# Install Hermes Agent pinned to the same upstream commit as Conde's local install,
+# then apply the local patches (trigger_words, tool_permissions / channel tool
+# filtering, Discord fixes). Upstream does not support those config keys, so an
+# unpatched install silently ignores discord.tool_permissions.
+# To upgrade: rebase the local patches, regenerate hermes/patches/, bump HERMES_COMMIT.
+ARG HERMES_COMMIT=5ff11a689b561fdb1404aede3fafa543bbbb86bf
+RUN curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_COMMIT}/scripts/install.sh" | \
+    bash -s -- --dir /opt/hermes-agent --non-interactive --skip-browser --commit "${HERMES_COMMIT}" \
     && if [ -f /root/.local/bin/hermes ]; then ln -sf /root/.local/bin/hermes /usr/local/bin/hermes; fi
+
+COPY patches/ /tmp/hermes-patches/
+RUN test "$(git -C /opt/hermes-agent rev-parse HEAD)" = "${HERMES_COMMIT}" \
+    && git -C /opt/hermes-agent -c user.name="Mochi Build" -c user.email=build@localhost am /tmp/hermes-patches/*.patch \
+    && grep -q "tool_permissions" /opt/hermes-agent/gateway/config.py \
+    && rm -rf /tmp/hermes-patches
 
 WORKDIR /app
 

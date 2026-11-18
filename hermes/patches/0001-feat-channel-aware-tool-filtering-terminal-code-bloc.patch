@@ -1,0 +1,285 @@
+From b498b4dfef1718e8b15a2dc1db049afa400fd38c Mon Sep 17 00:00:00 2001
+From: KKhamwiset <kritsakorn224@gmail.com>
+Date: Tue, 9 Jun 2026 02:48:23 +0800
+Subject: [PATCH 1/6] feat: channel-aware tool filtering + terminal code blocks
+ + username fix
+
+- gateway/channel_tool_filter.py: new module for per-channel tool restriction
+  - owner DM = full access, other DM = restricted, guild = none
+  - config-driven via discord.tool_permissions in config.yaml
+- gateway/run.py: integrate tool filter at _run_agent and _run_background_task
+- gateway/run.py: wrap terminal/execute_code previews in code blocks for Discord
+- plugins/platforms/discord/adapter.py: use .name instead of .display_name
+  for stable username identification in logs
+---
+ gateway/channel_tool_filter.py       | 119 +++++++++++++++++++++++++++
+ gateway/run.py                       |  54 ++++++++----
+ plugins/platforms/discord/adapter.py |  12 ++-
+ 3 files changed, 168 insertions(+), 17 deletions(-)
+ create mode 100644 gateway/channel_tool_filter.py
+
+diff --git a/gateway/channel_tool_filter.py b/gateway/channel_tool_filter.py
+new file mode 100644
+index 000000000..baefebedd
+--- /dev/null
++++ b/gateway/channel_tool_filter.py
+@@ -0,0 +1,119 @@
++"""
++Channel-aware tool filtering for the Hermes gateway.
++
++Filters enabled toolsets based on message source (user_id, chat_type)
++before they reach the AIAgent. This is hard enforcement — the model
++literally cannot call tools that aren't in its function schema.
++
++Config (config.yaml):
++
++    discord:
++      tool_permissions:
++        owner_id: '273760138135863296'
++        dm_owner:
++          mode: full          # all tools
++        dm_other:
++          mode: restricted    # only safe_toolsets
++          safe_toolsets:
++            - clarify
++            - web
++            - skills
++            - session_search
++            - todo
++        guild:
++          mode: none           # zero tools — chat only
++        guild_admin:
++          mode: full           # optional: admin channels get full access
++          channel_ids:
++            - 'CHANNEL_ID_1'
++"""
++
++import logging
++from typing import Optional, Set
++
++logger = logging.getLogger(__name__)
++
++# Default safe toolsets for non-owner DMs
++DEFAULT_SAFE_TOOLSETS = {"clarify", "web", "skills", "session_search", "todo"}
++
++# Toolsets that grant filesystem/terminal/memory access — never exposed to non-owners
++_RESTRICTED_TOOLSETS = {
++    "terminal", "file", "memory", "code_execution",
++    "debugging", "homeassistant", "spotify",
++}
++
++
++def filter_toolsets_for_source(
++    enabled_toolsets: Set[str],
++    user_id: Optional[str],
++    chat_type: str,  # "dm", "group", "channel", "thread"
++    guild_id: Optional[str] = None,
++    chat_id: Optional[str] = None,
++    config: Optional[dict] = None,
++) -> Set[str]:
++    """
++    Filter enabled_toolsets based on who is talking and where.
++
++    Returns the filtered set of toolset names. If no tool_permissions
++    config is present, returns enabled_toolsets unchanged (backward-compatible).
++    """
++    if not config:
++        return enabled_toolsets
++
++    discord_cfg = config.get("discord") or {}
++    perms = discord_cfg.get("tool_permissions")
++    if not perms:
++        return enabled_toolsets
++
++    owner_id = str(perms.get("owner_id", ""))
++    is_owner = user_id and str(user_id) == owner_id
++
++    # Determine which rule applies
++    if chat_type == "dm":
++        if is_owner:
++            rule = perms.get("dm_owner", {})
++        else:
++            rule = perms.get("dm_other", {})
++    elif chat_type in ("channel", "thread"):
++        # Check guild_admin channel override
++        guild_admin = perms.get("guild_admin", {})
++        admin_channels = {
++            str(c) for c in (guild_admin.get("channel_ids") or [])
++        }
++        if is_owner and chat_id and str(chat_id) in admin_channels:
++            rule = guild_admin
++        elif is_owner:
++            # Owner in guild channel — check if there's a specific owner guild rule
++            rule = perms.get("guild_owner", perms.get("guild", {}))
++        else:
++            rule = perms.get("guild", {})
++    elif chat_type == "group":
++        if is_owner:
++            rule = perms.get("group_owner", perms.get("guild", {}))
++        else:
++            rule = perms.get("guild", {})
++    else:
++        return enabled_toolsets
++
++    mode = rule.get("mode", "full")
++
++    if mode == "full":
++        logger.debug("Tool filter: full access for user=%s chat_type=%s", user_id, chat_type)
++        return enabled_toolsets
++
++    elif mode == "none":
++        logger.info("Tool filter: NO tools for user=%s chat_type=%s", user_id, chat_type)
++        return set()
++
++    elif mode == "restricted":
++        safe = set(rule.get("safe_toolsets") or DEFAULT_SAFE_TOOLSETS)
++        filtered = enabled_toolsets & safe
++        logger.info(
++            "Tool filter: restricted for user=%s chat_type=%s — %d/%d toolsets remain",
++            user_id, chat_type, len(filtered), len(enabled_toolsets),
++        )
++        return filtered
++
++    else:
++        logger.warning("Tool filter: unknown mode '%s', passing through", mode)
++        return enabled_toolsets
+diff --git a/gateway/run.py b/gateway/run.py
+index a388f184a..4853c0b91 100644
+--- a/gateway/run.py
++++ b/gateway/run.py
+@@ -11163,6 +11163,21 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+ 
+             from hermes_cli.tools_config import _get_platform_tools
+             enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
++
++            # Channel-aware tool filtering: restrict tools based on user + chat type
++            try:
++                from gateway.channel_tool_filter import filter_toolsets_for_source
++                enabled_toolsets = sorted(filter_toolsets_for_source(
++                    set(enabled_toolsets),
++                    user_id=getattr(source, 'user_id', None),
++                    chat_type=getattr(source, 'chat_type', 'dm'),
++                    guild_id=getattr(source, 'guild_id', None),
++                    chat_id=getattr(source, 'chat_id', None),
++                    config=user_config,
++                ))
++            except Exception as _filter_err:
++                logger.warning("Channel tool filter error (passing through): %s", _filter_err)
++
+             agent_cfg = user_config.get("agent") or {}
+             disabled_toolsets = agent_cfg.get("disabled_toolsets") or None
+ 
+@@ -14430,6 +14445,21 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+ 
+         from hermes_cli.tools_config import _get_platform_tools
+         enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
++
++        # Channel-aware tool filtering: restrict tools based on user + chat type
++        try:
++            from gateway.channel_tool_filter import filter_toolsets_for_source
++            enabled_toolsets = sorted(filter_toolsets_for_source(
++                set(enabled_toolsets),
++                user_id=getattr(source, 'user_id', None),
++                chat_type=getattr(source, 'chat_type', 'dm'),
++                guild_id=getattr(source, 'guild_id', None),
++                chat_id=getattr(source, 'chat_id', None),
++                config=user_config,
++            ))
++        except Exception as _filter_err:
++            logger.warning("Channel tool filter error (passing through): %s", _filter_err)
++
+         agent_cfg_local = user_config.get("agent") or {}
+         disabled_toolsets = agent_cfg_local.get("disabled_toolsets") or None
+ 
+@@ -14663,21 +14693,13 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+             from agent.display import get_tool_emoji
+             emoji = get_tool_emoji(tool_name, default="⚙️")
+ 
+-            # Markdown-capable platforms render a terminal command as a fenced
+-            # code block instead of the compact `terminal: "cmd…"` preview.
++            # Markdown-capable platforms render terminal commands as fenced
++            # code blocks instead of compact `terminal: "cmd…"` previews.
+             # Gated on the adapter's ``supports_code_blocks`` capability so
+-            # plain-text platforms keep the short line.  No language tag is
+-            # emitted — Slack mrkdwn renders the tag as a literal first code
+-            # line ("bash"), and a bare fence renders correctly everywhere
+-            # that supports blocks.
+-            #
+-            # Verbose mode shows the FULL command.  Non-verbose ("all"/"new")
+-            # modes still wrap in a fence but truncate to a single line capped
+-            # at ``tool_preview_length`` (default 40) so a long or multi-line
+-            # command doesn't render as a huge block — matching the budget the
+-            # non-terminal preview path already applies (#42634).
++            # plain-text platforms keep the short line.
+             _code_block_full = None
+             _code_block_short = None
++            _code_block_tools = {"execute_code"}
+             try:
+                 _progress_adapter = self.adapters.get(source.platform)
+             except Exception:
+@@ -14726,14 +14748,18 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+                     # detail.  Platform message-length limits handle the rest.
+                     if _pl > 0 and len(args_str) > _pl:
+                         args_str = args_str[:_pl - 3] + "..."
+-                    msg = f"{emoji} {tool_name}({list(args.keys())})\n{args_str}"
++                    if tool_name in _code_block_tools:
++                        cmd = args.get("command", args_str)
++                        msg = f"{emoji} {tool_name}\n```\n{cmd}\n```"
++                    else:
++                        msg = f"{emoji} {tool_name}({list(args.keys())})\n{args_str}"
+                 elif preview:
+                     msg = f"{emoji} {tool_name}: \"{preview}\""
+                 else:
+                     msg = f"{emoji} {tool_name}..."
+                 progress_queue.put(msg)
+                 return
+-            
++
+             # "all" / "new" modes: short preview, respects tool_preview_length
+             # config (defaults to 40 chars when unset to keep gateway messages
+             # compact — unlike CLI spinners, these persist as permanent messages).
+diff --git a/plugins/platforms/discord/adapter.py b/plugins/platforms/discord/adapter.py
+index dc62aabf7..044c1c3dc 100644
+--- a/plugins/platforms/discord/adapter.py
++++ b/plugins/platforms/discord/adapter.py
+@@ -4013,7 +4013,7 @@ class DiscordAdapter(BasePlatformAdapter):
+             chat_name=chat_name,
+             chat_type=chat_type,
+             user_id=str(interaction.user.id),
+-            user_name=interaction.user.display_name,
++            user_name=interaction.user.name,
+             thread_id=thread_id,
+             chat_topic=chat_topic,
+         )
+@@ -4095,7 +4095,7 @@ class DiscordAdapter(BasePlatformAdapter):
+             chat_name=chat_name,
+             chat_type="thread",
+             user_id=str(interaction.user.id),
+-            user_name=interaction.user.display_name,
++            user_name=interaction.user.name,
+             thread_id=thread_id,
+             chat_topic=chat_topic,
+         )
+@@ -5336,12 +5336,18 @@ class DiscordAdapter(BasePlatformAdapter):
+ 
+         # Build source
+         guild = getattr(message, "guild", None)
++        # Debug: log username vs display_name to verify correct field
++        _author = message.author
++        logger.info(
++            "[Discord] user identification: name=%r display_name=%r global_name=%r",
++            _author.name, _author.display_name, getattr(_author, 'global_name', None),
++        )
+         source = self.build_source(
+             chat_id=str(effective_channel.id),
+             chat_name=chat_name,
+             chat_type=chat_type,
+             user_id=str(message.author.id),
+-            user_name=message.author.display_name,
++            user_name=message.author.name,
+             thread_id=thread_id,
+             chat_topic=chat_topic,
+             is_bot=getattr(message.author, "bot", False),
+-- 
+2.49.0.windows.1
+

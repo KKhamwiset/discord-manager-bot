@@ -1,3 +1,5 @@
 # Enforce LF line endings for shell scripts across all platforms
 hermes/*.sh text eol=lf
 *.sh text eol=lf
+# Hermes source patches must be applied byte-for-byte (git am)
+hermes/patches/*.patch -text

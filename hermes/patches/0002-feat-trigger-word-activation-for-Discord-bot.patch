@@ -1,0 +1,92 @@
+From 8c541714acc8c9917955a0a6a8e54386d75d86ae Mon Sep 17 00:00:00 2001
+From: KKhamwiset <kritsakorn224@gmail.com>
+Date: Tue, 9 Jun 2026 03:10:48 +0800
+Subject: [PATCH 2/6] feat: trigger word activation for Discord bot
+
+- adapter: respond when message contains configured trigger words
+  (e.g. 'mochi' in any language) without requiring @mention
+- config: discord.trigger_words list + DISCORD_TRIGGER_WORDS env var
+- Two check points: before mention block (no-mention case) and
+  inside mention block (other-mentions case)
+---
+ plugins/platforms/discord/adapter.py | 50 +++++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/plugins/platforms/discord/adapter.py b/plugins/platforms/discord/adapter.py
+index 044c1c3dc..ade921a0a 100644
+--- a/plugins/platforms/discord/adapter.py
++++ b/plugins/platforms/discord/adapter.py
+@@ -1043,7 +1043,21 @@ class DiscordAdapter(BasePlatformAdapter):
+                     ):
+                         return
+                     _role_authorized = bool(getattr(self, "_allowed_role_ids", set()))
+-                
++
++                # Trigger word bypass: if message contains a configured
++                # trigger word (e.g. "mochi"), process it even without @mention.
++                _trigger_word_hit = False
++                if not isinstance(message.channel, discord.DMChannel):
++                    try:
++                        _triggers = adapter_self._discord_trigger_words()
++                        if _triggers:
++                            _content_lower = (message.content or "").lower()
++                            _trigger_word_hit = any(t.lower() in _content_lower for t in _triggers)
++                    except Exception:
++                        pass
++                if _trigger_word_hit:
++                    await self._handle_message(message, role_authorized=_role_authorized)
++                    return
+                 # Multi-agent filtering: if the message mentions specific bots
+                 # but NOT this bot, the sender is talking to another agent —
+                 # stay silent.  Messages with no bot mentions (general chat)
+@@ -1062,6 +1076,19 @@ class DiscordAdapter(BasePlatformAdapter):
+                         m.bot and m != self._client.user
+                         for m in message.mentions
+                     )
++                    # Trigger word check: respond if message contains any
++                    # configured trigger word (e.g. "mochi" in any language)
++                    _trigger_hit = False
++                    if not _self_mentioned:
++                        try:
++                            _triggers = adapter_self._discord_trigger_words()
++                            if _triggers:
++                                _content_lower = (message.content or "").lower()
++                                _trigger_hit = any(t.lower() in _content_lower for t in _triggers)
++                        except Exception:
++                            pass
++                    if _trigger_hit:
++                        _self_mentioned = True
+                     # If other bots are mentioned but we're not → not for us
+                     if _other_bots_mentioned and not _self_mentioned:
+                         return
+@@ -4140,6 +4167,27 @@ class DiscordAdapter(BasePlatformAdapter):
+             return bool(configured)
+         return os.getenv("DISCORD_REQUIRE_MENTION", "true").lower() not in {"false", "0", "no", "off"}
+ 
++    def _discord_trigger_words(self) -> list:
++        """Return configured trigger words that activate the bot without @mention.
++
++        Config format (config.yaml):
++            discord:
++              trigger_words:
++                - mochi
++                - もち
++                - 모치
++        Also reads DISCORD_TRIGGER_WORDS env var (comma-separated).
++        """
++        # Config takes priority
++        configured = self.config.extra.get("trigger_words")
++        if configured and isinstance(configured, list):
++            return [str(w) for w in configured if w]
++        # Env var fallback
++        env_val = os.getenv("DISCORD_TRIGGER_WORDS", "")
++        if env_val.strip():
++            return [w.strip() for w in env_val.split(",") if w.strip()]
++        return []
++
+     def _discord_allow_any_attachment(self) -> bool:
+         """Return whether Discord attachments bypass the SUPPORTED_DOCUMENT_TYPES allowlist.
+ 
+-- 
+2.49.0.windows.1
+

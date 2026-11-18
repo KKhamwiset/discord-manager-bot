@@ -1,0 +1,35 @@
+From da4fe30e42a322f8e2e4e1aca9947ad98631d288 Mon Sep 17 00:00:00 2001
+From: KKhamwiset <kritsakorn224@gmail.com>
+Date: Tue, 9 Jun 2026 03:30:16 +0800
+Subject: [PATCH 4/6] fix: bridge trigger_words and tool_permissions into
+ platform extra
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Config bridging was missing trigger_words and tool_permissions —
+the adapter's self.config.extra never received them, so
+_discord_trigger_words() always returned [] and the tool filter
+config was invisible to the adapter.
+---
+ gateway/config.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/gateway/config.py b/gateway/config.py
+index e1556b37d..b080d137d 100644
+--- a/gateway/config.py
++++ b/gateway/config.py
+@@ -1015,6 +1015,10 @@ def load_gateway_config() -> GatewayConfig:
+                     bridged["group_user_allowed_commands"] = platform_cfg["group_user_allowed_commands"]
+                 if plat in {Platform.DISCORD, Platform.SLACK} and "channel_skill_bindings" in platform_cfg:
+                     bridged["channel_skill_bindings"] = platform_cfg["channel_skill_bindings"]
++                if plat == Platform.DISCORD and "trigger_words" in platform_cfg:
++                    bridged["trigger_words"] = platform_cfg["trigger_words"]
++                if plat == Platform.DISCORD and "tool_permissions" in platform_cfg:
++                    bridged["tool_permissions"] = platform_cfg["tool_permissions"]
+                 if "channel_prompts" in platform_cfg:
+                     channel_prompts = platform_cfg["channel_prompts"]
+                     if isinstance(channel_prompts, dict):
+-- 
+2.49.0.windows.1
+
