@@ -148,25 +148,33 @@ class ChannelManagement(commands.Cog):
                           "316152771642654722", "997460686185701466",
                           "689023150834712586","688008838044975116"}
 
-        dest_channel = int(os.getenv("TRIO"))
-        if ctx.channel.id != dest_channel:
+        trio = os.getenv("TRIO", "")
+        if not trio.isdigit() or ctx.channel.id != int(trio):
             await ctx.send("Why are you calling this command blud?")
             return
+        dest_channel = int(trio)
         thread_users = await self.bot.get_channel(dest_channel).fetch_members()
 
+        def is_bot(member_id: int) -> bool:
+            # get_member() returns None for users who left the server or are not cached
+            member = ctx.guild.get_member(member_id)
+            return member is not None and member.bot
+
         to_remove = [
-            i for i in thread_users 
-            if str(i.id) not in preserve_users 
-            and not ctx.guild.get_member(i.id).bot
+            i for i in thread_users
+            if str(i.id) not in preserve_users
+            and not is_bot(i.id)
         ]
-        
+
         if not to_remove:
             await ctx.send("All members are ParaZ verified 😎")
             return
-        
+
         for i in to_remove:
             await ctx.channel.remove_user(i)
-            await ctx.send(f"{ctx.guild.get_member(i.id).display_name} has been kicked from the thread.")
+            member = ctx.guild.get_member(i.id)
+            name = member.display_name if member else f"<@{i.id}>"
+            await ctx.send(f"{name} has been kicked from the thread.")
 
 
     # --- disablebotchannel command ---

@@ -168,6 +168,13 @@ class BotInitDB(commands.Bot):
         except Exception as e:
             print(f"⚠️ Failed to load disabled commands from DB: {e}")
     
+    async def on_command_error(self, ctx, error):
+        # The b/t prefixes also match ordinary words ("title", "test"), so unknown
+        # commands are expected noise, not errors worth a traceback.
+        if isinstance(error, commands.CommandNotFound):
+            return
+        await super().on_command_error(ctx, error)
+
     async def check_maintenance_mode(self, ctx):
         if not self.is_paused:
             return True

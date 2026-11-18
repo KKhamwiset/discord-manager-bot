@@ -148,28 +148,36 @@ def callback():
         return jsonify({'error': 'No code provided'}), 400
     
     # Exchange code for access token
-    token_response = requests.post(
-        f"{DISCORD_OAUTH_URL}/token",
-        data={
-            'client_id': current_app.config['DISCORD_CLIENT_ID'],
-            'client_secret': current_app.config['DISCORD_CLIENT_SECRET'],
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': current_app.config['OAUTH_REDIRECT_URI']
-        },
-        headers={'Content-Type': 'application/x-www-form-urlencoded'}
-    )
-    
+    try:
+        token_response = requests.post(
+            f"{DISCORD_OAUTH_URL}/token",
+            data={
+                'client_id': current_app.config['DISCORD_CLIENT_ID'],
+                'client_secret': current_app.config['DISCORD_CLIENT_SECRET'],
+                'grant_type': 'authorization_code',
+                'code': code,
+                'redirect_uri': current_app.config['OAUTH_REDIRECT_URI']
+            },
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return jsonify({'error': 'Discord OAuth is unreachable'}), 502
+
     if token_response.status_code != 200:
         return jsonify({'error': 'Failed to get access token'}), 400
-    
+
     token_data = token_response.json()
     access_token = token_data['access_token']
-    
-    user_response = requests.get(
-        f"{DISCORD_API_URL}/users/@me",
-        headers={'Authorization': f"Bearer {access_token}"}
-    )
+
+    try:
+        user_response = requests.get(
+            f"{DISCORD_API_URL}/users/@me",
+            headers={'Authorization': f"Bearer {access_token}"},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return jsonify({'error': 'Discord API is unreachable'}), 502
     
     if user_response.status_code != 200:
         return jsonify({'error': 'Failed to get user info'}), 400

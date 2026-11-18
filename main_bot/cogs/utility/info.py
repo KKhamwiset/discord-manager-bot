@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import os
 import requests
@@ -39,7 +40,8 @@ class Info(commands.Cog):
     async def twd(self, ctx: commands.Context, amount: float = None):
         url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/thb.json"
         try:
-            response = requests.get(url)
+            # Run off the event loop: a slow CDN must not freeze the gateway heartbeat
+            response = await asyncio.to_thread(requests.get, url, timeout=10)
             response.raise_for_status()
             data = response.json()
             rate = data["thb"]["twd"]
