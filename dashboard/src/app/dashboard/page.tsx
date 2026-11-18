@@ -5,14 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { authApi, statsApi, StatsOverview } from '@/lib/api';
 import {
     ArrowTopRightOnSquareIcon,
-    BoltIcon,
     ChartBarIcon,
     CommandLineIcon,
-    HeartIcon,
     ServerIcon,
-    ShieldCheckIcon,
-    SparklesIcon,
-    UsersIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -23,6 +18,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [stats, setStats] = useState<StatsOverview | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadFailed, setLoadFailed] = useState(false);
     const [isAuthorizedUser, setIsAuthorizedUser] = useState(false);
 
     useEffect(() => {
@@ -62,6 +58,7 @@ export default function DashboardPage() {
                 setStats(overviewData);
             } catch (error) {
                 console.error('Failed to fetch overview data:', error);
+                setLoadFailed(true);
             } finally {
                 setLoading(false);
             }
@@ -73,64 +70,46 @@ export default function DashboardPage() {
     if (isLoading || !user) {
         return (
             <div className="flex min-h-screen items-center justify-center pixel-page">
-                <span className="loading loading-spinner loading-md text-primary"></span>
+                <span className="loading loading-spinner loading-md text-primary" aria-label="Loading"></span>
             </div>
         );
     }
 
-    const guildIconUrl = stats?.guild?.id && stats?.guild?.icon
-        ? `https://cdn.discordapp.com/icons/${stats.guild.id}/${stats.guild.icon}.png`
+    const guild = stats?.guild;
+    const guildIconUrl = guild?.id && guild?.icon
+        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
         : null;
 
     const isOnline = stats?.bot_status === 'online';
-    const statusLabel = loading ? 'Syncing...' : isOnline ? 'Online' : 'Sleeping';
-
-    const metrics = [
-        {
-            label: 'Bot status',
-            value: statusLabel,
-            detail: isOnline ? 'Commands are ready.' : 'Waiting for heartbeat.',
-            icon: SparklesIcon,
-        },
-        {
-            label: 'Members',
-            value: stats?.guild?.members ? stats.guild.members.toLocaleString() : '---',
-            detail: 'Guild member count.',
-            icon: UsersIcon,
-        },
-        {
-            label: 'Server',
-            value: stats?.guild?.name || '---',
-            detail: stats?.guild?.id ? `Guild ID ${stats.guild.id}` : 'No guild data yet.',
-            icon: ServerIcon,
-        },
-        {
-            label: 'Region',
-            value: stats?.guild?.region || 'Classic',
-            detail: 'Guild metadata snapshot.',
-            icon: ShieldCheckIcon,
-        },
-    ];
+    const status = loading
+        ? { label: 'Checking', detail: 'Reading the bot status.', dot: 'bg-pink-400 animate-pulse' }
+        : loadFailed
+            ? { label: 'Unknown', detail: 'The API did not answer. Refresh to try again.', dot: 'bg-red-400' }
+            : isOnline
+                ? { label: 'Online', detail: 'Heartbeat received. Commands are answering.', dot: 'bg-emerald-400' }
+                : { label: 'Sleeping', detail: 'No heartbeat in the last few minutes. Commands may not answer.', dot: 'bg-amber-300' };
 
     const actions = [
         {
             href: '/commands',
             label: 'Commands',
-            description: 'Toggle command availability.',
+            description: isAuthorizedUser ? 'Turn commands on or off.' : 'See which commands are on.',
             icon: CommandLineIcon,
-            enabled: isAuthorizedUser,
+            enabled: true,
         },
         {
             href: '/channels',
             label: 'Channels',
-            description: 'Manage channel rule maps.',
+            description: isAuthorizedUser
+                ? 'Choose which commands work in each channel.'
+                : 'Needs Manage Server permission.',
             icon: ChartBarIcon,
             enabled: isAuthorizedUser,
         },
         {
-            href: 'https://discord.com',
-            label: 'Discord',
-            description: 'Open Discord in a new tab.',
+            href: 'https://discord.com/channels/@me',
+            label: 'Open Discord',
+            description: 'Opens in a new tab.',
             icon: ArrowTopRightOnSquareIcon,
             enabled: true,
             external: true,
@@ -140,148 +119,104 @@ export default function DashboardPage() {
     return (
         <Header>
             <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-                <div className="mb-6 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
-                    <div className="pixel-panel p-5">
-                        <div className="mb-4 inline-flex items-center gap-2 border-2 border-pink-950 bg-white px-3 py-1.5 text-xs font-black uppercase shadow-[3px_3px_0_#8a174d]">
-                            <HeartIcon className="h-4 w-4 text-pink-700" aria-hidden="true" />
-                            Sakura Pixel Overview
-                        </div>
-                        <h1 className="text-3xl font-black uppercase text-pink-950 sm:text-4xl">
-                            Mochi Bot Dashboard
-                        </h1>
-                        <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-pink-900">
-                            A pink pixel-art control board for bot health, guild status, and fast operator actions.
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-black uppercase text-pink-950 sm:text-4xl">Overview</h1>
+                        <p className="mt-2 text-sm font-medium text-pink-900">
+                            Bot health and the server Mochi manages.
                         </p>
                     </div>
 
-                    <div className="pixel-panel-soft min-w-56 bg-white p-4">
-                        <div className="flex items-center gap-2 text-sm font-black uppercase">
-                            <span className={`h-4 w-4 border-2 border-pink-950 ${isOnline ? 'bg-emerald-400' : loading ? 'bg-pink-400 animate-pulse' : 'bg-amber-300'}`} />
-                            {statusLabel}
-                        </div>
-                        <p className="mt-2 text-xs font-bold uppercase text-pink-800">
-                            {isOnline ? 'Heartbeat healthy' : loading ? 'Reading signal' : 'Sleeping mode'}
+                    <div className="pixel-panel-soft bg-white px-4 py-3" role="status">
+                        <p className="flex items-center gap-2 text-sm font-black uppercase">
+                            <span className={`h-3.5 w-3.5 border-2 border-pink-950 ${status.dot}`} aria-hidden="true" />
+                            Bot {status.label}
                         </p>
                     </div>
                 </div>
 
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {metrics.map((metric) => {
-                        const Icon = metric.icon;
-
-                        return (
-                            <article key={metric.label} className="pixel-panel-soft bg-white p-4">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-black uppercase text-pink-700">{metric.label}</p>
-                                        <p className="mt-3 break-words text-lg font-black text-pink-950">{metric.value}</p>
+                <section className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-start">
+                    <article className="pixel-panel overflow-hidden bg-white" aria-labelledby="server-name">
+                        <div className="flex items-center gap-4 border-b-4 border-pink-950 bg-pink-300 p-5">
+                            <div className="h-16 w-16 flex-shrink-0 border-4 border-pink-950 bg-white shadow-[4px_4px_0_#8a174d]">
+                                {guildIconUrl ? (
+                                    <img src={guildIconUrl} alt="" width={56} height={56} className="h-full w-full" />
+                                ) : (
+                                    <div className="grid h-full w-full place-items-center text-pink-700">
+                                        <ServerIcon className="h-8 w-8" aria-hidden="true" />
                                     </div>
-                                    <div className="grid h-10 w-10 place-items-center border-2 border-pink-950 bg-pink-200">
-                                        <Icon className="h-5 w-5 text-pink-800" aria-hidden="true" />
-                                    </div>
-                                </div>
-                                <p className="mt-3 text-xs font-bold leading-5 text-pink-800">{metric.detail}</p>
-                            </article>
-                        );
-                    })}
-                </section>
-
-                <section className="mt-6 grid gap-5 xl:grid-cols-[1.35fr_0.85fr]">
-                    <article className="pixel-panel overflow-hidden bg-white">
-                        <div className="border-b-4 border-pink-950 bg-pink-300 p-5">
-                            <div className="flex items-center gap-4">
-                                <div className="h-16 w-16 border-4 border-pink-950 bg-white shadow-[4px_4px_0_#8a174d]">
-                                    {guildIconUrl ? (
-                                        <img src={guildIconUrl} alt={stats?.guild?.name || 'Guild avatar'} />
-                                    ) : (
-                                        <div className="grid h-full w-full place-items-center text-pink-700">
-                                            <ServerIcon className="h-8 w-8" aria-hidden="true" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-xs font-black uppercase text-pink-800">Server card</p>
-                                    <h2 className="truncate text-2xl font-black uppercase text-pink-950">
-                                        {stats?.guild?.name || 'Unknown Guild'}
-                                    </h2>
-                                </div>
+                                )}
                             </div>
+                            <h2 id="server-name" className="min-w-0 break-words text-2xl font-black uppercase text-pink-950">
+                                {loading ? (
+                                    <span className="block h-7 w-48 animate-pulse bg-pink-200" aria-label="Loading server" />
+                                ) : guild?.name || 'Server not found'}
+                            </h2>
                         </div>
 
-                        <div className="grid gap-4 p-5 sm:grid-cols-3">
-                            <div className="border-4 border-pink-950 bg-pink-100 p-4">
-                                <p className="text-xs font-black uppercase text-pink-700">Guild ID</p>
-                                <p className="mt-2 break-all text-sm font-bold text-pink-950">{stats?.guild?.id || 'N/A'}</p>
+                        <dl className="grid divide-y-4 divide-pink-950 sm:grid-cols-2 sm:divide-x-4 sm:divide-y-0">
+                            <div className="p-5">
+                                <dt className="text-xs font-black uppercase text-pink-800">Members</dt>
+                                <dd className="mt-2 text-3xl font-black tabular-nums text-pink-950">
+                                    {guild?.members ? guild.members.toLocaleString() : '—'}
+                                </dd>
                             </div>
-                            <div className="border-4 border-pink-950 bg-white p-4">
-                                <p className="text-xs font-black uppercase text-pink-700">Region</p>
-                                <p className="mt-2 text-sm font-bold text-pink-950">{stats?.guild?.region || 'Classic'}</p>
+                            <div className="p-5">
+                                <dt className="text-xs font-black uppercase text-pink-800">Server ID</dt>
+                                <dd className="mt-2 break-all text-sm font-bold tabular-nums text-pink-950">
+                                    {guild?.id || '—'}
+                                </dd>
                             </div>
-                            <div className="border-4 border-pink-950 bg-pink-100 p-4">
-                                <p className="text-xs font-black uppercase text-pink-700">Bot</p>
-                                <p className="mt-2 text-sm font-bold text-pink-950">{statusLabel}</p>
-                            </div>
-                        </div>
+                        </dl>
 
-                        <div className="border-t-4 border-pink-950 p-5">
-                            <div className="flex items-center gap-2 text-sm font-black uppercase">
-                                <BoltIcon className="h-5 w-5 text-pink-700" aria-hidden="true" />
-                                Heartbeat signal
-                            </div>
-                            <div className="mt-3 h-5 border-4 border-pink-950 bg-pink-100">
-                                <div className={`h-full ${isOnline ? 'w-[86%] bg-pink-600' : loading ? 'w-[50%] bg-pink-400 animate-pulse' : 'w-[30%] bg-amber-300'}`} />
-                            </div>
+                        <div className="border-t-4 border-pink-950 bg-pink-100 p-5">
+                            <p className="flex items-center gap-2 text-sm font-black uppercase text-pink-950">
+                                <span className={`h-3.5 w-3.5 border-2 border-pink-950 ${status.dot}`} aria-hidden="true" />
+                                Heartbeat: {status.label}
+                            </p>
+                            <p className="mt-1 text-sm font-medium text-pink-900">{status.detail}</p>
                         </div>
                     </article>
 
-                    <aside className="space-y-5">
-                        <article className="pixel-panel bg-white p-5">
-                            <h3 className="text-lg font-black uppercase text-pink-950">Quick actions</h3>
-                            <div className="mt-4 space-y-3">
-                                {actions.map((item) => {
-                                    const Icon = item.icon;
-                                    const disabled = !item.enabled;
-                                    const className = disabled
-                                        ? 'pointer-events-none opacity-50'
-                                        : item.external
-                                            ? 'pixel-button-light'
-                                            : 'pixel-button-light';
+                    <aside className="pixel-panel bg-white p-5" aria-labelledby="actions-heading">
+                        <h2 id="actions-heading" className="text-lg font-black uppercase text-pink-950">Go to</h2>
+                        <div className="mt-4 space-y-3">
+                            {actions.map((item) => {
+                                const Icon = item.icon;
+                                const content = (
+                                    <>
+                                        <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
+                                        <span>
+                                            <span className="block text-sm">{item.label}</span>
+                                            <span className="block text-xs font-medium normal-case text-pink-800">{item.description}</span>
+                                        </span>
+                                    </>
+                                );
+                                const rowClass = 'flex items-center gap-3 px-4 py-3';
 
-                                    const content = (
-                                        <>
-                                            <Icon className="h-5 w-5" aria-hidden="true" />
-                                            <span>
-                                                <span className="block text-sm">{item.label}</span>
-                                                <span className="block text-[10px] normal-case text-pink-700">{item.description}</span>
-                                            </span>
-                                        </>
-                                    );
-
-                                    return item.external ? (
-                                        <a key={item.label} href={item.href} target="_blank" rel="noreferrer" className={`flex items-center gap-3 px-4 py-3 ${className}`}>
+                                if (!item.enabled) {
+                                    return (
+                                        <div
+                                            key={item.label}
+                                            aria-disabled="true"
+                                            className={`${rowClass} border-3 border-dashed border-pink-800 bg-pink-50 font-black uppercase text-pink-800`}
+                                        >
                                             {content}
-                                        </a>
-                                    ) : (
-                                        <Link key={item.label} href={item.href} className={`flex items-center gap-3 px-4 py-3 ${className}`}>
-                                            {content}
-                                        </Link>
+                                        </div>
                                     );
-                                })}
-                            </div>
-                        </article>
+                                }
 
-                        <article className="pixel-panel-soft bg-pink-100 p-5">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-xs font-black uppercase text-pink-700">Mode</p>
-                                    <h3 className="mt-1 text-lg font-black uppercase text-pink-950">Pixel Sakura</h3>
-                                </div>
-                                <SparklesIcon className="h-7 w-7 text-pink-700" aria-hidden="true" />
-                            </div>
-                            <p className="mt-4 text-sm font-bold leading-6 text-pink-900">
-                                Square controls, pink panels, heavy outlines, and simple scan-first operator content.
-                            </p>
-                        </article>
+                                return item.external ? (
+                                    <a key={item.label} href={item.href} target="_blank" rel="noreferrer" className={`${rowClass} pixel-button-light`}>
+                                        {content}
+                                    </a>
+                                ) : (
+                                    <Link key={item.label} href={item.href} className={`${rowClass} pixel-button-light`}>
+                                        {content}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </aside>
                 </section>
             </div>

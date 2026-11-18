@@ -6,6 +6,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
 
+function avatarUrlFor(user: { id: string; avatar: string | null }) {
+    if (user.avatar) {
+        return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+    }
+    // Discord's default avatar index for accounts without a custom one.
+    const index = Number((BigInt(user.id) >> BigInt(22)) % BigInt(6));
+    return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+}
+
 export default function Header({ children }: { children?: ReactNode }) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
@@ -37,9 +46,7 @@ export default function Header({ children }: { children?: ReactNode }) {
 
     if (!user) return null;
 
-    const avatarUrl = user.avatar
-        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-        : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
+    const displayName = user.global_name || user.username;
 
     const navItems = [
         { path: '/dashboard', label: 'Overview' },
@@ -55,31 +62,25 @@ export default function Header({ children }: { children?: ReactNode }) {
 
     return (
         <div className="min-h-screen pixel-page text-pink-950">
-            <nav className="sticky top-0 z-50 border-b-4 border-pink-950 bg-pink-200/95 font-mono">
+            <nav aria-label="Main" className="sticky top-0 z-50 border-b-4 border-pink-950 bg-pink-200/95 font-mono">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6">
-                    <div className="flex min-h-16 flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center justify-between gap-4">
-                            <Link href="/dashboard" className="flex items-center gap-3">
-                                <span className="grid h-9 w-9 place-items-center border-4 border-pink-950 bg-pink-500 text-lg font-black text-white shadow-[3px_3px_0_#4a102c]">
-                                    M
-                                </span>
-                                <span>
-                                    <span className="block text-sm font-black uppercase tracking-wide text-pink-950">
-                                        Mochi
-                                    </span>
-                                    <span className="block text-[10px] font-bold uppercase tracking-wide text-pink-800">
-                                        Pixel Control
-                                    </span>
-                                </span>
-                            </Link>
-                        </div>
+                    <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-3 py-3">
+                        <Link href="/dashboard" className="flex items-center gap-3">
+                            <span className="grid h-9 w-9 place-items-center border-4 border-pink-950 bg-pink-500 text-lg font-black text-white shadow-[3px_3px_0_#4a102c]">
+                                M
+                            </span>
+                            <span className="text-sm font-black uppercase tracking-wide text-pink-950">
+                                Mochi
+                            </span>
+                        </Link>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="order-last flex w-full flex-wrap items-center gap-2 sm:order-none sm:w-auto">
                             {navItems.map((item) => (
                                 <Link
                                     key={item.path}
                                     href={item.path}
-                                    className={`border-2 px-3 py-1.5 text-xs font-black uppercase transition-transform hover:-translate-y-0.5 ${navLinkClass(item.path)}`}
+                                    aria-current={pathname === item.path ? 'page' : undefined}
+                                    className={`border-2 px-3 py-1.5 text-xs font-black uppercase hover:-translate-y-0.5 ${navLinkClass(item.path)}`}
                                 >
                                     {item.label}
                                 </Link>
@@ -90,20 +91,23 @@ export default function Header({ children }: { children?: ReactNode }) {
                             <div
                                 tabIndex={0}
                                 role="button"
-                                className="flex cursor-pointer items-center gap-2 border-2 border-pink-950 bg-white px-2 py-1 shadow-[3px_3px_0_#4a102c] transition-transform hover:-translate-y-0.5"
+                                aria-label={`Account menu for ${displayName}`}
+                                className="flex cursor-pointer items-center gap-2 border-2 border-pink-950 bg-white p-1 shadow-[3px_3px_0_#4a102c] hover:-translate-y-0.5 sm:pr-3"
                             >
-                                <div className="avatar">
-                                    <div className="h-8 w-8 border-2 border-pink-950">
-                                        <img src={avatarUrl} alt={user.username} />
-                                    </div>
-                                </div>
-                                <span className="hidden text-xs font-black uppercase text-pink-950 sm:block">
-                                    {user.username}
+                                <img
+                                    src={avatarUrlFor(user)}
+                                    alt=""
+                                    width={32}
+                                    height={32}
+                                    className="h-8 w-8 border-2 border-pink-950"
+                                />
+                                <span className="hidden max-w-40 truncate text-xs font-black text-pink-950 sm:block">
+                                    {displayName}
                                 </span>
                             </div>
-                            <ul tabIndex={0} className="dropdown-content menu z-50 mt-3 w-48 border-4 border-pink-950 bg-white p-1 shadow-[6px_6px_0_#4a102c]">
-                                <li className="px-3 py-2 text-[10px] font-black uppercase tracking-wide text-pink-700">
-                                    {user.username}
+                            <ul tabIndex={0} className="dropdown-content menu z-50 mt-3 w-52 border-4 border-pink-950 bg-white p-1 shadow-[6px_6px_0_#4a102c]">
+                                <li className="truncate px-3 py-2 text-xs font-bold text-pink-800">
+                                    Signed in as {displayName}
                                 </li>
                                 <li>
                                     <button onClick={logout} className="text-sm font-bold text-pink-950 hover:bg-pink-100">

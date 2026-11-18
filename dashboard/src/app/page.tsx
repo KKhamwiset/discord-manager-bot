@@ -7,8 +7,6 @@ import {
   ChatBubbleLeftRightIcon,
   CommandLineIcon,
   HeartIcon,
-  ShieldCheckIcon,
-  SparklesIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
@@ -20,6 +18,7 @@ export default function Home() {
   const { user, isLoading, login } = useAuth();
   const router = useRouter();
   const [overview, setOverview] = useState<StatsOverview | null>(null);
+  const [overviewFailed, setOverviewFailed] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -34,6 +33,7 @@ export default function Home() {
         setOverview(data);
       } catch (error) {
         console.error('Failed to fetch bot overview:', error);
+        setOverviewFailed(true);
       }
     };
 
@@ -43,29 +43,31 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center pixel-page">
-        <span className="loading loading-spinner loading-md text-primary"></span>
+        <span className="loading loading-spinner loading-md text-primary" aria-label="Loading"></span>
       </div>
     );
   }
 
   const isOnline = overview?.bot_status === 'online';
-  const statusLabel = overview?.bot_status || 'checking';
-  const memberLabel = overview?.guild?.members ? overview.guild.members.toLocaleString() : '---';
+  const statusLabel = overviewFailed ? 'Unknown' : !overview ? 'Checking' : isOnline ? 'Online' : 'Sleeping';
+  const statusDot = overviewFailed ? 'bg-red-400' : !overview ? 'bg-pink-400 animate-pulse' : isOnline ? 'bg-emerald-400' : 'bg-amber-300';
+  const memberLabel = overview?.guild?.members ? overview.guild.members.toLocaleString() : '—';
+  const serverName = overview?.guild?.name || (overviewFailed ? 'Server unavailable' : 'Loading server…');
 
   const featureCards = [
     {
-      title: 'Command control',
-      description: 'Toggle bot commands with chunky switches.',
+      title: 'Commands',
+      description: 'Turn any command on or off for the whole server.',
       icon: CommandLineIcon,
     },
     {
-      title: 'Channel rules',
-      description: 'Pixel-clear access rules for each room.',
+      title: 'Channels',
+      description: 'Choose which commands work in each channel.',
       icon: ChatBubbleLeftRightIcon,
     },
     {
-      title: 'Heartbeat watch',
-      description: 'See when Mochi is awake or sleeping.',
+      title: 'Heartbeat',
+      description: 'See whether Mochi is awake or sleeping.',
       icon: BoltIcon,
     },
   ];
@@ -78,31 +80,23 @@ export default function Home() {
             <div className="grid h-11 w-11 place-items-center border-4 border-pink-950 bg-pink-600 text-white shadow-[4px_4px_0_#8a174d]">
               <HeartIcon className="h-6 w-6" aria-hidden="true" />
             </div>
-            <div>
-              <p className="text-sm font-black uppercase tracking-wide">Mochi</p>
-              <p className="text-xs font-bold uppercase text-pink-800">Pixel control center</p>
-            </div>
+            <p className="text-sm font-black uppercase tracking-wide">Mochi</p>
           </div>
 
-          <div className="hidden items-center gap-2 border-2 border-pink-950 bg-white px-3 py-1.5 text-xs font-black uppercase sm:flex">
-            <span className={`h-3 w-3 border-2 border-pink-950 ${isOnline ? 'bg-emerald-400' : 'bg-amber-300'}`} />
+          <div className="flex items-center gap-2 border-2 border-pink-950 bg-white px-3 py-1.5 text-xs font-black uppercase" role="status">
+            <span className={`h-3 w-3 border-2 border-pink-950 ${statusDot}`} aria-hidden="true" />
             Bot {statusLabel}
           </div>
         </header>
 
         <section className="grid flex-1 items-center gap-8 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:py-14">
           <div className="pixel-panel p-6 sm:p-8">
-            <div className="mb-5 inline-flex items-center gap-2 border-2 border-pink-950 bg-white px-3 py-2 text-xs font-black uppercase text-pink-950 shadow-[4px_4px_0_#8a174d]">
-              <SparklesIcon className="h-4 w-4" aria-hidden="true" />
-              Sakura Pixel Dashboard
-            </div>
-
-            <h1 className="text-4xl font-black uppercase leading-none tracking-normal text-pink-950 sm:text-5xl lg:text-6xl">
-              Manage Mochi in pink pixel mode.
+            <h1 className="text-4xl font-black uppercase leading-none tracking-normal text-pink-950 [text-wrap:balance] sm:text-5xl lg:text-6xl">
+              Run Mochi from one place.
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base font-bold leading-7 text-pink-900 sm:text-lg">
-              A sharper arcade-style control room for Discord login, server status, commands, and channel rules.
+            <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-pink-900 sm:text-lg">
+              Sign in with Discord to check the bot&apos;s heartbeat, turn commands on or off, and choose which commands work in each channel.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -114,10 +108,8 @@ export default function Home() {
               </button>
 
               <div className="pixel-panel-soft px-5 py-3">
-                <p className="text-xs font-black uppercase tracking-wide text-pink-800">Managing</p>
-                <p className="mt-1 text-sm font-black text-pink-950">
-                  {overview?.guild?.name || 'Loading server...'}
-                </p>
+                <p className="text-xs font-black uppercase tracking-wide text-pink-800">Server</p>
+                <p className="mt-1 text-sm font-black text-pink-950">{serverName}</p>
               </div>
             </div>
           </div>
@@ -125,39 +117,26 @@ export default function Home() {
           <div className="space-y-4">
             <div className="pixel-panel bg-white p-5">
               <div className="flex items-start justify-between gap-4 border-b-4 border-pink-950 pb-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-pink-700">Live preview</p>
-                  <h2 className="mt-2 text-2xl font-black uppercase text-pink-950">
-                    {overview?.guild?.name || 'Mochi Server'}
-                  </h2>
-                </div>
-                <div className={`pixel-chip px-3 py-1 ${isOnline ? 'bg-emerald-100' : 'bg-amber-100'}`}>
-                  {isOnline ? 'Online' : 'Sleeping'}
+                <h2 className="min-w-0 break-words text-2xl font-black uppercase text-pink-950">{serverName}</h2>
+                <div className={`pixel-chip flex-shrink-0 px-3 py-1 ${isOnline ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                  {statusLabel}
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="pixel-panel-soft p-4">
-                  <UsersIcon className="h-5 w-5 text-pink-700" aria-hidden="true" />
-                  <p className="mt-4 text-2xl font-black text-pink-950">{memberLabel}</p>
-                  <p className="text-xs font-black uppercase text-pink-800">Members</p>
-                </div>
-                <div className="pixel-panel-soft p-4">
-                  <ShieldCheckIcon className="h-5 w-5 text-pink-700" aria-hidden="true" />
-                  <p className="mt-4 text-2xl font-black text-pink-950">{overview?.guild?.region || 'Classic'}</p>
-                  <p className="text-xs font-black uppercase text-pink-800">Region</p>
-                </div>
-              </div>
-
-              <div className="mt-4 border-4 border-pink-950 bg-white p-4">
-                <div className="flex items-center justify-between text-sm font-black uppercase">
-                  <span>Heartbeat signal</span>
-                  <span>{isOnline ? 'Healthy' : 'Waiting'}</span>
-                </div>
-                <div className="mt-3 h-4 border-2 border-pink-950 bg-pink-100">
-                  <div className={`h-full ${isOnline ? 'w-[88%] bg-pink-600' : 'w-[34%] bg-amber-300'}`} />
-                </div>
-              </div>
+              <dl className="mt-5 grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3">
+                <dt className="flex items-center gap-2 text-xs font-black uppercase text-pink-800">
+                  <UsersIcon className="h-5 w-5" aria-hidden="true" />
+                  Members
+                </dt>
+                <dd className="text-right text-2xl font-black tabular-nums text-pink-950">{memberLabel}</dd>
+                <dt className="flex items-center gap-2 text-xs font-black uppercase text-pink-800">
+                  <BoltIcon className="h-5 w-5" aria-hidden="true" />
+                  Heartbeat
+                </dt>
+                <dd className="text-right text-sm font-bold text-pink-950">
+                  {overviewFailed ? 'API not answering' : !overview ? 'Checking…' : isOnline ? 'Received recently' : 'Missed. Mochi is sleeping'}
+                </dd>
+              </dl>
             </div>
 
             <div className="grid gap-3">
@@ -166,12 +145,12 @@ export default function Home() {
 
                 return (
                   <div key={feature.title} className="pixel-panel-soft flex items-center gap-3 bg-white px-4 py-3">
-                    <div className="grid h-10 w-10 place-items-center border-2 border-pink-950 bg-pink-200 text-pink-800">
+                    <div className="grid h-10 w-10 flex-shrink-0 place-items-center border-2 border-pink-950 bg-pink-200 text-pink-800">
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div>
                       <p className="text-sm font-black uppercase text-pink-950">{feature.title}</p>
-                      <p className="text-xs font-bold text-pink-800">{feature.description}</p>
+                      <p className="text-sm font-medium text-pink-900">{feature.description}</p>
                     </div>
                   </div>
                 );
